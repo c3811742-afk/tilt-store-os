@@ -1,6 +1,6 @@
 import { assets } from '@/shared/assets';
 
-// The brand layer: this file and the logo are what make tilt-store-os and genz-store-os different.
+// The brand layer: this file and the logo are what make tilt-store-os and tilt-genz-store-os different.
 // The full list of files that may differ is in CLAUDE.md ("Two repos, one codebase"); everything else stays identical.
 export const brand = {
   id: 'tilt-store-os', // prefixes storage keys

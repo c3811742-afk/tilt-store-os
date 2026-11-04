@@ -22,7 +22,7 @@ React + TypeScript (Vite) demo of the store system (sales, stock, returns and br
 
 ## Two repos, one codebase
 
-This demo exists twice: `tilt-store-os` (TILT logo) and `genz-store-os` (Gen Z's logo). The two repos are identical except for the brand layer:
+This demo exists twice: `tilt-store-os` (TILT logo) and `tilt-genz-store-os` (Gen Z's logo). The two repos are identical except for the brand layer:
 
 - `src/shared/constants/brand.ts`: brand id, name, logo aspect ratio
 - `src/shared/assets/logos/logo.png`: the logo (black shape on transparent; `BrandLogo` colors it)
@@ -250,4 +250,4 @@ Rules:
 - [ ] Loading, error and empty states handled; every async call and form can fail gracefully
 - [ ] Wording uses standard labels, is short and plain, and has no AI-sounding phrases
 - [ ] No `left` / `right` in layout styles; the page checked in English and Arabic, light and dark, on a phone width and a desktop width
-- [ ] The same change made in the other repo (`tilt-store-os` / `genz-store-os`), unless it's a brand-layer file
+- [ ] The same change made in the other repo (`tilt-store-os` / `tilt-genz-store-os`), unless it's a brand-layer file
