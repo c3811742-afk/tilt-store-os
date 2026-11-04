@@ -1,0 +1,11 @@
+.text {
+  margin: 0;
+  color: var(--text-color);
+  text-align: var(--text-align);
+  font-family: var(--text-font-family);
+  font-size: var(--text-font-size);
+  font-weight: var(--text-font-weight);
+  line-height: var(--text-line-height);
+  letter-spacing: var(--text-letter-spacing);
+  text-transform: var(--text-transform);
+}

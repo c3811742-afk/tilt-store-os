@@ -1,0 +1,46 @@
+/* Base styles. Every value comes from the theme variables written onto <html> by applyTheme(). */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: var(--root-font-size);
+}
+
+body {
+  margin: 0;
+  min-block-size: var(--sizes-viewport-full-height);
+  background: var(--colors-background);
+  color: var(--colors-text);
+  font-family: var(--text-styles-body-font-family);
+  font-size: var(--text-styles-body-font-size);
+  font-weight: var(--text-styles-body-font-weight);
+  line-height: var(--text-styles-body-line-height);
+}
+
+img,
+video,
+svg {
+  display: block;
+  max-inline-size: 100%;
+  block-size: auto;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: var(--motion-none) !important;
+    animation-duration: var(--motion-none) !important;
+  }
+}

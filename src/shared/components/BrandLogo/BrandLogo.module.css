@@ -1,0 +1,8 @@
+.logo {
+  display: inline-block;
+  flex-shrink: 0;
+  block-size: var(--brand-logo-height);
+  aspect-ratio: var(--brand-logo-aspect-ratio);
+  background: var(--brand-logo-color);
+  mask: var(--brand-logo-image) center / contain no-repeat;
+}

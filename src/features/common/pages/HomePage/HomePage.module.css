@@ -1,0 +1,21 @@
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--spacing-5);
+  min-block-size: var(--sizes-viewport-hero-min-height);
+  padding-block: var(--spacing-8);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+}
+
+@media (--md-up) {
+  .hero {
+    padding-block: var(--spacing-9);
+  }
+}

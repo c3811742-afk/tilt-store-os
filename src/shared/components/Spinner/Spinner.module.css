@@ -1,0 +1,15 @@
+.spinner {
+  display: inline-block;
+  inline-size: var(--spinner-size);
+  block-size: var(--spinner-size);
+  border: var(--borders-width-thick) var(--borders-style) var(--spinner-track-color);
+  border-block-start-color: var(--spinner-color);
+  border-radius: var(--radii-full);
+  animation: spin var(--motion-spin) linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
