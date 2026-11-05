@@ -1,0 +1,15 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--sizes-tag-height);
+  padding-inline: var(--sizes-tag-padding-x);
+  border: var(--borders-width-thin) var(--borders-style) currentcolor;
+  border-radius: var(--badge-radius);
+  background: var(--badge-background);
+  color: var(--badge-color);
+  font-family: var(--text-styles-caption-font-family);
+  font-size: var(--text-styles-caption-font-size);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--text-styles-caption-line-height);
+  white-space: nowrap;
+}

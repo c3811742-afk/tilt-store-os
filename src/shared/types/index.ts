@@ -1,1 +1,11 @@
 export type { TextShape } from './text';
+export * from './common';
+export * from './org';
+export * from './people';
+export * from './catalog';
+export * from './stock';
+export * from './sales';
+export * from './finance';
+export * from './promotions';
+export * from './activity';
+export * from './settings';

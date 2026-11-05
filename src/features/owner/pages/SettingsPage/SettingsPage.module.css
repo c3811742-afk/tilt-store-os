@@ -1,0 +1,16 @@
+.preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-1);
+  inline-size: min(100%, var(--sizes-field-max-width));
+  margin-inline: auto;
+  padding: var(--spacing-4);
+  border: var(--borders-width-thin) dashed var(--colors-border-strong);
+  background: var(--colors-surface);
+}
+
+.rule {
+  inline-size: 100%;
+  border-block-start: var(--borders-width-thin) dashed var(--colors-border);
+}

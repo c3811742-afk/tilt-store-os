@@ -1,0 +1,8 @@
+.list {
+  max-block-size: var(--sizes-menu-max-height);
+  overflow-y: auto;
+  padding: var(--spacing-3);
+  border: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  border-radius: var(--radii-md);
+  background: var(--colors-surface);
+}

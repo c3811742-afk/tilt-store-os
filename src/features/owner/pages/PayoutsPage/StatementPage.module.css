@@ -1,0 +1,35 @@
+.rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  font-variant-numeric: var(--numeric-tabular);
+  list-style: none;
+}
+
+.row,
+.strong {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  padding-block: var(--spacing-2);
+  border-block-end: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+}
+
+.strong {
+  font-weight: var(--font-weight-semi-bold);
+}
+
+.whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  min-block-size: var(--sizes-button-height-sm);
+  padding-inline: var(--sizes-button-padding-x);
+  border: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  border-radius: var(--radii-md);
+  color: var(--colors-text);
+  font-size: var(--text-styles-button-font-size);
+  font-weight: var(--text-styles-button-font-weight);
+  text-decoration: none;
+}

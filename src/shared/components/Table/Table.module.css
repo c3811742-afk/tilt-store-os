@@ -1,0 +1,132 @@
+.scroller {
+  max-inline-size: 100%;
+  overflow-x: auto;
+  border: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  border-radius: var(--radii-md);
+  background: var(--colors-surface);
+}
+
+.table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-styles-body-sm-font-size);
+  font-variant-numeric: var(--numeric-tabular);
+  line-height: var(--text-styles-body-sm-line-height);
+}
+
+.table th,
+.table td {
+  padding: var(--spacing-3) var(--spacing-4);
+  border-block-end: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  text-align: start;
+  vertical-align: middle;
+}
+
+.table thead th {
+  background: var(--colors-surface-muted);
+  color: var(--colors-text-secondary);
+  font-size: var(--text-styles-caption-font-size);
+  font-weight: var(--font-weight-semi-bold);
+  white-space: nowrap;
+}
+
+.table tbody tr:last-child > * {
+  border-block-end: none;
+}
+
+.table tfoot td {
+  border-block: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  font-weight: var(--font-weight-semi-bold);
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.clickable:hover {
+  background: var(--colors-surface-muted);
+}
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.table .end {
+  text-align: end;
+}
+
+.table .center {
+  text-align: center;
+}
+
+/* Phones (stackOnMobile): each row is a card, each cell shows its column name before the value. */
+.stacked thead,
+.stacked tfoot {
+  display: none;
+}
+
+.stacked tbody tr {
+  display: block;
+  padding-block: var(--spacing-3);
+  border-block-end: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+}
+
+.stacked tbody tr:last-child {
+  border-block-end: none;
+}
+
+.stacked tbody td {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: var(--spacing-3);
+  padding-block: var(--spacing-1);
+  border: none;
+  text-align: start;
+}
+
+.stacked tbody td::before {
+  content: attr(data-label);
+  color: var(--colors-text-muted);
+}
+
+@media (--md-up) {
+  .stacked thead {
+    display: table-header-group;
+  }
+
+  .stacked tfoot {
+    display: table-footer-group;
+  }
+
+  .stacked tbody tr {
+    display: table-row;
+    padding-block: 0;
+    border-block-end: none;
+  }
+
+  .stacked tbody td {
+    display: table-cell;
+    padding-block: var(--spacing-3);
+    border-block-end: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  }
+
+  .stacked tbody tr:last-child > td {
+    border-block-end: none;
+  }
+
+  .stacked .end {
+    text-align: end;
+  }
+
+  .stacked tbody td::before {
+    content: none;
+  }
+}

@@ -1,0 +1,47 @@
+.page {
+  display: grid;
+  place-items: center;
+  min-block-size: var(--sizes-viewport-full-height);
+  padding: var(--spacing-5);
+  background: var(--colors-canvas);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+  inline-size: min(100%, var(--sizes-field-max-width));
+}
+
+.tools {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-2);
+}
+
+.accounts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  inline-size: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  border: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  border-radius: var(--radii-md);
+  background: var(--colors-surface);
+  color: var(--colors-text);
+  font-size: var(--text-styles-body-sm-font-size);
+  cursor: pointer;
+}
+
+.account:hover {
+  border-color: var(--colors-border-strong);
+}

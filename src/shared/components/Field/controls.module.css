@@ -1,0 +1,59 @@
+/* The look shared by every form control: inputs, selects and text areas. */
+.control {
+  inline-size: 100%;
+  min-block-size: var(--sizes-input-height);
+  padding-inline: var(--sizes-input-padding-x);
+  border: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  border-radius: var(--radii-md);
+  background: var(--colors-surface);
+  color: var(--colors-text);
+  font-size: var(--text-styles-body-sm-font-size);
+  font-variant-numeric: var(--numeric-tabular);
+}
+
+.control:focus-visible {
+  outline: var(--borders-width-thick) var(--borders-style) var(--colors-focus);
+  outline-offset: calc(-1 * var(--borders-width-thin));
+}
+
+.control:disabled {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+}
+
+.invalid {
+  border-color: var(--colors-danger);
+}
+
+.textarea {
+  min-block-size: var(--sizes-field-textarea-height);
+  padding-block: var(--spacing-2);
+  resize: vertical;
+}
+
+.withAffix {
+  display: flex;
+  align-items: stretch;
+}
+
+.affix {
+  display: inline-flex;
+  align-items: center;
+  padding-inline: var(--spacing-3);
+  border: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  border-inline-end: none;
+  border-start-start-radius: var(--radii-md);
+  border-end-start-radius: var(--radii-md);
+  background: var(--colors-surface-muted);
+  color: var(--colors-text-secondary);
+  font-size: var(--text-styles-caption-font-size);
+}
+
+.withAffix .control {
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+}
+
+.control:hover:not(:disabled) {
+  border-color: var(--colors-border-strong);
+}

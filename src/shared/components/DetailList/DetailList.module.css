@@ -1,0 +1,24 @@
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--detail-list-min), 1fr));
+  gap: var(--spacing-4);
+  margin: 0;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  min-inline-size: 0;
+}
+
+.label {
+  color: var(--colors-text-muted);
+  font-size: var(--text-styles-caption-font-size);
+}
+
+.value {
+  margin: 0;
+  font-variant-numeric: var(--numeric-tabular);
+  overflow-wrap: anywhere;
+}

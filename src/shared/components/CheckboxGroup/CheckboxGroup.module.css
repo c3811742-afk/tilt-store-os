@@ -1,0 +1,31 @@
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.legend {
+  padding: 0;
+  margin-block-end: var(--spacing-2);
+  font-size: var(--text-styles-body-sm-font-size);
+  font-weight: var(--font-weight-medium);
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--checkbox-group-min), 1fr));
+  gap: var(--spacing-2) var(--spacing-4);
+}
+
+.hint {
+  color: var(--colors-text-muted);
+  font-size: var(--text-styles-caption-font-size);
+}
+
+.error {
+  color: var(--colors-danger);
+  font-size: var(--text-styles-caption-font-size);
+}

@@ -1,0 +1,86 @@
+import { createBranch, newLocation, updateBranch, type BranchInput } from '@/shared/api';
+import { Button, Card, CheckboxGroup, Grid, IconButton, LocalizedField, Notice, SelectField, Stack, Text, TextField } from '@/shared/components';
+import { branchKinds } from '@/shared/constants';
+import { useErrorMessage, useForm, useFormat, useLocale, useReference } from '@/shared/hooks';
+import type { LocationKind } from '@/shared/types';
+import { vars } from '@/shared/theme';
+import { CountrySelect, CurrencySelect } from '../../components';
+import { validators } from '../../utils';
+
+const locationKinds: LocationKind[] = ['floor', 'backRoom', 'storage'];
+
+export interface BranchFormProps {
+  branchId?: string;
+  initial: BranchInput;
+  onDone: (branchId: string) => void;
+}
+
+// A branch's details, its currency and payment methods, and its stock locations (shop floor, back room, storage).
+export const BranchForm = ({ branchId, initial, onDone }: BranchFormProps) => {
+  const { text } = useLocale();
+  const format = useFormat();
+  const { settings } = useReference();
+  const errorMessage = useErrorMessage();
+  const check = validators(text);
+  const t = text.owner.branches;
+  const form = useForm(initial, { name: check.required, city: check.required });
+  const locations = form.values.locations;
+
+  return (
+    <Stack
+      as="form"
+      gap={vars.spacing[5]}
+      onSubmit={form.submit(async (values) => {
+        const branch = branchId ? await updateBranch(branchId, values) : await createBranch(values);
+        onDone(branch.id);
+      })}
+    >
+      {Boolean(form.requestError) && <Notice tone="danger">{errorMessage(form.requestError)}</Notice>}
+      <Grid>
+        <TextField label={text.common.name} required {...form.field('name')} />
+        <SelectField label={t.kind} hint={t.kindHints[form.values.kind]} value={form.values.kind} onChange={(kind) => form.setValue('kind', kind)} options={branchKinds.map((kind) => ({ value: kind, label: t.kinds[kind] }))} />
+        <CountrySelect value={form.values.countryCode} onChange={(countryCode) => form.setValue('countryCode', countryCode)} />
+        <TextField label={text.owner.fields.city} required {...form.field('city')} />
+        <TextField label={text.owner.fields.address} {...form.field('address')} />
+        <TextField label={text.owner.fields.phone} type="tel" {...form.field('phone')} />
+        <CurrencySelect value={form.values.currency} onChange={(currency) => form.setValue('currency', currency)} hint={t.currencyHint} />
+      </Grid>
+      {form.values.kind !== 'warehouse' && (
+        <CheckboxGroup
+          label={t.paymentMethods}
+          options={settings.paymentMethods.filter((method) => method.active).map((method) => ({ value: method.id, label: format.text(method.name) }))}
+          value={form.values.paymentMethodIds}
+          onChange={(paymentMethodIds) => form.setValue('paymentMethodIds', paymentMethodIds)}
+        />
+      )}
+      <Card title={t.locations} background={vars.colors.surfaceMuted}>
+        <Text variant="bodySm" color={vars.colors.textMuted}>
+          {t.locationsHint}
+        </Text>
+        {locations.map((location, index) => (
+          <Stack key={location.id} direction="row" wrap align="flex-end" gap={vars.spacing[3]}>
+            <SelectField
+              label={t.locationKind}
+              value={location.kind}
+              width={vars.sizes.field.narrow}
+              onChange={(kind) => form.setValue('locations', locations.map((current, position) => (position === index ? { ...current, kind } : current)))}
+              options={locationKinds.map((kind) => ({ value: kind, label: t.locationKinds[kind] }))}
+            />
+            <LocalizedField label={text.common.name} value={location.name} onChange={(name) => form.setValue('locations', locations.map((current, position) => (position === index ? { ...current, name } : current)))} />
+            <IconButton icon="trash" label={text.common.remove} disabled={locations.length <= 1} onClick={() => form.setValue('locations', locations.filter((_, position) => position !== index))} />
+          </Stack>
+        ))}
+        <Stack direction="row">
+          <Button variant="secondary" size="sm" onClick={() => form.setValue('locations', [...locations, newLocation('storage', { en: '', ar: '' })])}>
+            {t.addLocation}
+          </Button>
+        </Stack>
+      </Card>
+      <Stack direction="row" justify="flex-end">
+        <Button type="submit" disabled={form.submitting}>
+          {branchId ? text.common.saveChanges : t.add}
+        </Button>
+      </Stack>
+    </Stack>
+  );
+};

@@ -1,0 +1,19 @@
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+  min-block-size: var(--stat-card-min-height);
+}
+
+.value {
+  font-variant-numeric: var(--numeric-tabular);
+}
+
+.detail {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  color: var(--stat-card-trend);
+}

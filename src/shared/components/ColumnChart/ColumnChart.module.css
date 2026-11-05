@@ -1,0 +1,50 @@
+.chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.columns {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--spacing-1);
+  block-size: var(--column-chart-height);
+  border-block-end: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+}
+
+.column {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: flex-end;
+  block-size: 100%;
+  min-inline-size: 0;
+}
+
+.bar {
+  inline-size: 100%;
+  border-start-start-radius: var(--radii-sm);
+  border-start-end-radius: var(--radii-sm);
+  background: var(--column-chart-color);
+}
+
+.previous {
+  position: absolute;
+  inset-inline: 0;
+  border-block-start: var(--borders-width-thick) var(--borders-style) var(--column-chart-previous);
+}
+
+.labels {
+  display: flex;
+  gap: var(--spacing-1);
+  color: var(--colors-text-muted);
+  font-size: var(--text-styles-caption-font-size);
+}
+
+.label {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-align: center;
+  white-space: nowrap;
+}

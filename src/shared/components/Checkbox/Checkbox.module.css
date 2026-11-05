@@ -1,0 +1,26 @@
+.checkbox {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--spacing-2);
+  cursor: pointer;
+}
+
+.input {
+  flex-shrink: 0;
+  inline-size: var(--sizes-icon-sm);
+  block-size: var(--sizes-icon-sm);
+  margin: 0;
+  margin-block-start: var(--spacing-1);
+  accent-color: var(--colors-primary);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--text-styles-body-sm-font-size);
+}
+
+.hint {
+  color: var(--colors-text-muted);
+  font-size: var(--text-styles-caption-font-size);
+}

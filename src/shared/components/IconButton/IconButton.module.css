@@ -1,0 +1,29 @@
+.button {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--icon-button-size);
+  block-size: var(--icon-button-size);
+  padding: 0;
+  border: none;
+  border-radius: var(--radii-md);
+  background: transparent;
+  color: var(--icon-button-color);
+  cursor: pointer;
+}
+
+.button:focus-visible {
+  outline: var(--borders-width-thick) var(--borders-style) var(--colors-focus);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+}
+
+.button:hover:not(:disabled) {
+  background: var(--colors-surface-muted);
+  color: var(--colors-text);
+}

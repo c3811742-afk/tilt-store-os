@@ -1,0 +1,60 @@
+.modal {
+  inline-size: var(--modal-width);
+  max-inline-size: 100%;
+  max-block-size: var(--sizes-modal-max-height);
+  padding: 0;
+  border: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  border-radius: var(--radii-lg);
+  background: var(--colors-surface);
+  color: var(--colors-text);
+}
+
+.modal::backdrop {
+  background: var(--colors-overlay);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
+  padding: var(--spacing-5);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.close {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--sizes-tap-target);
+  block-size: var(--sizes-tap-target);
+  margin-block-start: calc(-1 * var(--spacing-2));
+  margin-inline-end: calc(-1 * var(--spacing-2));
+  border: none;
+  border-radius: var(--radii-md);
+  background: transparent;
+  cursor: pointer;
+}
+
+.close:hover {
+  background: var(--colors-surface-muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--spacing-3);
+}

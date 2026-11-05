@@ -1,0 +1,20 @@
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--spacing-3);
+}
+
+.fields {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(auto-fill, minmax(var(--filter-bar-field), 1fr));
+  gap: var(--spacing-3);
+  min-inline-size: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+}

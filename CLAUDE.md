@@ -232,6 +232,15 @@ Rules:
 - Route paths are defined once in `shared/constants/routes.ts`. Storage keys in `shared/constants/storageKeys.ts`, and storage is accessed only through `storage` from `shared/utils`.
 - All UI text goes in `shared/constants/text/` in both languages.
 
+## Data, defaults and the mock API
+
+- **Every configurable value has its default in one file: `shared/constants/defaults.ts`** (limits, VAT and receipt text per country, return rules, payment methods, reasons lists, default brand terms, alert and flag settings...). The owner changes them on the Policies and Settings pages; "Reset to defaults" brings back this file's values. Never put a default inside a page.
+- **Mock API behaviour** (delay, failure rate, the live demo checkout, the seed) is in `shared/constants/mock.ts`.
+- **All data goes through `shared/api/`**: `respond()` for reads, `mutate()` for changes (it saves to this browser, compressed, and tells every page through `onDataChange`). Every change calls `logActivity()`; alerts go through `notify()`. Pages never touch the data directly.
+- **Business rules live once:** sale economics (`utils/economics.ts`), rates, VAT and brand terms on a date (`utils/rates.ts`), stock levels from movements (`utils/stockLevels.ts`), batch costs (`utils/costing.ts`), recording a sale (`api/engine.ts`), report facts (`api/facts.ts`) and brand settlements (`api/settlement.ts`). The seed, the live demo and every screen use them.
+- **History is never rewritten:** sales keep a copy of their price, cost, commission, VAT rate and exchange rate; rates, VAT rates and brand terms are added from a date, never edited; stock only changes through movements; completed sales are reversed with a record, never edited.
+- **Demo data** (`shared/mocks/`): GenZ's real branches, brands and products (`catalog.ts`, researched from public sources); people's names, phone numbers and bank details are placeholders.
+
 ## TypeScript
 
 - `strict` mode on. No `any`. Use `unknown` and narrow it when needed.

@@ -29,6 +29,16 @@ export const sizes = {
   icon: { sm: '1rem', md: '1.5rem', lg: '2rem' }, // 16 / 24 / 32
   spinner: { size: '2.5rem' }, // 40
   stateMessage: { minHeight: '40dvh', maxWidth: '32rem' }, // loading / error / empty / not found
+  tapTarget: '2.5rem', // 40, icon-only buttons
+  statCard: { minHeight: '6.5rem' }, // 104
+  table: { firstColumn: 'min(14rem, 40%)', thumbnail: '2.5rem' }, // 224 / 40
+  field: { maxWidth: '28rem', narrow: '10rem', textareaHeight: '6rem' }, // 448 / 160 / 96
+  bar: { height: '0.5rem', chartHeight: '10rem' }, // 8 / 160: bar lists and the column chart
+  badgeDot: '0.5rem', // 8, the "new" dot on the notifications bell
+  thumbnail: { sm: '2.5rem', md: '4rem', lg: '8rem' }, // 40 / 64 / 128: product photos and brand logos
+  menu: { minWidth: '14rem', maxHeight: '60dvh' }, // 224, dropdown menus
+  signature: { height: '8rem' }, // 128, signature pad
+  pageMaxWidth: '90rem', // 1440, the owner's pages
 
   aspectRatio: {
     square: '1 / 1',

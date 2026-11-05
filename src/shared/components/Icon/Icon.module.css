@@ -1,0 +1,10 @@
+.icon {
+  flex-shrink: 0;
+  inline-size: var(--icon-size);
+  block-size: var(--icon-size);
+  color: var(--icon-color);
+}
+
+[dir='rtl'] .flip {
+  transform: scaleX(-1);
+}

@@ -1,0 +1,25 @@
+.group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1);
+  border: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  border-radius: var(--radii-md);
+  background: var(--colors-surface-muted);
+}
+
+.option {
+  padding: var(--spacing-1) var(--spacing-3);
+  border: none;
+  border-radius: var(--radii-sm);
+  background: transparent;
+  color: var(--colors-text-secondary);
+  font-size: var(--text-styles-body-sm-font-size);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+}
+
+.selected {
+  background: var(--colors-surface);
+  color: var(--colors-text);
+}

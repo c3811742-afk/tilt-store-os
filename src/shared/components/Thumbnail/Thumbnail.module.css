@@ -1,0 +1,24 @@
+.thumbnail {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--thumbnail-size);
+  block-size: var(--thumbnail-size);
+  overflow: hidden;
+  border: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  border-radius: var(--radii-md);
+  background: var(--colors-brand-soft);
+  color: var(--colors-on-brand-soft);
+  font-weight: var(--font-weight-semi-bold);
+}
+
+.round {
+  border-radius: var(--radii-full);
+}
+
+.image {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}

@@ -1,0 +1,23 @@
+.notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-4);
+  border: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  border-inline-start: var(--borders-width-accent) var(--borders-style) var(--notice-color);
+  border-radius: var(--radii-md);
+  background: var(--colors-surface);
+}
+
+.icon {
+  color: var(--notice-color);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  min-inline-size: 0;
+}
