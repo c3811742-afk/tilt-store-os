@@ -37,7 +37,7 @@ export const BrandProfileForm = ({ initial, submitLabel, onSubmit, onCancel, ext
       <FileField
         label={t.logo}
         accept="image/*"
-        value={form.values.logo ? { name: t.logo, size: form.values.logo.length, dataUrl: form.values.logo } : null}
+        value={form.values.logo ? { name: t.logo, size: 0, dataUrl: form.values.logo } : null}
         onChange={(file) => form.setValue('logo', file?.dataUrl)}
       />
       <Grid>

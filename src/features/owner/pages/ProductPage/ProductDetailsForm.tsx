@@ -58,7 +58,7 @@ export const ProductDetailsForm = ({ initial, showPricing, currencies, submitLab
         <SelectField label={text.owner.fields.season} placeholder={text.common.none} value={form.values.season} onChange={(value) => form.setValue('season', value)} options={settings.seasons.map((value) => ({ value, label: value }))} />
         <TextField label={text.owner.fields.collection} {...form.field('collection')} />
       </Grid>
-      <FileField label={t.photo} accept="image/*" value={form.values.photo ? { name: t.photo, size: form.values.photo.length, dataUrl: form.values.photo } : null} onChange={(file) => form.setValue('photo', file?.dataUrl)} />
+      <FileField label={t.photo} accept="image/*" value={form.values.photo ? { name: t.photo, size: 0, dataUrl: form.values.photo } : null} onChange={(file) => form.setValue('photo', file?.dataUrl)} />
       <Card title={t.variants} background={vars.colors.surfaceMuted}>
         <Text variant="bodySm" color={vars.colors.textMuted}>
           {t.variantsHint} {variantCount ? `(${variantCount})` : ''}

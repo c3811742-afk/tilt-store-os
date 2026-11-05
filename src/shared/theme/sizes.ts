@@ -24,7 +24,7 @@ export const sizes = {
   },
   input: { height: '2.5rem', paddingX: spacing[3] }, // 40
   tag: { height: '1.375rem', paddingX: spacing[2] }, // 22
-  card: { padding: spacing[4], minWidth: 'min(15rem, 100%)' }, // 240, never wider than its column
+  card: { padding: spacing[5], minWidth: 'min(17rem, 100%)' }, // 272, never wider than its column; roomy padding
   avatar: { sm: '2rem', md: '3rem', lg: '4rem', xl: '6rem' }, // 32 / 48 / 64 / 96
   icon: { sm: '1rem', md: '1.5rem', lg: '2rem' }, // 16 / 24 / 32
   spinner: { size: '2.5rem' }, // 40

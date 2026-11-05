@@ -38,7 +38,9 @@ export const BranchForm = ({ branchId, initial, onDone }: BranchFormProps) => {
       {Boolean(form.requestError) && <Notice tone="danger">{errorMessage(form.requestError)}</Notice>}
       <Grid>
         <TextField label={text.common.name} required {...form.field('name')} />
-        <SelectField label={t.kind} hint={t.kindHints[form.values.kind]} value={form.values.kind} onChange={(kind) => form.setValue('kind', kind)} options={branchKinds.map((kind) => ({ value: kind, label: t.kinds[kind] }))} />
+        {form.values.kind !== 'warehouse' && (
+          <SelectField label={t.kind} hint={t.kindHints[form.values.kind]} value={form.values.kind} onChange={(kind) => form.setValue('kind', kind)} options={branchKinds.filter((kind) => kind !== 'warehouse').map((kind) => ({ value: kind, label: t.kinds[kind] }))} />
+        )}
         <CountrySelect value={form.values.countryCode} onChange={(countryCode) => form.setValue('countryCode', countryCode)} />
         <TextField label={text.owner.fields.city} required {...form.field('city')} />
         <TextField label={text.owner.fields.address} {...form.field('address')} />
@@ -78,7 +80,7 @@ export const BranchForm = ({ branchId, initial, onDone }: BranchFormProps) => {
       </Card>
       <Stack direction="row" justify="flex-end">
         <Button type="submit" disabled={form.submitting}>
-          {branchId ? text.common.saveChanges : t.add}
+          {branchId ? text.common.saveChanges : form.values.kind === 'warehouse' ? t.addWarehouse : t.add}
         </Button>
       </Stack>
     </Stack>

@@ -17,7 +17,7 @@ export const BranchSelect = ({ kinds = ['store', 'online'], includeArchived = fa
   const { text } = useLocale();
   return (
     <SelectField
-      label={props.label ?? text.owner.fields.branch}
+      label={props.label ?? (kinds.includes('warehouse') ? text.owner.fields.branchOrWarehouse : text.owner.fields.branch)}
       placeholder={props.allLabel}
       value={props.value}
       onChange={props.onChange}

@@ -49,9 +49,6 @@ export const BrandsPage = () => {
           const shown = filter(rows);
           return (
             <Stack gap={vars.spacing[2]}>
-              <Text variant="caption" color={vars.colors.textMuted}>
-                {format.number(shown.length)} / {format.number(rows.length)}
-              </Text>
               <Table
                 label={t.title}
                 emptyText={text.common.noResults}
@@ -76,9 +73,11 @@ export const BrandsPage = () => {
                             <Text as="span" variant="h4" autoDirection>
                               {row.brand.name}
                             </Text>
-                            <Text as="span" variant="caption" color={vars.colors.textMuted}>
-                              {row.brand.instagram || row.brand.contactName || ' '}
-                            </Text>
+                            {(row.brand.instagram || row.brand.contactName) && (
+                              <Text as="span" variant="caption" color={vars.colors.textMuted}>
+                                {row.brand.instagram || row.brand.contactName}
+                              </Text>
+                            )}
                           </Stack>
                         </Stack>
                       ),

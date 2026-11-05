@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import { getBranch, setBranchArchived } from '@/shared/api';
 import { AsyncContent, Badge, Button, Card, Icon, Notice, PageHeader, Stack } from '@/shared/components';
 import { routes, toPath } from '@/shared/constants';
-import { useAction, useAsync, useErrorMessage, useLiveVersion, useLocale, useReference } from '@/shared/hooks';
+import { useAction, useAsync, useErrorMessage, useLiveVersion, useLocale, useQueryState, useReference } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { BranchForm } from './BranchForm';
 
@@ -18,6 +18,7 @@ export const BranchPage = () => {
   const action = useAction();
   const [saved, setSaved] = useState(false);
   const t = text.owner.branches;
+  const [newKind] = useQueryState<'store' | 'warehouse'>('kind', 'store');
   const state = useAsync(() => (branchId ? getBranch(branchId) : Promise.resolve(null)), [branchId, version], () => false);
 
   return (
@@ -26,14 +27,14 @@ export const BranchPage = () => {
         <Stack gap={vars.spacing[5]}>
           <PageHeader
             back={{ to: routes.owner.branches, label: t.title }}
-            title={branch ? branch.name : t.add}
+            title={branch ? branch.name : newKind === 'warehouse' ? t.addWarehouse : t.add}
             actions={
               branch && (
                 <>
                   {branch.archived && <Badge>{text.common.archived}</Badge>}
                   <Button variant="secondary" disabled={Boolean(action.busy)} onClick={() => action.run('archive', () => setBranchArchived(branch.id, !branch.archived))}>
                     <Icon name={branch.archived ? 'restore' : 'archive'} />
-                    {branch.archived ? text.common.restore : t.archive}
+                    {branch.archived ? text.common.restore : branch.kind === 'warehouse' ? t.archiveWarehouse : t.archive}
                   </Button>
                 </>
               )
@@ -49,7 +50,7 @@ export const BranchPage = () => {
               initial={
                 branch
                   ? { name: branch.name, kind: branch.kind, countryCode: branch.countryCode, city: branch.city, address: branch.address, phone: branch.phone, currency: branch.currency, paymentMethodIds: branch.paymentMethodIds, locations: branch.locations }
-                  : { name: '', kind: 'store', countryCode: 'EG', city: '', address: '', phone: '', currency: settings.baseCurrency, paymentMethodIds: settings.paymentMethods.filter((method) => method.active).map((method) => method.id), locations: [] }
+                  : { name: '', kind: newKind, countryCode: 'EG', city: '', address: '', phone: '', currency: settings.baseCurrency, paymentMethodIds: newKind === 'warehouse' ? [] : settings.paymentMethods.filter((method) => method.active).map((method) => method.id), locations: [] }
               }
               onDone={(id) => {
                 setSaved(true);

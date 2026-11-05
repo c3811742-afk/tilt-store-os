@@ -43,7 +43,7 @@ export const FileField = (props: FileFieldProps) => {
         {value && (
           <>
             <span className={styles.name}>
-              {value.name} ({formatFileSize(value.size, locale)})
+              {value.size > 0 ? `${value.name} (${formatFileSize(value.size, locale)})` : value.name}
             </span>
             <IconButton icon="close" label={text.common.remove} onClick={() => onChange?.(null)} />
           </>

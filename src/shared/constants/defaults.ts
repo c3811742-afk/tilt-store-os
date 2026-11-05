@@ -38,15 +38,15 @@ const egypt: CountrySettings = {
   authority: 'eta',
   registration: {
     countryCode: 'EG',
-    legalName: `${brand.name} for Ready-Made Garments`,
+    legalName: '', // not public yet: the owner fills it in
     vatNumber: '',
     commercialRegistration: '',
     address: '',
   },
   receipt: {
     header: both(brand.name, brand.name),
-    footer: both('Thank you for shopping local.', 'شكرًا لدعمك للبراندات المحلية.'),
-    returnPolicy: both('Returns and exchanges within 14 days with the receipt.', 'الاسترجاع والاستبدال خلال ١٤ يومًا مع الإيصال.'),
+    footer: both('The No.1 Local Brands Showroom', 'The No.1 Local Brands Showroom'), // the store's own tagline
+    returnPolicy: both('Returns and exchanges within 14 days with the receipt.', 'الاسترجاع والاستبدال خلال ١٤ يومًا مع الإيصال.'), // to confirm: the Egyptian store's policy isn't public yet
     showLogo: true,
   },
   returns: { days: 14, receiptRequired: true, saleItems: 'exchangeOnly', refundMethods: ['cash', 'cardReversal', 'storeCredit'], otherBranch: true },
@@ -55,14 +55,18 @@ const egypt: CountrySettings = {
 const saudiArabia: CountrySettings = {
   countryCode: 'SA',
   authority: 'zatca',
-  registration: { countryCode: 'SA', legalName: `${brand.name} Trading Company`, vatNumber: '', commercialRegistration: '', address: '' },
+  registration: { countryCode: 'SA', legalName: '', vatNumber: '', commercialRegistration: '', address: '' },
   receipt: {
     header: both(brand.name, brand.name),
-    footer: both('Thank you for shopping local.', 'شكرًا لدعمك للبراندات المحلية.'),
-    returnPolicy: both('Returns and exchanges within 7 days with the receipt.', 'الاسترجاع والاستبدال خلال ٧ أيام مع الإيصال.'),
+    footer: both('The No.1 Local Brands Showroom', 'The No.1 Local Brands Showroom'),
+    // From the Saudi store's refund policy (genzs-sa.com/policies/refund-policy).
+    returnPolicy: both(
+      'Returns and exchanges within 7 days. Items must be unused, with their tags and original packaging. Refunds go back to the original payment method.',
+      'الاسترجاع والاستبدال خلال ٧ أيام. يجب أن تكون القطعة غير مستخدمة وبملصقاتها وتغليفها الأصلي. يُرد المبلغ بنفس طريقة الدفع الأصلية.',
+    ),
     showLogo: true,
   },
-  returns: { days: 7, receiptRequired: true, saleItems: 'exchangeOnly', refundMethods: ['cardReversal', 'storeCredit'], otherBranch: false },
+  returns: { days: 7, receiptRequired: true, saleItems: 'exchangeOnly', refundMethods: ['cash', 'cardReversal'], otherBranch: false },
 };
 
 // Settings for a country added later, before the owner fills them in.
@@ -123,7 +127,7 @@ export const defaultSettings: Settings = {
   },
   sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'One size'],
   colors: ['Black', 'White', 'Off-white', 'Grey', 'Navy', 'Green', 'Beige', 'Brown', 'Blue', 'Red', 'Pink'],
-  seasons: ['Summer 2026', 'Winter 2026', 'Ramadan 2026', 'Back to school 2026', 'Winter 2025'],
+  seasons: ['Summer collection', 'Winter collection', 'All season'],
   barcodePrefix: '622', // Egypt's GS1 prefix; generated barcodes are EAN-13
   lists: {
     discountReasons: [

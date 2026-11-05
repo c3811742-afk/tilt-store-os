@@ -1,4 +1,5 @@
-import { Route, Routes } from 'react-router';
+import type { ReactNode } from 'react';
+import { Route, Routes, useParams } from 'react-router';
 import { routes } from '@/shared/constants';
 import { NotFoundPage } from '@/features/common/pages/NotFoundPage';
 import { OwnerLayout } from './layout/OwnerLayout';
@@ -29,6 +30,13 @@ import { ActivityPage } from './pages/ActivityPage';
 import { CustomerPage, CustomersPage } from './pages/CustomersPage';
 import { SettingsPage } from './pages/SettingsPage';
 
+// A page about one record starts fresh for each record (a different brand, product or statement), so nothing
+// from the previous one stays on screen while the new one loads.
+const PerRecord = ({ children }: { children: ReactNode }) => {
+  const params = useParams();
+  return <div key={JSON.stringify(params)}>{children}</div>;
+};
+
 // The owner's pages. Paths come from routes.owner; they're matched relative to /owner.
 const relative = (path: string) => path.replace(`${routes.owner.dashboard}/`, '');
 
@@ -38,43 +46,43 @@ export const OwnerRoutes = () => (
       <Route index element={<DashboardPage />} />
       <Route path={relative(routes.owner.morning)} element={<MorningPage />} />
       <Route path={relative(routes.owner.brands)} element={<BrandsPage />} />
-      <Route path={relative(routes.owner.newBrand)} element={<NewBrandPage />} />
-      <Route path={relative(routes.owner.brand)} element={<BrandPage />} />
+      <Route path={relative(routes.owner.newBrand)} element={<PerRecord><NewBrandPage /></PerRecord>} />
+      <Route path={relative(routes.owner.brand)} element={<PerRecord><BrandPage /></PerRecord>} />
       <Route path={relative(routes.owner.products)} element={<ProductsPage />} />
-      <Route path={relative(routes.owner.newProduct)} element={<NewProductPage />} />
+      <Route path={relative(routes.owner.newProduct)} element={<PerRecord><NewProductPage /></PerRecord>} />
       <Route path={relative(routes.owner.importProducts)} element={<ImportProductsPage />} />
-      <Route path={relative(routes.owner.product)} element={<ProductPage />} />
+      <Route path={relative(routes.owner.product)} element={<PerRecord><ProductPage /></PerRecord>} />
       <Route path={relative(routes.owner.categories)} element={<CategoriesPage />} />
       <Route path={relative(routes.owner.branches)} element={<BranchesPage />} />
-      <Route path={relative(routes.owner.newBranch)} element={<BranchPage />} />
-      <Route path={relative(routes.owner.branch)} element={<BranchPage />} />
+      <Route path={relative(routes.owner.newBranch)} element={<PerRecord><BranchPage /></PerRecord>} />
+      <Route path={relative(routes.owner.branch)} element={<PerRecord><BranchPage /></PerRecord>} />
       <Route path={relative(routes.owner.currencies)} element={<CurrenciesPage />} />
       <Route path={relative(routes.owner.tax)} element={<TaxPage />} />
       <Route path={relative(routes.owner.staff)} element={<StaffPage />} />
-      <Route path={relative(routes.owner.newStaff)} element={<StaffMemberPage />} />
-      <Route path={relative(routes.owner.staffMember)} element={<StaffMemberPage />} />
+      <Route path={relative(routes.owner.newStaff)} element={<PerRecord><StaffMemberPage /></PerRecord>} />
+      <Route path={relative(routes.owner.staffMember)} element={<PerRecord><StaffMemberPage /></PerRecord>} />
       <Route path={relative(routes.owner.roles)} element={<RolesPage />} />
       <Route path={relative(routes.owner.promotions)} element={<PromotionsPage />} />
-      <Route path={relative(routes.owner.newPromotion)} element={<PromotionPage />} />
-      <Route path={relative(routes.owner.promotion)} element={<PromotionPage />} />
+      <Route path={relative(routes.owner.newPromotion)} element={<PerRecord><PromotionPage /></PerRecord>} />
+      <Route path={relative(routes.owner.promotion)} element={<PerRecord><PromotionPage /></PerRecord>} />
       <Route path={relative(routes.owner.costing)} element={<CostingPage />} />
-      <Route path={relative(routes.owner.batch)} element={<BatchPage />} />
+      <Route path={relative(routes.owner.batch)} element={<PerRecord><BatchPage /></PerRecord>} />
       <Route path={relative(routes.owner.defects)} element={<DefectsPage />} />
       <Route path={relative(routes.owner.stock)} element={<StockPage />} />
-      <Route path={relative(routes.owner.itemHistory)} element={<ItemHistoryPage />} />
+      <Route path={relative(routes.owner.itemHistory)} element={<PerRecord><ItemHistoryPage /></PerRecord>} />
       <Route path={relative(routes.owner.transfers)} element={<TransfersPage />} />
       <Route path={relative(routes.owner.payouts)} element={<PayoutsPage />} />
-      <Route path={relative(routes.owner.brandPayouts)} element={<BrandPayoutsPage />} />
-      <Route path={relative(routes.owner.statement)} element={<StatementPage />} />
+      <Route path={relative(routes.owner.brandPayouts)} element={<PerRecord><BrandPayoutsPage /></PerRecord>} />
+      <Route path={relative(routes.owner.statement)} element={<PerRecord><StatementPage /></PerRecord>} />
       <Route path={relative(routes.owner.expenses)} element={<ExpensesPage />} />
       <Route path={relative(routes.owner.reports)} element={<ReportsPage />} />
-      <Route path={relative(routes.owner.report)} element={<ReportPage />} />
+      <Route path={relative(routes.owner.report)} element={<PerRecord><ReportPage /></PerRecord>} />
       <Route path={relative(routes.owner.policies)} element={<PoliciesPage />} />
       <Route path={relative(routes.owner.approvals)} element={<ApprovalsPage />} />
       <Route path={relative(routes.owner.notifications)} element={<NotificationsPage />} />
       <Route path={relative(routes.owner.activity)} element={<ActivityPage />} />
       <Route path={relative(routes.owner.customers)} element={<CustomersPage />} />
-      <Route path={relative(routes.owner.customer)} element={<CustomerPage />} />
+      <Route path={relative(routes.owner.customer)} element={<PerRecord><CustomerPage /></PerRecord>} />
       <Route path={relative(routes.owner.settings)} element={<SettingsPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Route>

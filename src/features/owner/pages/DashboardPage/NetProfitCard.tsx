@@ -26,7 +26,7 @@ export const NetProfitCard = ({ data }: { data: Dashboard }) => {
   return (
     <Card title={text.owner.dashboard.netProfit}>
       <ul className={styles.steps}>
-        {rows.map((row) => (
+        {rows.filter((row) => row.strong || row.key === 'net' || row.key === 'cost' || row.value !== money(0)).map((row) => (
           <li key={row.key} className={row.strong ? styles.strongStep : styles.step}>
             <span>{row.label}</span>
             <span>{row.value}</span>

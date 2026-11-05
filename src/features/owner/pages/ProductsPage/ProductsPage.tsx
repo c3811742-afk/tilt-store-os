@@ -85,7 +85,7 @@ export const ProductsPage = () => {
                           <Stack gap={vars.spacing[0]}>
                             <Link to={toPath(routes.owner.product, { productId: row.product.id })}>{row.product.name}</Link>
                             <Text as="span" variant="caption" color={vars.colors.textMuted}>
-                              {[row.product.season, row.product.collection, `${format.number(row.product.variants.filter((variant) => !variant.archived).length)} ${t.variantsSuffix}`].filter(Boolean).join(' · ')}
+                              {`${format.number(row.product.variants.filter((variant) => !variant.archived).length)} ${t.variantsSuffix}`}
                             </Text>
                           </Stack>
                         </Stack>

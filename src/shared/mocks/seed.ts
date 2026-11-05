@@ -4,8 +4,8 @@ import type { Database } from '@/shared/api/database';
 import { addMovement, placeIn, recordSale } from '@/shared/api/engine';
 import { buildStatement } from '@/shared/api/settlement';
 import type { Batch, Branch, Brand, BrandTerms, Category, Id, Product, Role, Variant } from '@/shared/types';
-import { addDays, createRandom, makeEan13, monthKey, startOfMonth, toIsoDate, type Random } from '@/shared/utils';
-import { seedBrands, seedProducts } from './catalog';
+import { addDays, createRandom, makeEan13, monthKey, shopPrice, startOfMonth, toIsoDate, type Random } from '@/shared/utils';
+import { seedBrands, seedCategories, seedProducts } from './catalog';
 import { seedPeople } from './people';
 
 // Builds the demo's starting data: GenZ's real branches, brands and products, and about two months of activity.
@@ -43,25 +43,13 @@ const builtInRoles = (): Role[] => {
   ];
 };
 
-const categories = (): Category[] => {
-  const category = (id: string, en: string, ar: string, minMargin: number | null = null): Category => ({ id, name: { en, ar }, archived: false, minMargin });
-  return [
-    category('cat-tshirts', 'T-shirts', 'تيشيرتات'),
-    category('cat-shirts', 'Shirts', 'قمصان'),
-    category('cat-polos', 'Polo shirts', 'بولو'),
-    category('cat-hoodies', 'Hoodies and sweatshirts', 'هوديز وسويت شيرت'),
-    category('cat-jackets', 'Jackets', 'جواكت', 40),
-    category('cat-jeans', 'Jeans', 'جينز'),
-    category('cat-sweatpants', 'Sweatpants and pants', 'بنطلونات رياضية'),
-    category('cat-shorts', 'Shorts and swimwear', 'شورتات ومايوهات'),
-    category('cat-caps', 'Caps and beanies', 'كابات وطواقي', 45),
-  ];
-};
+// GenZ's own category codes ("07 T-SHIRT"), as their store uses them.
+const categories = (): Category[] => seedCategories.map((category) => ({ id: category.id, name: { en: `${category.code} ${category.en}`, ar: `${category.code} ${category.ar}` }, archived: false, minMargin: null }));
 
-// Each brand's deal. Most local brands are on commission; a few are bought outright, GenZ's own label is its own.
-const termsFor = (random: Random, own: boolean, index: number): BrandTerms => {
+// Each brand's deal (to confirm with the owner: the real terms aren't public). Most local brands are on
+// commission; a few are bought outright.
+const termsFor = (random: Random, index: number): BrandTerms => {
   const base = { ...defaultSettings.defaultBrandTerms };
-  if (own) return { ...base, model: 'own', commissionRate: 0, discountFunding: 'store', brandSharePercent: 0, defectPolicy: 'storeAbsorbs' };
   if (index % 9 === 4) return { ...base, model: 'bought', commissionRate: 0, discountFunding: 'store', brandSharePercent: 0, defectPolicy: 'brandReplaces' };
   return {
     ...base,
@@ -73,7 +61,7 @@ const termsFor = (random: Random, own: boolean, index: number): BrandTerms => {
   };
 };
 
-const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+const egpPerSar = 13.2; // EGP prices aren't public yet: worked out from SAR at this rate
 
 export const buildSeed = (): Database => {
   const random = createRandom(mockConfig.seed);
@@ -160,7 +148,7 @@ export const buildSeed = (): Database => {
       payment: { method: index % 3 ? 'bank' : 'instapay', bankName: '', accountName: seed.name, accountNumber: '', instapay: '' },
       contractStart,
       status: 'active',
-      termsHistory: [{ id: newId(), effectiveFrom: contractStart, terms: termsFor(random, seed.own, index), byId: ownerId, at: atTime(contractStart, 11) }],
+      termsHistory: [{ id: newId(), effectiveFrom: contractStart, terms: termsFor(random, index), byId: ownerId, at: atTime(contractStart, 11) }],
       createdAt: atTime(contractStart, 11),
     };
   });
@@ -177,42 +165,49 @@ export const buildSeed = (): Database => {
   let barcodeSequence = 1000;
   data.products = seedProducts.map((seed, index): Product => {
     const terms = brandById.get(seed.brandId)?.termsHistory[0].terms;
-    const exVat = seed.egp / 1.14;
-    const costShare = terms?.model === 'own' ? 0.38 : terms?.model === 'bought' ? 0.55 : 0.5;
-    const sizes = [...seed.sizes].sort((a, b) => (sizeOrder.indexOf(a) + 1 || 99) - (sizeOrder.indexOf(b) + 1 || 99)).slice(0, 5);
-    const colors = seed.colors.slice(0, 2);
-    const variants: Variant[] = colors.flatMap((color, colorIndex) =>
-      sizes.map((size): Variant => {
-        barcodeSequence += 1;
-        const generated = index % 6 === 0;
-        return {
-          id: `${seed.id}-${colorIndex}-${size}`.toLowerCase().replace(/[^a-z0-9-]/g, ''),
-          size,
-          color,
-          sku: `${String(index + 7001)}-${colorIndex + 1}-${sizes.indexOf(size) + 1}`,
-          barcode: generated ? makeEan13(settings.barcodePrefix, barcodeSequence) : makeEan13('629', barcodeSequence * 7),
-          barcodeGenerated: generated,
-          // The biggest sizes cost a little more for some brands.
-          prices: size === 'XXL' && index % 5 === 0 ? { EGP: seed.egp + 100, SAR: seed.sar + 10 } : {},
-          archived: false,
-        };
-      }),
-    );
+    // A product on sale in the store: its regular price is the "was" price, the sale price runs as a scheduled sale.
+    const regularSar = seed.sarWas ?? seed.sar;
+    const regularEgp = seed.sarWas ? shopPrice(seed.sarWas * egpPerSar) : seed.egp;
+    const exVat = regularEgp / 1.14;
+    const costShare = terms?.model === 'bought' ? 0.55 : 0.5;
+    const variants = seed.variants.map((variant, variantIndex): Variant => {
+      barcodeSequence += 1;
+      return {
+        id: `${seed.id}-${variantIndex}`,
+        size: variant.size,
+        color: variant.color,
+        sku: variant.sku || `${seed.id.slice(3, 9)}-${variantIndex + 1}`,
+        barcode: makeEan13(settings.barcodePrefix, barcodeSequence), // GenZ's barcodes aren't published: generated
+        barcodeGenerated: true,
+        prices: {},
+        archived: false,
+      };
+    });
+    if (seed.sarWas) {
+      data.schedules.push(
+        { id: newId(), productId: seed.id, kind: 'sale', currency: 'SAR', price: seed.sar, startDate: addDays(today, -10), endDate: addDays(today, 20), cancelled: false, byId: ownerId, at: setupAt },
+        { id: newId(), productId: seed.id, kind: 'sale', currency: 'EGP', price: seed.egp, startDate: addDays(today, -10), endDate: addDays(today, 20), cancelled: false, byId: ownerId, at: setupAt },
+      );
+    }
     return {
       id: seed.id,
       brandId: seed.brandId,
       categoryId: seed.categoryId,
       name: seed.name,
-      season: random.pick(settings.seasons.slice(0, 3)),
-      collection: random.pick(['Core', 'Graphic', 'Essentials', 'Summer drop', 'Winter drop']),
-      // The last two products came in without a price in SAR, to show the "no selling price" alert.
-      prices: index >= seedProducts.length - 2 ? { EGP: seed.egp } : { EGP: seed.egp, SAR: seed.sar },
+      photo: seed.photo || undefined,
+      season: seed.season,
+      collection: seed.collection,
+      // The last product came in without a price in SAR, to show the "no selling price" alert.
+      prices: index === seedProducts.length - 1 ? { EGP: regularEgp } : { EGP: regularEgp, SAR: regularSar },
       cost: Math.round(exVat * costShare),
       variants,
       archived: false,
       createdAt: setupAt,
     };
   });
+  // The sizes and colours GenZ's products come in.
+  settings.sizes = [...new Set(data.products.flatMap((product) => product.variants.map((variant) => variant.size)))];
+  settings.colors = [...new Set(data.products.flatMap((product) => product.variants.map((variant) => variant.color)))].sort();
 
   // ---- Receiving: each store, and the warehouse, gets a batch of most products ----
   const stockBranches = branches.filter((branch) => branch.kind !== 'online');

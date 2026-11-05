@@ -9,11 +9,11 @@ export const useTermsSummary = () => {
   const format = useFormat();
   const t = text.owner.brands.terms;
 
+  // "30% commission, EGP 4,000 monthly fee" or "Bought stock": the deal in a few words.
   const deal = (terms: BrandTerms) => {
-    const parts = [t.models[terms.model]];
-    if (terms.model === 'commission') parts.push(fillText(t.commissionShort, { rate: format.percent(terms.commissionRate) }));
+    const parts = [terms.model === 'commission' ? fillText(t.commissionShort, { rate: format.percent(terms.commissionRate, 0) }) : t.models[terms.model]];
     if (terms.monthlyFee) parts.push(fillText(t.feeShort, { amount: format.money(terms.monthlyFee, terms.feeCurrency) }));
-    return parts.join(' + ');
+    return parts.join(text.common.listSeparator);
   };
 
   const items = (terms: BrandTerms): DetailItem[] => {

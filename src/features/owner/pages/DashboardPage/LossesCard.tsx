@@ -22,9 +22,10 @@ export const LossesCard = ({ data, range }: { data: Dashboard; range: DateRange 
     { key: 'cardFees', label: t.cardFees, value: data.totals.fees, to: withQuery(routes.owner.reports, { ...period, report: 'sales' }) },
   ];
   const total = rows.reduce((sum, row) => sum + row.value, 0);
+  const shown = rows.filter((row) => Math.round(row.value) !== 0).sort((a, b) => b.value - a.value);
   return (
     <Card title={t.title} actions={<strong>{money(total)}</strong>}>
-      <BarList label={t.title} items={rows.map((row) => ({ key: row.key, label: row.label, value: row.value, display: money(row.value), to: row.to }))} />
+      <BarList label={t.title} items={shown.map((row) => ({ key: row.key, label: row.label, value: row.value, display: money(row.value), to: row.to }))} />
     </Card>
   );
 };
