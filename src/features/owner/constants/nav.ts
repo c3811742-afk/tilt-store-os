@@ -1,18 +1,5 @@
-import type { IconName } from '@/shared/assets';
+import type { NavGroup } from '@/shared/components';
 import { routes } from '@/shared/constants';
-import type { Text } from '@/shared/constants';
-
-export interface NavItem {
-  key: keyof Omit<Text['nav'], 'groups'>;
-  to: string;
-  icon: IconName;
-  end?: boolean; // active only on this exact path (the dashboard)
-}
-
-export interface NavGroup {
-  key: keyof Text['nav']['groups'];
-  items: NavItem[];
-}
 
 // The owner's side menu, in order.
 export const ownerNav: NavGroup[] = [

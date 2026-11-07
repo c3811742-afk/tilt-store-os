@@ -30,6 +30,7 @@
 
 .account {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: var(--spacing-3);
   inline-size: 100%;
@@ -44,4 +45,27 @@
 
 .account:hover {
   border-color: var(--colors-border-strong);
+}
+
+.who,
+.how {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  min-inline-size: 0;
+}
+
+.who {
+  text-align: start;
+}
+
+.how {
+  align-items: flex-end;
+  font-variant-numeric: var(--numeric-tabular);
+  text-align: end;
+}
+
+.role {
+  color: var(--colors-text-muted);
+  font-size: var(--text-styles-caption-font-size);
 }

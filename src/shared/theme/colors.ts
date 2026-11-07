@@ -65,6 +65,8 @@ export interface Colors {
   warning: string;
   onWarning: string;
   overlay: string;
+  printPaper: string; // receipts, barcodes and QR codes: white paper and black ink in both appearances, so they scan
+  printInk: string;
 }
 
 const light: Colors = {
@@ -98,6 +100,8 @@ const light: Colors = {
   onWarning: palette.white,
 
   overlay: 'rgba(15, 26, 20, 0.5)',
+  printPaper: palette.white,
+  printInk: palette.ink,
 };
 
 // Dark: mint takes over as the action color, because dark green disappears on dark backgrounds.
@@ -133,6 +137,8 @@ const dark: Colors = {
   onWarning: palette.night900,
 
   overlay: 'rgba(0, 0, 0, 0.6)',
+  printPaper: palette.white,
+  printInk: palette.ink,
 };
 
 export const colorsByAppearance: Record<Appearance, Colors> = { light, dark };

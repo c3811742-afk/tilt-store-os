@@ -1,0 +1,56 @@
+.count {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.denominations {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--sizes-field-narrow), 1fr));
+  gap: var(--spacing-3);
+}
+
+.countTotal {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  padding-block-start: var(--spacing-3);
+  border-block-start: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  font-size: var(--text-styles-h4-font-size);
+  font-variant-numeric: var(--numeric-tabular);
+}
+
+.compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--sizes-field-narrow), 1fr));
+  gap: var(--spacing-3);
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  padding: var(--spacing-3);
+  border-radius: var(--radii-md);
+  background: var(--colors-surface-muted);
+  font-variant-numeric: var(--numeric-tabular);
+}
+
+.figureLabel {
+  color: var(--colors-text-muted);
+  font-size: var(--text-styles-caption-font-size);
+}
+
+.figureValue {
+  font-size: var(--text-styles-h4-font-size);
+  font-weight: var(--font-weight-semi-bold);
+}
+
+.off {
+  color: var(--colors-danger);
+}
+
+.even {
+  color: var(--colors-success);
+}

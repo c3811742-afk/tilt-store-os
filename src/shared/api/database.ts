@@ -12,12 +12,14 @@ import type {
   ExchangeRate,
   Expense,
   FeeCharge,
+  HeldSale,
   PriceChange,
   PriceSchedule,
   Product,
   PromoCode,
   Promotion,
   Receiving,
+  Reservation,
   Role,
   Sale,
   SaleReturn,
@@ -72,4 +74,6 @@ export interface Database {
   notifications: AppNotification[];
   minQty: Record<string, number>; // `${variantId}|${branchId}` -> the minimum the storekeeper set
   counters: Record<string, number>; // the last number used for each kind of document
+  heldSales: HeldSale[]; // sales on hold at the tills
+  reservations: Reservation[]; // pieces held for customers in another branch
 }

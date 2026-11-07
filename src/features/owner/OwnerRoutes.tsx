@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { Route, Routes, useParams } from 'react-router';
 import { routes } from '@/shared/constants';
 import { NotFoundPage } from '@/features/common/pages/NotFoundPage';
-import { OwnerLayout } from './layout/OwnerLayout';
 import { DashboardPage } from './pages/DashboardPage';
 import { MorningPage } from './pages/MorningPage';
 import { BrandsPage } from './pages/BrandsPage';
@@ -25,7 +24,7 @@ import { ExpensesPage } from './pages/ExpensesPage';
 import { ReportPage, ReportsPage } from './pages/ReportsPage';
 import { PoliciesPage } from './pages/PoliciesPage';
 import { ApprovalsPage } from './pages/ApprovalsPage';
-import { NotificationsPage } from './pages/NotificationsPage';
+import { NotificationsPage } from '@/features/common/pages/NotificationsPage';
 import { ActivityPage } from './pages/ActivityPage';
 import { CustomerPage, CustomersPage } from './pages/CustomersPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -37,12 +36,12 @@ const PerRecord = ({ children }: { children: ReactNode }) => {
   return <div key={JSON.stringify(params)}>{children}</div>;
 };
 
-// The owner's pages. Paths come from routes.owner; they're matched relative to /owner.
+// The owner's pages, inside the app's frame (src/app/AppFrame.tsx). Paths come from routes.owner; they're matched relative to /owner.
 const relative = (path: string) => path.replace(`${routes.owner.dashboard}/`, '');
 
 export const OwnerRoutes = () => (
   <Routes>
-    <Route element={<OwnerLayout />}>
+    <Route>
       <Route index element={<DashboardPage />} />
       <Route path={relative(routes.owner.morning)} element={<MorningPage />} />
       <Route path={relative(routes.owner.brands)} element={<BrandsPage />} />

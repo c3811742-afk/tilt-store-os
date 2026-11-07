@@ -41,3 +41,6 @@ export const formatPercent = (value: number, locale: Locale, digits = 1) =>
 
 export const formatDateTime = (date: Date | string, locale: Locale) =>
   formatDate(date, locale, { dateStyle: 'medium', timeStyle: 'short' });
+
+// 10:02 / ١٠:٠٢
+export const formatTime = (date: Date | string, locale: Locale) => formatDate(date, locale, { timeStyle: 'short' });

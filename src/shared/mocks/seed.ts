@@ -1,9 +1,9 @@
-import { defaultSettings, mockConfig } from '@/shared/constants';
+import { brand, defaultSettings, mockConfig } from '@/shared/constants';
 import { allPermissions, type Permission } from '@/shared/constants/permissions';
 import type { Database } from '@/shared/api/database';
 import { addMovement, placeIn, recordSale } from '@/shared/api/engine';
 import { buildStatement } from '@/shared/api/settlement';
-import type { Batch, Branch, Brand, BrandTerms, Category, Id, Product, Role, Variant } from '@/shared/types';
+import type { Batch, Branch, Brand, BrandTerms, Category, CountrySettings, Id, Product, Role, Variant } from '@/shared/types';
 import { addDays, createRandom, makeEan13, monthKey, shopPrice, startOfMonth, toIsoDate, type Random } from '@/shared/utils';
 import { seedBrands, seedCategories, seedProducts } from './catalog';
 import { seedPeople } from './people';
@@ -40,6 +40,7 @@ const builtInRoles = (): Role[] => {
     role('role-driver', 'driver', 'Driver / courier', 'سائق / مندوب', ['transfers.drive']),
     role('role-online', 'online', 'Online orders staff', 'موظف الطلبات الإلكترونية', ['online.orders', 'stock.view', 'stock.otherBranches', 'customers.view']),
     role('role-brand', 'brandPartner', 'Brand partner', 'شريك البراند', ['brandPortal.view']),
+    role('role-it', 'it', 'IT admin', 'مسؤول تقنية المعلومات', [...allPermissions]),
   ];
 };
 
@@ -72,6 +73,14 @@ export const buildSeed = (): Database => {
   const setupDay = addDays(historyStart, -10);
   const setupAt = atTime(setupDay, 9);
   const settings = structuredClone(defaultSettings);
+  // Example tax registrations, so receipts show a full header and a valid-looking QR in the demo. Placeholders: the owner
+  // replaces them on the Tax page with the real numbers ("Reset to defaults" leaves them empty).
+  const company = brand.name.replace(/'s$/, ''); // "GenZ's" -> "GenZ"
+  const exampleRegistrations: Record<string, Omit<CountrySettings['registration'], 'countryCode'>> = {
+    EG: { legalName: `${company} for Trading S.A.E.`, vatNumber: '100-200-300', commercialRegistration: '123456', address: 'Park Mall, New Cairo, Cairo' },
+    SA: { legalName: `${company} Trading Co.`, vatNumber: '300000000000003', commercialRegistration: '4030000000', address: 'Souq 7, Jeddah' },
+  };
+  settings.countries.forEach((country) => Object.assign(country.registration, exampleRegistrations[country.countryCode] ?? {}));
   const branches = buildBranches(setupAt);
   const roles = builtInRoles();
   const people = seedPeople(branches, setupAt);
@@ -129,6 +138,8 @@ export const buildSeed = (): Database => {
     notifications: [],
     minQty: {},
     counters: {},
+    heldSales: [],
+    reservations: [],
   };
   const number = (kind: string, digits = 5) => {
     data.counters[kind] = (data.counters[kind] ?? 0) + 1;

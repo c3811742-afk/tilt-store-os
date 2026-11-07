@@ -9,6 +9,7 @@ export const fontsUrl =
 const fontStack = {
   inter: "'Inter', 'IBM Plex Sans Arabic', system-ui, sans-serif",
   plexArabic: "'IBM Plex Sans Arabic', 'Inter', system-ui, sans-serif",
+  mono: "ui-monospace, 'SF Mono', Menlo, Consolas, monospace", // record ids and raw data (IT admin); the system's own font, nothing to load
 } as const;
 
 export const fontWeight = {
@@ -39,13 +40,13 @@ export const numeric = { tabular: 'tabular-nums', normal: 'normal' } as const;
 // Arabic needs more line height, no letter spacing and no uppercase.
 const localeTypography = {
   en: {
-    fontFamily: { display: fontStack.inter, body: fontStack.inter },
+    fontFamily: { display: fontStack.inter, body: fontStack.inter, mono: fontStack.mono },
     lineHeight: { tight: 1.2, snug: 1.35, body: 1.5 },
     letterSpacing: { normal: '0', tight: '-0.01em', wide: '0.06em' },
     caps: 'uppercase',
   },
   ar: {
-    fontFamily: { display: fontStack.plexArabic, body: fontStack.plexArabic },
+    fontFamily: { display: fontStack.plexArabic, body: fontStack.plexArabic, mono: fontStack.mono },
     lineHeight: { tight: 1.4, snug: 1.55, body: 1.8 },
     letterSpacing: { normal: '0', tight: '0', wide: '0' },
     caps: 'none',

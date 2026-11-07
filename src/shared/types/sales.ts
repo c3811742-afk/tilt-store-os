@@ -69,6 +69,7 @@ export interface ReturnLine {
   amount: number; // refunded, in the sale's currency
   reasonId: Id;
   condition: ReturnCondition;
+  defectOrigin?: 'received' | 'store'; // defective items: came from the brand that way, or damaged in the store
 }
 
 export interface SaleReturn {
@@ -82,6 +83,7 @@ export interface SaleReturn {
   lines: ReturnLine[];
   refunds: { methodId: Id; amount: number }[];
   exchangeSaleId?: Id;
+  approvalIds?: Id[]; // approvals that allowed it (outside the policy, a large cash refund)
 }
 
 export interface Customer {
@@ -104,4 +106,58 @@ export interface Shift {
   countedCash?: number;
   note?: string;
   approvedById?: Id;
+  // Recorded by the cashier screens:
+  deviceId?: Id; // the till
+  cashMoves?: CashMove[]; // cash added to or taken out of the drawer during the shift
+  openingCount?: Record<string, number>; // notes and coins counted at opening: value -> how many
+  closingCount?: Record<string, number>;
+  cardExpected?: number; // card payments recorded during the shift
+  cardCounted?: number; // the total on the card machine's end-of-day report
+}
+
+export interface CashMove {
+  id: Id;
+  kind: 'in' | 'out';
+  amount: number;
+  reasonId: Id; // from settings.lists.cashMoveReasons
+  note?: string;
+  at: IsoDateTime;
+  byId: Id;
+}
+
+// A manual discount the cashier gives on a line or on the whole sale.
+export interface ManualDiscount {
+  type: 'percent' | 'amount';
+  value: number;
+  reasonId: Id;
+  approvalId?: Id; // above the cashier's limit: the approval that allowed it
+}
+
+// A sale put on hold to serve another customer; resumed or cancelled later. Nothing is sold until it is completed.
+export interface HeldSale {
+  id: Id;
+  number: string;
+  branchId: Id;
+  cashierId: Id;
+  at: IsoDateTime;
+  customer?: { name: string; phone: string };
+  items: { variantId: Id; qty: number; discount?: ManualDiscount }[];
+  orderDiscount?: ManualDiscount;
+  promoCode?: string;
+}
+
+// A piece held for a customer in a branch until `expiresAt`, then put back on sale.
+export interface Reservation {
+  id: Id;
+  number: string;
+  variantId: Id;
+  qty: number;
+  branchId: Id; // where the piece is held
+  forBranchId: Id; // the branch the customer is in
+  customer: { name: string; phone: string };
+  byId: Id;
+  at: IsoDateTime;
+  expiresAt: IsoDateTime;
+  status: 'active' | 'released' | 'collected';
+  closedAt?: IsoDateTime;
 }

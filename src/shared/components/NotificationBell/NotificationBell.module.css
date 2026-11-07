@@ -1,0 +1,14 @@
+.bell {
+  position: relative;
+}
+
+.dot {
+  position: absolute;
+  inset-block-start: var(--spacing-2);
+  inset-inline-end: var(--spacing-2);
+  inline-size: var(--sizes-badge-dot);
+  block-size: var(--sizes-badge-dot);
+  border-radius: var(--radii-full);
+  background: var(--colors-danger);
+  pointer-events: none;
+}

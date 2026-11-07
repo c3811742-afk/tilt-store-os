@@ -1,4 +1,4 @@
-import type { BrandTerms, ConfigOption, CountrySettings, Localized, PaymentMethod, Settings } from '@/shared/types';
+import type { AlertKind, BrandTerms, BuiltInRole, ConfigOption, CountrySettings, Localized, PaymentMethod, Settings } from '@/shared/types';
 import { brand } from './brand';
 
 // The shared defaults file: every value the owner can change starts here.
@@ -124,6 +124,10 @@ export const defaultSettings: Settings = {
     defectiveReturn: true,
     eReceiptFailed: true,
     approvalWaiting: true,
+    approvalApproved: false,
+    approvalRejected: false,
+    promotionApproved: false,
+    promotionRejected: false,
   },
   sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'One size'],
   colors: ['Black', 'White', 'Off-white', 'Grey', 'Navy', 'Green', 'Beige', 'Brown', 'Blue', 'Red', 'Pink'],
@@ -177,5 +181,49 @@ export const defaultSettings: Settings = {
       option('ar-too-high', 'Too high', 'أعلى من المسموح'),
       option('ar-no-reason', 'No valid reason', 'لا يوجد سبب مقبول'),
     ],
+    cashMoveReasons: [
+      option('cm-change', 'Change for the drawer', 'فكة للدرج'),
+      option('cm-deposit', 'Bank deposit', 'إيداع في البنك'),
+      option('cm-expense', 'Small store expense', 'مصروف صغير للمتجر'),
+      option('cm-owner', 'Taken by the owner', 'سحب المالك'),
+      option('cm-other', 'Other', 'أخرى'),
+    ],
   },
+};
+
+// ---- Accounts, help and alerts for every role ----------------------------------------------------------------
+
+export const accountDefaults = {
+  idleLogoutMinutes: 15, // logged out automatically after this long without a click or key press
+  minPasswordLength: 8,
+  pinLength: 4,
+};
+
+// The cashier screens.
+export const tillDefaults = {
+  register: 'Till 1', // the register name on a shift, when the branch has one till
+  reservationHours: [2, 24, 48], // how long a piece can be held for a customer in another branch
+  phoneDigits: 7, // a customer's phone counts as complete from this many digits
+  searchDigits: 3, // digits or letters typed before a customer or receipt search starts
+  // Notes and coins counted in the drawer, per currency.
+  denominations: { EGP: [200, 100, 50, 20, 10, 5, 1, 0.5], SAR: [500, 200, 100, 50, 20, 10, 5, 1] } as Record<string, number[]>,
+};
+
+// Daily backups of all data. The demo keeps them in this browser, which has room for a few days only.
+export const backupDefaults = {
+  keepDays: 3,
+};
+
+// Support contact on the Help page. An example number: replace it with the real support line.
+export const supportDefaults = {
+  whatsApp: '+20 100 000 0000',
+};
+
+// The alerts each kind of role can receive and turn off (Notifications › Alerts you receive). Owners choose
+// for all owners at once on the same tab.
+export const alertsByRole: Partial<Record<BuiltInRole, AlertKind[]>> = {
+  manager: ['approvalWaiting', 'approvalApproved', 'approvalRejected', 'cashDifference', 'lowStock', 'stockRequest', 'defectiveReturn'],
+  cashier: ['approvalApproved', 'approvalRejected', 'lowStock'],
+  brandPartner: ['promotionApproved', 'promotionRejected', 'lowStock'],
+  it: ['eReceiptFailed', 'approvalApproved', 'approvalRejected'],
 };
