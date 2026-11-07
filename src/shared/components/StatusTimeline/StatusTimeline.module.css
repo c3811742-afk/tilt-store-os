@@ -1,0 +1,54 @@
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+}
+
+.dot {
+  flex-shrink: 0;
+  inline-size: var(--sizes-timeline-dot);
+  block-size: var(--sizes-timeline-dot);
+  margin-block-start: var(--spacing-1);
+  border: var(--borders-width-thick) var(--borders-style) var(--colors-border);
+  border-radius: var(--radii-full);
+  background: var(--colors-surface);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+}
+
+.done .dot {
+  border-color: var(--colors-success);
+  background: var(--colors-success);
+}
+
+.current .dot {
+  border-color: var(--colors-primary);
+}
+
+.stopped .dot {
+  border-color: var(--colors-danger);
+  background: var(--colors-danger);
+}
+
+@media (--md-up) {
+  .timeline {
+    flex-direction: row;
+    gap: var(--spacing-5);
+  }
+
+  .step {
+    flex: 1;
+  }
+}

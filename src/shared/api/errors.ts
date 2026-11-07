@@ -14,7 +14,12 @@ export type ApiErrorCode =
   | 'invalidFile'
   | 'lastOwner'
   | 'alreadyDecided'
-  | 'wrongPassword';
+  | 'wrongPassword'
+  | 'notEnoughStock'
+  | 'wrongPin'
+  | 'pinLocked'
+  | 'ownRequest'
+  | 'missingReason';
 
 export class ApiError extends Error {
   code: ApiErrorCode;

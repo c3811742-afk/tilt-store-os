@@ -1,5 +1,5 @@
 import { onHandStatuses, stockStatuses } from '@/shared/constants/statuses';
-import type { Id, StockStatus, Transfer } from '@/shared/types';
+import type { ApprovalState, Id, StockCount, StockStatus, Transfer } from '@/shared/types';
 import { daysBetween, nowIso, stockLevels, today } from '@/shared/utils';
 import { ApiError } from './errors';
 import { resolveApprovals } from './costing';
@@ -7,8 +7,10 @@ import { variantIndex } from './engine';
 import { stockSummary, type StockSummary } from './facts';
 import { lowStockRows } from './dashboard';
 import { actor, db, findById, logActivity, mutate, newId, nextNumber, notify, respond } from './server';
+import { notifyUsers, staffWithRole } from './branchScope';
 
-const describeVariant = (variantId: Id) => {
+// A variant's product, brand, size, colour and SKU, for lists. No prices or costs.
+export const describeVariant = (variantId: Id) => {
   const entry = variantIndex(db).get(variantId);
   return entry
     ? { productId: entry.product.id, productName: entry.product.name, brandId: entry.product.brandId, size: entry.variant.size, color: entry.variant.color, sku: entry.variant.sku }
@@ -146,6 +148,7 @@ export const getLowStock = () =>
 export const listCounts = () =>
   respond(() =>
     db.counts
+      .filter((count): count is StockCount & { status: ApprovalState } => count.status !== 'open') // open: still being counted in the branch
       .map((count) => ({
         count,
         differences: count.lines.filter((line) => line.counted !== line.expected).map((line) => ({ ...line, ...describeVariant(line.variantId), difference: line.counted - line.expected })),
@@ -169,7 +172,7 @@ export const decideCount = (countId: Id, approve: boolean, reason?: string) =>
       count.lines.forEach((line) => {
         const difference = line.counted - line.expected;
         if (!difference) return;
-        const place = { branchId: branch.id, locationId, status: 'available' as const };
+        const place = { branchId: branch.id, locationId: line.locationId ?? locationId, status: 'available' as const };
         db.movements.push({ id: newId(), at: nowIso(), byId: actor().id, variantId: line.variantId, qty: Math.abs(difference), ...(difference > 0 ? { to: place } : { from: place }), kind: 'adjust', ref: { type: 'count', id: count.id }, reason: line.reasonId });
       });
     }
@@ -202,9 +205,14 @@ export const decideStockRequest = (requestId: Id, decision: 'warehouse' | 'brand
       request.status = 'sentToWarehouse';
       const warehouse = db.branches.find((branch) => branch.kind === 'warehouse' && !branch.archived);
       if (warehouse) {
-        db.transfers.push({ id: newId(), number: nextNumber('TR', 4), fromBranchId: warehouse.id, toBranchId: request.branchId, lines: request.lines.map((line) => ({ ...line })), status: 'approved', requestedById: request.requestedById, createdAt: nowIso() });
+        const transfer = { id: newId(), number: nextNumber('TR', 4), fromBranchId: warehouse.id, toBranchId: request.branchId, lines: request.lines.map((line) => ({ ...line })), status: 'approved' as const, requestedById: request.requestedById, createdAt: nowIso(), note: request.number, decidedById: actor().id, decidedAt: nowIso() };
+        db.transfers.push(transfer);
+        // The warehouse storekeepers prepare a dispatch for it.
+        notifyUsers('transferReady', { number: transfer.number, to: findById(db.branches, request.branchId).name }, '/storekeeper/transfers?tab=prepare', staffWithRole('storekeeper', warehouse.id));
       }
     }
+    // The manager who asked is told either way.
+    notifyUsers('stockRequestDecided', { number: request.number, decision: decision === 'reject' ? 'rejected' : decision, note: note ?? '' }, '/manager/stock?tab=requests', [request.requestedById]);
     resolveApprovals('stockRequest', requestId, decision !== 'reject', note);
     logActivity({ action: decision === 'reject' ? 'reject' : 'approve', target: { type: 'stockRequest', id: request.id, label: request.number }, branchId: request.branchId, changes: [{ field: 'status', from: 'pending', to: request.status }] });
     return request;

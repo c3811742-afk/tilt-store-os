@@ -12,7 +12,8 @@ export type ApprovalKind =
   | 'costRedistribution'
   | 'promotion'
   | 'stockRequest'
-  | 'payout';
+  | 'payout'
+  | 'transfer'; // a transfer out of a branch, approved by that branch's manager
 
 export type ApprovalLevel = 'manager' | 'owner';
 
@@ -34,6 +35,7 @@ export interface ApprovalRequest {
   decidedAt?: IsoDateTime;
   channel?: 'till' | 'phone' | 'app';
   reason?: string;
+  note?: string; // added by whoever decided
 }
 
 export type ActivityAction =
@@ -123,10 +125,13 @@ export type AlertKind =
   | 'eReceiptFailed'
   | 'approvalWaiting';
 
+// Alerts only branch staff receive (the owners' own alerts, which they can switch off, are AlertKind).
+export type StaffAlertKind = 'transferArrived' | 'stockRequestDecided' | 'transferAssigned' | 'transferReady' | 'lowOnFloor' | 'countSubmitted' | 'transferDecided';
+
 export interface AppNotification {
   id: Id;
   at: IsoDateTime;
-  kind: AlertKind;
+  kind: AlertKind | StaffAlertKind;
   userIds: Id[]; // who receives it
   openedBy: Id[];
   params: Record<string, string>; // filled into the alert's text

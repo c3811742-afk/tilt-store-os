@@ -447,7 +447,7 @@ const returns: Builder = (filter, range) => {
 const counts: Builder = (filter, range) => {
   const n = names();
   const rows: ReportRow[] = db.counts
-    .filter((count) => inRange(count.at, range) && (!filter.branchId || count.branchId === filter.branchId))
+    .filter((count) => count.status !== 'open' && inRange(count.at, range) && (!filter.branchId || count.branchId === filter.branchId))
     .flatMap((count) =>
       count.lines
         .filter((line) => line.counted !== line.expected && (!filter.brandId || n.index.get(line.variantId)?.product.brandId === filter.brandId))

@@ -1,0 +1,23 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  max-block-size: var(--sizes-menu-max-height);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  border: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  border-radius: var(--radii-md);
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2) var(--spacing-3);
+}
+
+.item + .item {
+  border-block-start: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+}

@@ -5,6 +5,7 @@ import { decideRedistribution, decideWriteOff } from './costing';
 import { decidePromotion } from './promotions';
 import { decideCount, decideStockRequest } from './stock';
 import { decideStatement } from './payouts';
+import { decideTransfer } from './transfers';
 import { actor, db, findById, logActivity, mutate, respond } from './server';
 
 export const listApprovals = (filter: { status?: ApprovalRequest['status']; level?: ApprovalRequest['level'] }) =>
@@ -35,6 +36,8 @@ export const decideApproval = async (approvalId: Id, approve: boolean, reason?: 
       return decideStockRequest(refId, approve ? 'warehouse' : 'reject', reason);
     case 'payout':
       return decideStatement(refId, approve, reason);
+    case 'transfer':
+      return decideTransfer(refId, approve, reason);
     default:
       return mutate(() => {
         const current = findById(db.approvals, approvalId);

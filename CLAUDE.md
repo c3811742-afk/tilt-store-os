@@ -239,6 +239,7 @@ Rules:
 - **All data goes through `shared/api/`**: `respond()` for reads, `mutate()` for changes (it saves to this browser, compressed, and tells every page through `onDataChange`). Every change calls `logActivity()`; alerts go through `notify()`. Pages never touch the data directly.
 - **Business rules live once:** sale economics (`utils/economics.ts`), rates, VAT and brand terms on a date (`utils/rates.ts`), stock levels from movements (`utils/stockLevels.ts`), batch costs (`utils/costing.ts`), recording a sale (`api/engine.ts`), report facts (`api/facts.ts`) and brand settlements (`api/settlement.ts`). The seed, the live demo and every screen use them.
 - **History is never rewritten:** sales keep a copy of their price, cost, commission, VAT rate and exchange rate; rates, VAT rates and brand terms are added from a date, never edited; stock only changes through movements; completed sales are reversed with a record, never edited.
+- **Branch staff** (manager, storekeeper, driver, online orders) only reach their own branches: every call for them checks the branch with `assertBranch()` (`api/branchScope.ts`) and never returns cost, margin, commission or profit. Pages get the branch from `useBranchScope()`.
 - **Demo data** (`shared/mocks/`): GenZ's real branches, brands and products (`catalog.ts`, researched from public sources); people's names, phone numbers and bank details are placeholders.
 
 ## TypeScript

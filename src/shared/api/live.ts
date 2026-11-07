@@ -2,6 +2,8 @@ import { mockConfig } from '@/shared/constants';
 import { createRandom, nowIso } from '@/shared/utils';
 import { availableIn, recordSale } from './engine';
 import { db, mutate, newId, nextNumber, notify } from './server';
+import { checkStockAlerts } from './stockAlerts';
+import { startOnlineOrderFeed } from './onlineOrders';
 
 const maxTries = 30;
 
@@ -33,15 +35,8 @@ const simulateSale = () =>
       number: nextNumber('S', 6),
     });
     if (sale.eReceipt.status === 'failed') notify('eReceiptFailed', { number: sale.number }, '/owner/tax?tab=receipts');
-    // Low or out of stock after the sale: the owners and the branch's storekeepers are told.
-    const left = availableIn(db, variantId, branch.id);
-    const min = db.minQty[`${variantId}|${branch.id}`] ?? db.settings.lowStockDefault;
-    if (left <= min) {
-      const product = db.products.find((current) => current.variants.some((variant) => variant.id === variantId));
-      const variant = product?.variants.find((current) => current.id === variantId);
-      const storekeepers = db.users.filter((user) => user.branchIds.includes(branch.id) && user.roleIds.includes('role-storekeeper')).map((user) => user.id);
-      notify('lowStock', { product: `${product?.name ?? ''} ${variant?.size ?? ''}`, branch: branch.name, qty: String(left), min: String(min) }, `/owner/stock/item/${variantId}`, storekeepers);
-    }
+    // Low or out of stock after the sale: the owners, the branch manager and the storekeepers are told.
+    checkStockAlerts(branch.id, [variantId]);
     return sale.id;
   });
 
@@ -49,6 +44,7 @@ let started = false;
 
 // Starts the simulated checkouts (mockConfig.liveSaleEveryMs; 0 turns them off).
 export const startLiveDemo = () => {
+  startOnlineOrderFeed();
   if (started || !mockConfig.liveSaleEveryMs) return;
   started = true;
   setInterval(() => {

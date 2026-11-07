@@ -7,4 +7,5 @@ export const storageKeys = {
   session: `${brand.id}.session`,
   database: `${brand.id}.database`, // the demo's mock data, with every change the user made
   scope: `${brand.id}.scope`, // the branch the owner last looked at
+  branch: `${brand.id}.branch`, // the branch a manager or storekeeper with several branches last worked in
 } as const;

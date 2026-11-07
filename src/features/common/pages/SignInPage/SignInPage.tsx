@@ -1,13 +1,14 @@
 import { Navigate, useNavigate } from 'react-router';
 import { demoAccounts, signIn } from '@/shared/api';
 import { AsyncContent, BrandLogo, Button, Card, Notice, Stack, Text, TextField } from '@/shared/components';
-import { routes } from '@/shared/constants';
+import { homeFor } from '@/shared/constants';
 import { useAppearance, useAsync, useErrorMessage, useForm, useLocale, useSession } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
+import { localized } from '@/shared/utils';
 import styles from './SignInPage.module.css';
 
 export const SignInPage = () => {
-  const { text, switchLocale } = useLocale();
+  const { text, locale, switchLocale } = useLocale();
   const { appearance, switchAppearance } = useAppearance();
   const { session, setSession } = useSession();
   const navigate = useNavigate();
@@ -16,12 +17,14 @@ export const SignInPage = () => {
   const required = (value: string) => (value.trim() ? null : text.validation.required);
   const form = useForm({ login: '', password: '' }, { login: required, password: required });
 
-  if (session?.isOwner) return <Navigate to={routes.owner.dashboard} replace />;
+  const home = session ? homeFor(session.roles) : undefined;
+  if (home) return <Navigate to={home} replace />;
 
   const onSubmit = form.submit(async ({ login, password }) => {
     const signed = await signIn(login, password);
     setSession(signed);
-    if (signed.isOwner) navigate(routes.owner.dashboard);
+    const signedHome = homeFor(signed.roles);
+    if (signedHome) navigate(signedHome);
   });
 
   return (
@@ -46,7 +49,7 @@ export const SignInPage = () => {
                 {text.signIn.subtitle}
               </Text>
             </Stack>
-            {session && !session.isOwner && <Notice tone="warning">{text.signIn.noAccess}</Notice>}
+            {session && !home && <Notice tone="warning">{text.signIn.noAccess}</Notice>}
             {Boolean(form.requestError) && <Notice tone="danger">{errorMessage(form.requestError)}</Notice>}
             <TextField label={text.signIn.login} autoComplete="username" {...form.field('login')} />
             <TextField label={text.signIn.password} type="password" autoComplete="current-password" {...form.field('password')} />
@@ -76,7 +79,7 @@ export const SignInPage = () => {
                       }}
                     >
                       <span>{account.name}</span>
-                      <span>{account.username}</span>
+                      <span>{[localized(account.roleName, locale), account.branch, account.username].filter(Boolean).join(text.common.listSeparator)}</span>
                     </button>
                   </li>
                 ))}

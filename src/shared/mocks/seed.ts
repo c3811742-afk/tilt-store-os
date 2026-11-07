@@ -7,6 +7,7 @@ import type { Batch, Branch, Brand, BrandTerms, Category, Id, Product, Role, Var
 import { addDays, createRandom, makeEan13, monthKey, shopPrice, startOfMonth, toIsoDate, type Random } from '@/shared/utils';
 import { seedBrands, seedCategories, seedProducts } from './catalog';
 import { seedPeople } from './people';
+import { addStaffDemoData } from './staffSeed';
 
 // Builds the demo's starting data: GenZ's real branches, brands and products, and about two months of activity.
 // The same seed (mockConfig.seed) always builds the same data.
@@ -23,7 +24,7 @@ const buildBranches = (createdAt: string): Branch[] => {
   const branch = (fields: Omit<Branch, 'archived' | 'createdAt'>): Branch => ({ ...fields, archived: false, createdAt });
   return [
     branch({ id: 'b-park-mall', name: 'Park Mall', kind: 'store', countryCode: 'EG', city: 'New Cairo', address: 'Park Mall, New Cairo', phone: '', currency: 'EGP', paymentMethodIds: egypt, locations: [floor('pm'), backRoom('pm')] }),
-    branch({ id: 'b-royal-park', name: 'Royal Park Mall', kind: 'store', countryCode: 'EG', city: 'Sheikh Zayed', address: 'Royal Park Mall, El Sheikh Zayed', phone: '', currency: 'EGP', paymentMethodIds: egypt, locations: [floor('rp'), backRoom('rp')] }),
+    branch({ id: 'b-royal-park', name: 'Arkan', kind: 'store', countryCode: 'EG', city: 'Sheikh Zayed', address: 'Arkan Plaza, El Sheikh Zayed', phone: '', currency: 'EGP', paymentMethodIds: egypt, locations: [floor('rp'), backRoom('rp')] }),
     branch({ id: 'b-souq7', name: 'Souq 7', kind: 'store', countryCode: 'SA', city: 'Jeddah', address: 'Souq 7, Jeddah', phone: '', currency: 'SAR', paymentMethodIds: ['pm-cash', 'pm-card', 'pm-mada', 'pm-credit'], locations: [floor('s7'), backRoom('s7')] }),
     branch({ id: 'b-online', name: 'genz-s.com', kind: 'online', countryCode: 'EG', city: 'Cairo', address: 'Online store', phone: '', currency: 'EGP', paymentMethodIds: ['pm-card', 'pm-instapay', 'pm-wallet', 'pm-cod'], locations: [location('on-store', 'storage', 'Online stock', 'مخزون المتجر الإلكتروني')] }),
     branch({ id: 'b-warehouse', name: 'Main warehouse', kind: 'warehouse', countryCode: 'EG', city: 'Cairo', address: '', phone: '', currency: 'EGP', paymentMethodIds: [], locations: [location('wh-store', 'storage', 'Warehouse', 'المستودع')] }),
@@ -129,6 +130,9 @@ export const buildSeed = (): Database => {
     notifications: [],
     minQty: {},
     counters: {},
+    cashChecks: [],
+    onlineOrders: [],
+    brandReturns: [],
   };
   const number = (kind: string, digits = 5) => {
     data.counters[kind] = (data.counters[kind] ?? 0) + 1;
@@ -470,7 +474,7 @@ export const buildSeed = (): Database => {
     const add = (categoryId: string, branchId: Id | null, currency: string, amount: number, note: string) =>
       data.expenses.push({ id: newId(), categoryId, branchId, currency, amount, date: month, repeatMonthly: categoryId !== 'ex-marketing', note, byId: ownerId, at: atTime(month, 9) });
     add('ex-rent', 'b-park-mall', 'EGP', 120000, 'Park Mall unit');
-    add('ex-rent', 'b-royal-park', 'EGP', 100000, 'Royal Park Mall unit');
+    add('ex-rent', 'b-royal-park', 'EGP', 100000, 'Arkan unit');
     add('ex-rent', 'b-souq7', 'SAR', 9000, 'Souq 7 unit');
     add('ex-salaries', 'b-park-mall', 'EGP', 60000, 'Store team');
     add('ex-salaries', 'b-royal-park', 'EGP', 50000, 'Store team');
@@ -622,5 +626,8 @@ export const buildSeed = (): Database => {
   data.notifications.sort((a, b) => b.at.localeCompare(a.at));
 
   data.activity.push({ id: newId(), at: setupAt, userId: ownerId, action: 'create', target: { type: 'settings', id: 'settings', label: settings.company.name }, flagged: false });
+  // The branch staff screens' own demo data (manager, storekeeper, driver, online orders).
+  addStaffDemoData(data, newId, today);
+
   return data;
 };
