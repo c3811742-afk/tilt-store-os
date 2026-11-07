@@ -1,0 +1,9 @@
+.printButton {
+  display: inline-flex;
+}
+
+@media print {
+  .printButton {
+    display: none;
+  }
+}

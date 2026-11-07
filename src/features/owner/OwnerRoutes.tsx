@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { Route, Routes, useParams } from 'react-router';
+import { Route, Routes } from 'react-router';
+import { PerRecord } from '@/shared/components';
 import { routes } from '@/shared/constants';
 import { NotFoundPage } from '@/features/common/pages/NotFoundPage';
 import { OwnerLayout } from './layout/OwnerLayout';
@@ -29,13 +29,6 @@ import { NotificationsPage } from './pages/NotificationsPage';
 import { ActivityPage } from './pages/ActivityPage';
 import { CustomerPage, CustomersPage } from './pages/CustomersPage';
 import { SettingsPage } from './pages/SettingsPage';
-
-// A page about one record starts fresh for each record (a different brand, product or statement), so nothing
-// from the previous one stays on screen while the new one loads.
-const PerRecord = ({ children }: { children: ReactNode }) => {
-  const params = useParams();
-  return <div key={JSON.stringify(params)}>{children}</div>;
-};
 
 // The owner's pages. Paths come from routes.owner; they're matched relative to /owner.
 const relative = (path: string) => path.replace(`${routes.owner.dashboard}/`, '');

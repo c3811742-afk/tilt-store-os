@@ -1,0 +1,1 @@
+export { NewReceivingPage } from './NewReceivingPage';

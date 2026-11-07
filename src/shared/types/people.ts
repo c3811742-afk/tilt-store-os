@@ -24,6 +24,7 @@ export interface User {
   pin: string; // the till PIN
   approvalPin?: string;
   approvalPinLocked?: boolean;
+  approvalPinTries?: number; // wrong tries in a row; the PIN locks at the limit in Policies
   status: UserStatus;
   mustChangePassword: boolean;
   brandId?: Id; // brand partners: the one brand they can see

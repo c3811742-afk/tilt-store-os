@@ -66,7 +66,7 @@ export const sellingCurrencies = (data: Database) => [...new Set(data.branches.f
 
 const allVariants = (except?: Id) => db.products.flatMap((product) => (product.id === except ? [] : product.variants));
 
-const checkUnique = (variants: Variant[], productId?: Id) => {
+export const checkUnique = (variants: Variant[], productId?: Id) => {
   const others = allVariants(productId);
   const barcodes = new Set(others.map((variant) => variant.barcode));
   const skus = new Set(others.map((variant) => variant.sku));
@@ -81,7 +81,7 @@ const checkUnique = (variants: Variant[], productId?: Id) => {
 };
 
 // A new EAN-13 barcode with the store's prefix that no item uses yet.
-const freshBarcode = (taken: Set<string>) => {
+export const freshBarcode = (taken: Set<string>) => {
   let sequence = (db.counters.barcode ?? 5000) + 1;
   let code = makeEan13(db.settings.barcodePrefix, sequence);
   while (taken.has(code)) {

@@ -59,6 +59,8 @@ export interface Sale {
   eReceipt: EReceipt;
   voidedAt?: IsoDateTime; // a voided sale is reversed with a record, never edited
   voidedById?: Id;
+  voidReasonId?: Id; // an approval reason from the owner's list
+  voidNote?: string;
 }
 
 export type ReturnCondition = 'available' | 'defective' | 'toReturn';
@@ -104,4 +106,57 @@ export interface Shift {
   countedCash?: number;
   note?: string;
   approvedById?: Id;
+  closedById?: Id; // a manager can close a register for a cashier
+  approvedAt?: IsoDateTime;
+  approvalReason?: Id; // an approval reason from the owner's list
+}
+
+// A cash check: someone counted the cash in a register at any time and compared it with what the system expects.
+export interface CashCheck {
+  id: Id;
+  branchId: Id;
+  shiftId: Id;
+  at: IsoDateTime;
+  byId: Id;
+  currency: CurrencyCode;
+  expected: number;
+  counted: number;
+  note?: string;
+}
+
+export type OnlineOrderStatus = 'new' | 'packed' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
+
+export interface OnlineOrderLine {
+  variantId: Id;
+  qty: number;
+  unitPrice: number; // in the order's currency, VAT included
+  returned?: number;
+}
+
+// An order from the online store. Its pieces are reserved where it ships from as soon as it is placed; shipping
+// records the sale; cancelling puts the pieces back in stock.
+export interface OnlineOrder {
+  id: Id;
+  number: string;
+  at: IsoDateTime;
+  customer: { name: string; phone: string; address: string; city: string };
+  lines: OnlineOrderLine[];
+  currency: CurrencyCode;
+  methodId: Id; // card, wallet, InstaPay or cash on delivery
+  paid: boolean;
+  paidAt?: IsoDateTime;
+  paidById?: Id; // cash on delivery: who marked it paid
+  status: OnlineOrderStatus;
+  fulfilBranchId: Id; // the branch, warehouse or online stock it ships from
+  packedAt?: IsoDateTime;
+  packedById?: Id;
+  shippedAt?: IsoDateTime;
+  shippedById?: Id;
+  trackingNumber?: string;
+  deliveredAt?: IsoDateTime;
+  cancelledAt?: IsoDateTime;
+  cancelledById?: Id;
+  cancelReasonId?: Id;
+  saleId?: Id; // the sale recorded when it shipped
+  returns: { id: Id; at: IsoDateTime; byId: Id; lines: { variantId: Id; qty: number }[]; reasonId: Id; refund: number }[];
 }

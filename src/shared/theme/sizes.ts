@@ -13,7 +13,8 @@ export const sizes = {
     heroMinHeight: '60dvh',
   },
   sidebar: { width: 'clamp(13rem, 18vw, 15rem)' }, // the app's side menu
-  modal: { width: 'min(90vw, 32rem)', maxHeight: '85dvh' },
+  branchSwitcher: { width: '14rem' }, // 224, the branch picker in the top bar
+  modal: { width: 'min(90vw, 32rem)', wide: 'min(94vw, 48rem)', maxHeight: '85dvh' }, // wide: forms with a list of items
   header: { height: '3.5rem' }, // 56
   logo: { height: { sm: '1.25rem', md: '1.75rem', lg: '3rem' } }, // 20 / 28 / 48; width follows the logo's shape
 
@@ -32,9 +33,10 @@ export const sizes = {
   tapTarget: '2.5rem', // 40, icon-only buttons
   statCard: { minHeight: '6.5rem' }, // 104
   table: { firstColumn: 'min(14rem, 40%)', thumbnail: '2.5rem' }, // 224 / 40
-  field: { maxWidth: '28rem', narrow: '10rem', textareaHeight: '6rem' }, // 448 / 160 / 96
+  field: { maxWidth: '28rem', narrow: '10rem', textareaHeight: '6rem', qty: '6rem' }, // 448 / 160 / 96 / 96 (a quantity in a list)
   bar: { height: '0.5rem', chartHeight: '10rem' }, // 8 / 160: bar lists and the column chart
   badgeDot: '0.5rem', // 8, the "new" dot on the notifications bell
+  timeline: { dot: '0.75rem' }, // 12, one step of a transfer or order timeline
   thumbnail: { sm: '2.5rem', md: '4rem', lg: '8rem' }, // 40 / 64 / 128: product photos and brand logos
   menu: { minWidth: '14rem', maxHeight: '60dvh' }, // 224, dropdown menus
   signature: { height: '8rem' }, // 128, signature pad

@@ -1,3 +1,5 @@
+import type { BuiltInRole } from '@/shared/types';
+
 // Every path in the app, defined once. Build links with these, never by hand.
 export const routes = {
   home: '/',
@@ -46,7 +48,67 @@ export const routes = {
     customer: '/owner/customers/:customerId',
     settings: '/owner/settings',
   },
+  manager: {
+    dashboard: '/manager',
+    staff: '/manager/staff',
+    stock: '/manager/stock',
+    item: '/manager/stock/item/:variantId',
+    transfers: '/manager/transfers',
+    newTransfer: '/manager/transfers/new',
+    transfer: '/manager/transfers/:transferId',
+    counts: '/manager/counts',
+    count: '/manager/counts/:countId',
+    defects: '/manager/defects',
+    approvals: '/manager/approvals',
+    registers: '/manager/registers',
+    reports: '/manager/reports',
+    notifications: '/manager/notifications',
+  },
+  storekeeper: {
+    home: '/storekeeper',
+    receiving: '/storekeeper/receiving',
+    newReceiving: '/storekeeper/receiving/new',
+    receivingRecord: '/storekeeper/receiving/:receivingId',
+    defects: '/storekeeper/defects',
+    stock: '/storekeeper/stock',
+    item: '/storekeeper/stock/item/:variantId',
+    counts: '/storekeeper/counts',
+    count: '/storekeeper/counts/:countId',
+    transfers: '/storekeeper/transfers',
+    newTransfer: '/storekeeper/transfers/new',
+    transfer: '/storekeeper/transfers/:transferId',
+    brandReturns: '/storekeeper/brand-returns',
+    newBrandReturn: '/storekeeper/brand-returns/new',
+    brandReturn: '/storekeeper/brand-returns/:returnId',
+    notifications: '/storekeeper/notifications',
+  },
+  driver: {
+    jobs: '/driver',
+    job: '/driver/jobs/:transferId',
+    notifications: '/driver/notifications',
+  },
+  online: {
+    orders: '/online',
+    order: '/online/orders/:orderId',
+    stock: '/online/stock',
+    notifications: '/online/notifications',
+  },
 } as const;
+
+// The page each built-in role starts on after signing in. Roles without screens yet have no entry.
+// A person with several roles starts on the first one in this order.
+export const roleHomes = [
+  ['owner', routes.owner.dashboard],
+  ['manager', routes.manager.dashboard],
+  ['storekeeper', routes.storekeeper.home],
+  ['online', routes.online.orders],
+  ['driver', routes.driver.jobs],
+] as const satisfies readonly (readonly [BuiltInRole, string])[];
+
+export const homeFor = (roles: readonly BuiltInRole[]) => roleHomes.find(([role]) => roles.includes(role))?.[1];
+
+// A path inside a role's routes, for <Route path>: relativeTo(routes.manager.dashboard, routes.manager.stock) -> 'stock'
+export const relativeTo = (base: string, path: string) => path.replace(`${base}/`, '');
 
 // Fills a route's parameters: toPath(routes.owner.brand, { brandId: 'b1' }) -> '/owner/brands/b1'
 export const toPath = (route: string, params: Record<string, string>) =>

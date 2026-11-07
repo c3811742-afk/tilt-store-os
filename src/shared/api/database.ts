@@ -5,11 +5,14 @@ import type {
   Batch,
   Branch,
   Brand,
+  BrandReturn,
+  CashCheck,
   BrandPayment,
   Category,
   Customer,
   Defect,
   ExchangeRate,
+  OnlineOrder,
   Expense,
   FeeCharge,
   PriceChange,
@@ -72,4 +75,7 @@ export interface Database {
   notifications: AppNotification[];
   minQty: Record<string, number>; // `${variantId}|${branchId}` -> the minimum the storekeeper set
   counters: Record<string, number>; // the last number used for each kind of document
+  cashChecks: CashCheck[];
+  onlineOrders: OnlineOrder[];
+  brandReturns: BrandReturn[];
 }

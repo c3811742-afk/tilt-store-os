@@ -14,6 +14,7 @@ export interface ReferenceUser {
 export interface ReferenceBrand extends Pick<Brand, 'id' | 'name' | 'status' | 'logo'> {
   model: ReturnType<typeof currentTerms>['model'];
   allowDiscounts: boolean;
+  defectPolicy: ReturnType<typeof currentTerms>['defectPolicy']; // who carries the cost of defects, by default
 }
 
 // The small lists almost every page needs to show names: branches, brands, categories, people, settings.
@@ -33,7 +34,7 @@ export const getReferenceData = () =>
       branches: db.branches,
       brands: db.brands.map((brand) => {
         const terms = currentTerms(brand);
-        return { id: brand.id, name: brand.name, status: brand.status, logo: brand.logo, model: terms.model, allowDiscounts: terms.allowDiscounts };
+        return { id: brand.id, name: brand.name, status: brand.status, logo: brand.logo, model: terms.model, allowDiscounts: terms.allowDiscounts, defectPolicy: terms.defectPolicy };
       }),
       categories: db.categories,
       roles: db.roles,

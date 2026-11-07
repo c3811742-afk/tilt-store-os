@@ -1,0 +1,1 @@
+export { BrandReturnsPage } from './BrandReturnsPage';
