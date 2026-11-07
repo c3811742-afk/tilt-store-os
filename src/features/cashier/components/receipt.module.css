@@ -1,0 +1,85 @@
+/* Receipt paper: black on white in both appearances, so it looks the same on screen and on the printer. */
+.receipt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  inline-size: 100%;
+  max-inline-size: var(--sizes-receipt-width);
+  margin-inline: auto;
+  padding: var(--spacing-5) var(--spacing-4);
+  border: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  border-radius: var(--radii-sm);
+  background: var(--colors-print-paper);
+  color: var(--colors-print-ink);
+  font-size: var(--text-styles-caption-font-size);
+  font-variant-numeric: var(--numeric-tabular);
+  line-height: var(--text-styles-caption-line-height);
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-1);
+  text-align: center;
+}
+
+.rule {
+  border-block-start: var(--borders-width-thin) dashed var(--colors-print-ink);
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--spacing-1) var(--spacing-3);
+  margin: 0;
+}
+
+.meta dd {
+  margin: 0;
+  text-align: end;
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.line {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.lineName {
+  font-weight: var(--font-weight-medium);
+}
+
+.split {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+}
+
+.total {
+  font-size: var(--text-styles-h4-font-size);
+  font-weight: var(--font-weight-semi-bold);
+}
+
+.label {
+  font-weight: var(--font-weight-semi-bold);
+}
+
+.small {
+  font-size: var(--text-styles-caption-font-size);
+}
+
+@media print {
+  .receipt {
+    border: none;
+  }
+}

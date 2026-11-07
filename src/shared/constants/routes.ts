@@ -46,6 +46,38 @@ export const routes = {
     customer: '/owner/customers/:customerId',
     settings: '/owner/settings',
   },
+  // Pages every signed-in person has
+  notifications: '/notifications',
+  account: '/account',
+  changePassword: '/account/password',
+  help: '/help',
+  lock: '/lock', // the PIN screen: switch person or come back after an automatic log-out
+  cashier: {
+    sell: '/cashier',
+    held: '/cashier/held',
+    customers: '/cashier/customers',
+    customer: '/cashier/customers/:customerId',
+    stock: '/cashier/stock',
+    stockItem: '/cashier/stock/:productId',
+    returns: '/cashier/returns',
+    receipts: '/cashier/receipts',
+    receipt: '/cashier/receipts/:saleId',
+    shift: '/cashier/shift',
+    mySales: '/cashier/my-sales',
+    approvals: '/cashier/approvals', // branch managers: requests sent to their phone
+  },
+  it: {
+    data: '/it', // the IT admin's start page: every database table
+    errors: '/it/errors',
+    backups: '/it/backups',
+  },
+  brand: {
+    home: '/brand',
+    sales: '/brand/sales',
+    stock: '/brand/stock',
+    returns: '/brand/returns',
+    promotions: '/brand/promotions',
+  },
 } as const;
 
 // Fills a route's parameters: toPath(routes.owner.brand, { brandId: 'b1' }) -> '/owner/brands/b1'

@@ -56,7 +56,9 @@ export type ActivityAction =
   | 'lock'
   | 'signIn'
   | 'export'
-  | 'send';
+  | 'send'
+  | 'signOut'
+  | 'backup';
 
 export type ActivityTarget =
   | 'brand'
@@ -87,7 +89,12 @@ export type ActivityTarget =
   | 'sale'
   | 'return'
   | 'shift'
-  | 'eReceipt';
+  | 'eReceipt'
+  | 'customer'
+  | 'reservation'
+  | 'heldSale'
+  | 'record'
+  | 'backup';
 
 export interface ActivityChange {
   field: string;
@@ -121,7 +128,11 @@ export type AlertKind =
   | 'pickupMismatch'
   | 'defectiveReturn'
   | 'eReceiptFailed'
-  | 'approvalWaiting';
+  | 'approvalWaiting'
+  | 'approvalApproved'
+  | 'approvalRejected'
+  | 'promotionApproved'
+  | 'promotionRejected';
 
 export interface AppNotification {
   id: Id;

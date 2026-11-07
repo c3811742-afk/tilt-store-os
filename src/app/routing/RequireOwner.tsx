@@ -1,11 +1,10 @@
 import type { ReactNode } from 'react';
-import { Navigate } from 'react-router';
-import { routes } from '@/shared/constants';
 import { useSession } from '@/shared/hooks';
+import { AccessPage } from '@/features/common/pages/AccessPage';
 
-// Owner pages: signed-out visitors go to the sign-in page, other roles are sent there too with a message.
+// Owner pages: owners, and the IT admin (who can open every screen). Anyone else sees "You don't have access".
 export const RequireOwner = ({ children }: { children: ReactNode }) => {
   const { session } = useSession();
-  if (!session?.isOwner) return <Navigate to={routes.signIn} replace />;
+  if (!session?.isOwner && !session?.roles.includes('it')) return <AccessPage />;
   return children;
 };

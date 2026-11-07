@@ -35,6 +35,7 @@ export const icons = {
   // Actions
   search: [circle(11, 11, 8), 'M21 21l-4.3-4.3'],
   plus: ['M12 5v14', 'M5 12h14'],
+  minus: ['M5 12h14'],
   pencil: ['M17 3l4 4L8 20H4v-4z', 'M14 6l4 4'],
   trash: ['M3 6h18', 'M8 6V3h8v3', 'M19 6l-1 15H6L5 6', 'M10 11v6', 'M14 11v6'],
   archive: [rect(2, 3, 20, 5), 'M4 8v13h16V8', 'M10 12h4'],

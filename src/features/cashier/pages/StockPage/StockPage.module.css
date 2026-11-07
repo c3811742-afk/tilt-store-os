@@ -1,0 +1,16 @@
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-4);
+}
+
+.photo {
+  inline-size: var(--sizes-thumbnail-md);
+}
+
+/* Keeps "Report defect" on one line, so every row has the same height. */
+.actions {
+  display: block;
+  white-space: nowrap;
+}

@@ -1,0 +1,75 @@
+.pad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-3);
+  border-radius: var(--radii-md);
+}
+
+.pad:focus-visible {
+  outline: var(--borders-width-thick) var(--borders-style) var(--colors-focus);
+  outline-offset: var(--spacing-1);
+}
+
+.dots {
+  display: flex;
+  gap: var(--spacing-3);
+  padding-block: var(--spacing-2);
+}
+
+.dot {
+  inline-size: var(--sizes-pin-pad-dot);
+  block-size: var(--sizes-pin-pad-dot);
+  border: var(--borders-width-thin) var(--borders-style) var(--colors-border-strong);
+  border-radius: var(--radii-full);
+}
+
+.filled {
+  border-color: var(--colors-primary);
+  background: var(--colors-primary);
+}
+
+.invalid .dot {
+  border-color: var(--colors-danger);
+}
+
+.error {
+  margin: 0;
+  color: var(--colors-danger);
+  font-size: var(--text-styles-caption-font-size);
+}
+
+/* Number keys keep the phone layout (1 2 3 on top, left to right) in both languages. */
+.keys {
+  direction: ltr;
+  display: grid;
+  grid-template-columns: repeat(3, var(--sizes-pin-pad-key));
+  gap: var(--spacing-2);
+}
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  block-size: var(--sizes-pin-pad-key);
+  border: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  border-radius: var(--radii-md);
+  background: var(--colors-surface);
+  color: var(--colors-text);
+  font-size: var(--text-styles-h3-font-size);
+  font-variant-numeric: var(--numeric-tabular);
+  cursor: pointer;
+}
+
+.key:disabled {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+}
+
+.key:hover:not(:disabled) {
+  background: var(--colors-surface-muted);
+}
+
+.erase {
+  color: var(--colors-text-secondary);
+}

@@ -1,0 +1,65 @@
+import { getBrandUnits } from '@/shared/api';
+import { AsyncContent, Card, ColumnChart, FilterBar, Grid, PageHeader, PeriodFilter, SelectField, Stack, StatCard, Table } from '@/shared/components';
+import { useAsync, useFormat, useLiveVersion, useLocale, usePeriod, useQueryState, useReference } from '@/shared/hooks';
+import { vars } from '@/shared/theme';
+
+// Units sold of the brand's products by branch and date.
+export const SalesPage = () => {
+  const { text } = useLocale();
+  const format = useFormat();
+  const version = useLiveVersion();
+  const { branches } = useReference();
+  const period = usePeriod('month');
+  const [branchId, setBranchId] = useQueryState('branch', '');
+  const t = text.brandPortal.sales;
+  const state = useAsync(() => getBrandUnits(period.range, branchId || undefined), [period.range.from, period.range.to, branchId, version]);
+
+  return (
+    <Stack gap={vars.spacing[5]}>
+      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PeriodFilter period={period} />
+      <FilterBar>
+        <SelectField label={t.branch} placeholder={t.allBranches} value={branchId} onChange={setBranchId} options={branches.filter((branch) => !branch.archived && branch.kind !== 'warehouse').map((branch) => ({ value: branch.id, label: branch.name }))} />
+      </FilterBar>
+      <AsyncContent state={state}>
+        {(data) => (
+          <Stack gap={vars.spacing[5]}>
+            <Grid minColumnWidth={vars.sizes.card.minWidth}>
+              <StatCard label={t.sold} value={format.number(data.sold)} highlight />
+              <StatCard label={t.returned} value={format.number(data.returned)} />
+            </Grid>
+            <Card title={t.byDay}>
+              <ColumnChart label={t.byDay} points={data.byDay.map((point) => ({ key: point.day, label: format.shortDate(`${point.day}T12:00:00`), value: point.sold, display: format.number(point.sold) }))} labelEvery={Math.max(1, Math.ceil(data.byDay.length / 10))} />
+            </Card>
+            <Grid minColumnWidth={vars.sizes.card.minWidth}>
+              <Card title={t.byBranch}>
+                <Table
+                  label={t.byBranch}
+                  columns={[
+                    { key: 'branch', label: t.branch },
+                    { key: 'sold', label: t.sold, align: 'end' },
+                    { key: 'returned', label: t.returned, align: 'end' },
+                  ]}
+                  rows={data.byBranch.map((row) => ({ key: row.branchId, cells: { branch: row.name, sold: format.number(row.sold), returned: format.number(row.returned) } }))}
+                  footer={{ branch: text.common.total, sold: format.number(data.sold), returned: format.number(data.returned) }}
+                />
+              </Card>
+              <Card title={t.byProduct}>
+                <Table
+                  label={t.byProduct}
+                  emptyText={text.brandPortal.overview.noSales}
+                  columns={[
+                    { key: 'product', label: t.product },
+                    { key: 'sold', label: t.sold, align: 'end' },
+                    { key: 'returned', label: t.returned, align: 'end' },
+                  ]}
+                  rows={data.byProduct.map((row) => ({ key: row.productId, cells: { product: row.name, sold: format.number(row.sold), returned: format.number(row.returned) } }))}
+                />
+              </Card>
+            </Grid>
+          </Stack>
+        )}
+      </AsyncContent>
+    </Stack>
+  );
+};

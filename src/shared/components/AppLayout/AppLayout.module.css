@@ -1,0 +1,156 @@
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-block-size: var(--sizes-viewport-full-height);
+  background: var(--colors-canvas);
+}
+
+.sidebar {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  z-index: var(--z-index-overlay);
+  display: none;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  inline-size: var(--sizes-sidebar-width);
+  overflow-y: auto;
+  padding: var(--spacing-4) var(--spacing-3);
+  border-inline-end: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  background: var(--colors-background);
+}
+
+.open {
+  display: flex;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-index-overlay);
+  border: none;
+  background: var(--colors-overlay);
+}
+
+.logo {
+  padding-inline: var(--spacing-2);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.groupLabel {
+  padding-inline: var(--spacing-2);
+  color: var(--colors-text-muted);
+  font-size: var(--text-styles-label-font-size);
+  font-weight: var(--text-styles-label-font-weight);
+  letter-spacing: var(--text-styles-label-letter-spacing);
+  text-transform: var(--text-styles-label-text-transform);
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2);
+  border-radius: var(--radii-md);
+  color: var(--colors-text-secondary);
+  font-size: var(--text-styles-body-sm-font-size);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+}
+
+.link:hover {
+  background: var(--colors-surface-muted);
+  color: var(--colors-text);
+}
+
+.active {
+  background: var(--colors-brand-soft);
+  color: var(--colors-on-brand-soft);
+}
+
+/* The account button: just the round photo, no browser button frame. */
+.avatarButton {
+  display: inline-flex;
+  padding: var(--spacing-1);
+  border: none;
+  border-radius: var(--radii-full);
+  background: none;
+  cursor: pointer;
+}
+
+.avatarButton:hover {
+  background: var(--colors-surface-muted);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.topBar {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: var(--z-index-sticky);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+  min-block-size: var(--sizes-header-height);
+  padding-inline: var(--sizes-container-padding-x);
+  border-block-end: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  background: var(--colors-background);
+}
+
+.topStart,
+.topEnd {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.topStart {
+  flex: 1;
+  min-inline-size: 0;
+  gap: var(--spacing-2);
+}
+
+.content {
+  inline-size: 100%;
+  max-inline-size: var(--sizes-page-max-width);
+  margin-inline: auto;
+  padding: var(--spacing-5) var(--sizes-container-padding-x) var(--spacing-8);
+}
+
+.mobileOnly {
+  display: inline-flex;
+}
+
+@media (--lg-up) {
+  .layout {
+    grid-template-columns: var(--sizes-sidebar-width) minmax(0, 1fr);
+  }
+
+  .sidebar {
+    position: sticky;
+    display: flex;
+    block-size: var(--sizes-viewport-full-height);
+  }
+
+  .backdrop,
+  .mobileOnly {
+    display: none;
+  }
+}
+
+/* Printing prints only a <PrintArea> (a receipt, a shift summary), never the app around it. */
+@media print {
+  .layout {
+    display: none;
+  }
+}

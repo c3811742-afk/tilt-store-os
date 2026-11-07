@@ -200,7 +200,7 @@ export const decideStockRequest = (requestId: Id, decision: 'warehouse' | 'brand
     if (decision === 'brand') request.status = 'sentToBrand';
     if (decision === 'warehouse') {
       request.status = 'sentToWarehouse';
-      const warehouse = db.branches.find((branch) => branch.kind === 'warehouse' && !branch.archived);
+      const warehouse = db.branches.find((branch) => (request.fromBranchId ? branch.id === request.fromBranchId : branch.kind === 'warehouse') && !branch.archived);
       if (warehouse) {
         db.transfers.push({ id: newId(), number: nextNumber('TR', 4), fromBranchId: warehouse.id, toBranchId: request.branchId, lines: request.lines.map((line) => ({ ...line })), status: 'approved', requestedById: request.requestedById, createdAt: nowIso() });
       }

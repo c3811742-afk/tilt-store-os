@@ -1,0 +1,55 @@
+.branch {
+  display: inline-flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  padding-inline-end: var(--spacing-2);
+  border-inline-end: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  line-height: var(--text-styles-caption-line-height);
+}
+
+.branchPicker {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 1;
+  inline-size: var(--sizes-field-narrow);
+  min-inline-size: 0;
+}
+
+.hiddenLabel {
+  position: absolute;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  inline-size: 0;
+  block-size: 0;
+}
+
+/* The product search needs room: on phones it is on the Stock and Sell pages instead of the top bar. */
+.search {
+  display: none;
+  flex: 1;
+  min-inline-size: 0;
+}
+
+@media (--md-up) {
+  .search {
+    display: flex;
+  }
+}
+
+.offline,
+.syncing {
+  margin: 0;
+  padding: var(--spacing-2) var(--sizes-container-padding-x);
+  font-size: var(--text-styles-body-sm-font-size);
+}
+
+.offline {
+  background: var(--colors-warning);
+  color: var(--colors-on-warning);
+}
+
+.syncing {
+  background: var(--colors-brand-soft);
+  color: var(--colors-on-brand-soft);
+}

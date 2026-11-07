@@ -1,0 +1,7 @@
+/* Always black on white, so it scans on screen and on paper in both themes. */
+.qr {
+  inline-size: var(--qr-size);
+  block-size: var(--qr-size);
+  background: var(--colors-print-paper);
+  fill: var(--colors-print-ink);
+}

@@ -1,5 +1,4 @@
-export { usePeriod } from './usePeriod';
-export type { Period } from './usePeriod';
+export { usePeriod } from '@/shared/hooks'; // moved to shared: the brand portal uses it too
+export type { Period } from '@/shared/hooks';
 export { useChange } from './useChange';
-export { useAlertText } from './useAlertText';
 export { useExport } from './useExport';

@@ -1,0 +1,14 @@
+.video {
+  inline-size: 100%;
+  border-radius: var(--radii-md);
+  background: var(--colors-surface-muted);
+  aspect-ratio: var(--sizes-aspect-ratio-video);
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  margin: 0;
+  padding-inline-start: var(--spacing-5);
+}

@@ -14,7 +14,25 @@ export type ApiErrorCode =
   | 'invalidFile'
   | 'lastOwner'
   | 'alreadyDecided'
-  | 'wrongPassword';
+  | 'wrongPassword'
+  | 'wrongPin'
+  | 'wrongCurrentPassword'
+  | 'samePassword'
+  | 'shiftClosed'
+  | 'shiftAlreadyOpen'
+  | 'customerRequired'
+  | 'outOfStock'
+  | 'notPaid'
+  | 'approvalNeeded'
+  | 'notEnoughCredit'
+  | 'invalidCode'
+  | 'wrongApprovalPin'
+  | 'approvalPinLocked'
+  | 'noteRequired'
+  | 'reasonRequired'
+  | 'returnNotAllowed'
+  | 'tooManyReturned'
+  | 'noDiscountOnPromotion';
 
 export class ApiError extends Error {
   code: ApiErrorCode;
