@@ -1,0 +1,1 @@
+export { PaymentChip } from './PaymentChip';

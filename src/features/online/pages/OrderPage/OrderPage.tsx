@@ -26,6 +26,7 @@ import { useAction, useAsync, useErrorMessage, useFormat, useLiveVersion, useLoc
 import { vars } from '@/shared/theme';
 import { fillText, safeAsync } from '@/shared/utils';
 import { orderStatusTone, orderSteps } from '../../constants/statuses';
+import { PaymentChip } from '../../components/PaymentChip';
 
 // One online order: who it is for, where it ships from, and its next step (pack, ship, deliver, mark paid), or
 // cancelling it before it ships, or returning items after.
@@ -57,10 +58,7 @@ export const OrderPage = () => {
               back={{ to: routes.online.orders, label: text.online.orders.title }}
               title={`${order.number} · ${order.customer.name}`}
               actions={
-                <>
-                  {!order.paid && order.status !== 'cancelled' && <Badge variant="warning">{text.online.orders.unpaid}</Badge>}
-                  <Badge variant={orderStatusTone[order.status]}>{t.states[order.status]}</Badge>
-                </>
+                <Badge variant={orderStatusTone[order.status]}>{t.states[order.status]}</Badge>
               }
             />
             {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
@@ -79,14 +77,21 @@ export const OrderPage = () => {
                 ]}
               />
             </Card>
-            <Card>
+            <Card
+              actions={
+                <>
+                  {order.status !== 'cancelled' && <PaymentChip paid={order.paid} />}
+                  {location && order.status !== 'cancelled' && <Badge>{fillText(t.reservedIn, { location: format.text(location.name) })}</Badge>}
+                </>
+              }
+            >
               <DetailList
                 items={[
                   { key: 'customer', label: t.customer, value: order.customer.name },
                   { key: 'phone', label: t.phone, value: order.customer.phone },
                   { key: 'address', label: t.address, value: `${order.customer.address}, ${order.customer.city}` },
-                  { key: 'payment', label: t.payment, value: `${format.payment(order.methodId)} · ${order.paid ? text.online.orders.paid : text.online.orders.unpaid}` },
-                  { key: 'from', label: t.shipsFrom, value: `${format.branch(order.fulfilBranchId)}${location ? ` · ${fillText(t.reservedIn, { location: format.text(location.name) })}` : ''}` },
+                  { key: 'payment', label: t.payment, value: format.payment(order.methodId) },
+                  { key: 'from', label: t.shipsFrom, value: format.branch(order.fulfilBranchId) },
                   { key: 'placed', label: t.placed, value: format.dateTime(order.at) },
                   ...(order.trackingNumber ? [{ key: 'tracking', label: t.tracking, value: order.trackingNumber }] : []),
                   ...(order.cancelReasonId ? [{ key: 'reason', label: t.reason, value: format.option(order.cancelReasonId) }] : []),

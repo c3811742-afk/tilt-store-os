@@ -39,8 +39,9 @@ export const formatFileSize = (bytes: number, locale: Locale) => {
 export const formatPercent = (value: number, locale: Locale, digits = 1) =>
   new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: digits }).format(value / 100);
 
+// "Nov 8, 2026 11:42 PM": the date, a space, then the time (no comma between them).
 export const formatDateTime = (date: Date | string, locale: Locale) =>
-  formatDate(date, locale, { dateStyle: 'medium', timeStyle: 'short' });
+  `${formatDate(date, locale, { dateStyle: 'medium' })} ${formatDate(date, locale, { timeStyle: 'short' })}`;
 
 // 10:02 / ١٠:٠٢
 export const formatTime = (date: Date | string, locale: Locale) => formatDate(date, locale, { timeStyle: 'short' });

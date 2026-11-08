@@ -6,6 +6,7 @@ import { useAction, useAsync, useErrorMessage, useFormat, useLiveVersion, useLoc
 import type { OnlineOrderStatus } from '@/shared/types';
 import { vars } from '@/shared/theme';
 import { fillText } from '@/shared/utils';
+import { PaymentChip } from '../../components/PaymentChip';
 import { orderStatusTone } from '../../constants/statuses';
 
 const statuses: readonly OnlineOrderStatus[] = ['new', 'packed', 'shipped', 'delivered', 'cancelled', 'returned'];
@@ -21,6 +22,7 @@ export const OrdersPage = () => {
   const action = useAction();
   const [done, setDone] = useState('');
   const t = text.online.orders;
+  const piecesText = (count: number) => (count === 1 ? t.piece : fillText(t.pieces, { count: format.number(count) }));
   const views = state.status === 'success' ? state.data : [];
 
   const card = ({ order, total }: OnlineOrderView) => (
@@ -30,7 +32,7 @@ export const OrdersPage = () => {
       title={`${order.number} · ${order.customer.name}`}
       actions={
         <>
-          {!order.paid && order.status !== 'cancelled' && <Badge variant="warning">{t.unpaid}</Badge>}
+          {order.status !== 'cancelled' && <PaymentChip paid={order.paid} />}
           <Badge variant={orderStatusTone[order.status]}>{text.online.order.states[order.status]}</Badge>
         </>
       }
@@ -38,7 +40,7 @@ export const OrdersPage = () => {
       <Text variant="caption" color={vars.colors.textMuted}>
         {[
           format.dateTime(order.at),
-          fillText(t.summary, { items: format.number(order.lines.reduce((sum, line) => sum + line.qty, 0)), total: format.money(total, order.currency), payment: format.payment(order.methodId), branch: format.branch(order.fulfilBranchId) }),
+          fillText(t.summary, { items: piecesText(order.lines.reduce((sum, line) => sum + line.qty, 0)), total: format.money(total, order.currency), payment: format.payment(order.methodId), branch: format.branch(order.fulfilBranchId) }),
         ].join(' · ')}
       </Text>
     </Card>

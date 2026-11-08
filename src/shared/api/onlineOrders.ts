@@ -279,12 +279,29 @@ export const returnOnlineOrder = (orderId: Id, input: OnlineReturnInput) =>
 
 // The pieces the website can sell right now: available in the online stock, the Egyptian stores and the warehouse
 // (orders ship from any of them). Reserved pieces are already taken out, so the website never oversells.
-export const getOnlineStock = (query: string) =>
+export type OnlineAvailability = 'inStock' | 'low' | 'soldOut' | 'reserved';
+export type OnlineSource = 'online' | 'elsewhere';
+
+export interface OnlineStockFilter {
+  query?: string; // product name, SKU or barcode
+  brandId?: Id;
+  categoryId?: Id;
+  size?: string;
+  color?: string;
+  availability?: OnlineAvailability; // low: at or under the low-stock limit in Policies
+  source?: OnlineSource; // online: in the online stock; elsewhere: only in the stores or the warehouse
+}
+
+const onlineStockLimit = 200; // the most rows sent at once; the page says when there are more
+
+export const getOnlineStock = (filter: OnlineStockFilter) =>
   respond(() => {
     assertOnlineStaff();
     const egypt = db.branches.filter((branch) => !branch.archived && branch.countryCode === 'EG');
     const online = egypt.find((branch) => branch.kind === 'online');
-    const needle = query.trim().toLowerCase();
+    const needle = filter.query?.trim().toLowerCase() ?? '';
+    const variants = new Map(db.products.flatMap((product) => product.variants.map((variant) => [variant.id, { product, variant }] as const)));
+    const low = db.settings.lowStockDefault;
     const byVariant = new Map<Id, { online: number; elsewhere: number; reserved: number }>();
     stockLevels(db.movements).forEach((level) => {
       if (!egypt.some((branch) => branch.id === level.branchId) || level.qty <= 0) return;
@@ -296,9 +313,24 @@ export const getOnlineStock = (query: string) =>
       }
       byVariant.set(level.variantId, row);
     });
-    return [...byVariant.entries()]
-      .map(([variantId, row]) => ({ variantId, ...row, shown: row.online + row.elsewhere, ...describeVariant(variantId) }))
-      .filter((row) => row.productId && (!needle || row.productName.toLowerCase().includes(needle) || row.sku.toLowerCase().includes(needle)))
-      .sort((a, b) => a.productName.localeCompare(b.productName) || a.size.localeCompare(b.size))
-      .slice(0, 200);
+    const rows = [...byVariant.entries()]
+      .map(([variantId, row]) => ({ variantId, ...row, shown: row.online + row.elsewhere, ...describeVariant(variantId), categoryId: variants.get(variantId)?.product.categoryId ?? '' }))
+      .filter((row) => {
+        const variant = variants.get(row.variantId)?.variant;
+        if (!row.productId) return false;
+        if (needle && !row.productName.toLowerCase().includes(needle) && !row.sku.toLowerCase().includes(needle) && !variant?.barcode.includes(needle)) return false;
+        if (filter.brandId && row.brandId !== filter.brandId) return false;
+        if (filter.categoryId && row.categoryId !== filter.categoryId) return false;
+        if (filter.size && row.size !== filter.size) return false;
+        if (filter.color && row.color !== filter.color) return false;
+        if (filter.availability === 'inStock' && row.shown <= 0) return false;
+        if (filter.availability === 'low' && (row.shown <= 0 || row.shown > low)) return false;
+        if (filter.availability === 'soldOut' && row.shown > 0) return false;
+        if (filter.availability === 'reserved' && row.reserved <= 0) return false;
+        if (filter.source === 'online' && row.online <= 0) return false;
+        if (filter.source === 'elsewhere' && (row.online > 0 || row.elsewhere <= 0)) return false;
+        return true;
+      })
+      .sort((a, b) => a.productName.localeCompare(b.productName) || a.size.localeCompare(b.size));
+    return { rows: rows.slice(0, onlineStockLimit), total: rows.length };
   });

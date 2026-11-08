@@ -13,6 +13,13 @@
   min-inline-size: 0;
 }
 
+/* A search box is the main filter: it takes two columns from tablet width up (one column on phones). */
+@media (--md-up) {
+  .fields > :has(input[type='search']) {
+    grid-column: span 2;
+  }
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;
