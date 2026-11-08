@@ -7,13 +7,16 @@
 .row {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--spacing-3);
 }
 
+/* The title and subtitle take the space left beside the actions (a long subtitle wraps in its own column);
+   when the screen is too narrow for both, the actions move under the title. */
 .titles {
   display: flex;
+  flex: 1 1 min(100%, var(--sizes-field-max-width));
   flex-direction: column;
   gap: var(--spacing-1);
   min-inline-size: 0;

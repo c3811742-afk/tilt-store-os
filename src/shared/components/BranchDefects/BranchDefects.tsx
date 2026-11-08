@@ -7,7 +7,9 @@ import { withDefaults } from '@/shared/utils';
 import { AsyncContent } from '../AsyncContent';
 import { Badge } from '../Badge';
 import { Button } from '../Button';
+import { Icon } from '../Icon';
 import { Notice } from '../Notice';
+import { PageHeader } from '../PageHeader';
 import { ReportDefectModal } from '../ReportDefectModal';
 import { Stack } from '../Stack';
 import { Table } from '../Table';
@@ -19,10 +21,11 @@ import type { BranchDefectsProps } from './BranchDefects.types';
 
 type DefectsTab = 'defects' | 'writeOffs';
 
-// The branch's defects and write-offs: report a defect, set defective pieces aside for the brand, and ask to write
-// off lost stock. Quantities and reasons only, no cost.
+// The branch's defects and write-offs, as a whole page: report a defect, set defective pieces aside for the brand, and
+// ask to write off lost stock. Quantities and reasons only, no cost. The two actions sit in the page header (top right),
+// with Report a defect as the main one.
 export const BranchDefects = (props: BranchDefectsProps) => {
-  const { foundAtOptions, showLiability, showPhotos } = withDefaults(branchDefectsDefaults, props);
+  const { foundAtOptions, showLiability, showPhotos, title, subtitle, children } = withDefaults(branchDefectsDefaults, props);
   const { text } = useLocale();
   const format = useFormat();
   const errorMessage = useErrorMessage();
@@ -42,13 +45,23 @@ export const BranchDefects = (props: BranchDefectsProps) => {
   };
 
   return (
-    <Stack gap={vars.spacing[4]}>
-      <Stack direction="row" wrap gap={vars.spacing[2]} justify="flex-end">
-        <Button variant="secondary" onClick={() => setOpen('writeOff')}>
-          {t.writeOff}
-        </Button>
-        <Button onClick={() => setOpen('report')}>{t.report}</Button>
-      </Stack>
+    <Stack gap={vars.spacing[5]}>
+      <PageHeader
+        title={title ?? t.title}
+        subtitle={subtitle ?? t.subtitle}
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => setOpen('writeOff')}>
+              {t.writeOff}
+            </Button>
+            <Button onClick={() => setOpen('report')}>
+              <Icon name="plus" />
+              {t.report}
+            </Button>
+          </>
+        }
+      />
+      {children}
       {done && <Notice tone="success">{done}</Notice>}
       {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
       <Tabs<DefectsTab> label={t.title} value={tab} onChange={setTab} tabs={(['defects', 'writeOffs'] as const).map((value) => ({ value, label: t.tabs[value] }))}>
