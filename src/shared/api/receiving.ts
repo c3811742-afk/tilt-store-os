@@ -114,7 +114,9 @@ const cleanLines = (lines: readonly ReceivingLineInput[]) =>
   lines.map((line) => {
     const expected = whole(line.expected);
     const received = whole(line.received);
-    const defective = Math.min(whole(line.defective), received);
+    const defective = whole(line.defective);
+    // Defective pieces are part of what was received.
+    if (defective > received) throw new ApiError('quantityMismatch');
     return { variantId: line.variantId, expected, received, defective, missing: Math.max(expected - received, 0) };
   });
 

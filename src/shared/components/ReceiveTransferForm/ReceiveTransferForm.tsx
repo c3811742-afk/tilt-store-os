@@ -31,8 +31,8 @@ export const ReceiveTransferForm = ({ view, onDone }: ReceiveTransferFormProps) 
     detail: [line.pickupQty !== null && `${t.pickedUp} ${format.number(line.pickupQty)}`, line.deliveryQty !== null && `${t.delivered} ${format.number(line.deliveryQty)}`].filter(Boolean).join(' · '),
   }));
   const fields: SignatureField[] = [
-    { key: 'received', label: t.received },
-    { key: 'defects', label: t.defects },
+    { key: 'received', label: t.received, max: sent },
+    { key: 'defects', label: t.defects, max: (_variantId, row) => row.received ?? 0 },
     { key: 'extra', label: t.extra },
   ];
   const [value, setValue] = useState<SignatureValue>(() => emptySignature(lines, fields, (variantId, field) => (field === 'received' ? sent(variantId) : 0)));

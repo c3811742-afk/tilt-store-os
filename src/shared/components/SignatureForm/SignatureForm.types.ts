@@ -9,6 +9,9 @@ export interface SignatureLine {
 export interface SignatureField {
   key: string; // e.g. 'qty', 'received', 'defects'
   label: string; // the column heading
+  // The most this field can be for a line, given the row's other numbers (e.g. defects can't be more than received).
+  // Typing more stops at the maximum, so the numbers on screen always add up.
+  max?: (variantId: string, row: Record<string, number>) => number;
 }
 
 // Quantities per product and field, the typed name and the confirmation tick.

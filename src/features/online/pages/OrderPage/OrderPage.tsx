@@ -196,11 +196,12 @@ const ReturnModal = ({ view, onClose, onDone }: { view: OnlineOrderView; onClose
   const t = text.online.order;
   const open = view.lines.filter((line) => line.qty > (line.returned ?? 0));
   const lines = open.map((line) => ({ variantId: line.variantId, label: `${line.productName} · ${line.size} · ${line.color}`, detail: `${text.common.quantity} ${format.number(line.qty - (line.returned ?? 0))}` }));
-  const fields = [{ key: 'qty', label: t.returnQty }];
-  const [value, setValue] = useState<SignatureValue>(() => emptySignature(lines, fields, (variantId) => {
+  const left = (variantId: string) => {
     const line = open.find((current) => current.variantId === variantId);
     return line ? line.qty - (line.returned ?? 0) : 0;
-  }));
+  };
+  const fields = [{ key: 'qty', label: t.returnQty, max: left }];
+  const [value, setValue] = useState<SignatureValue>(() => emptySignature(lines, fields, left));
   const [reasonId, setReasonId] = useState('');
   const [errors, setErrors] = useState<{ reason?: string; lines?: string }>({});
   const [busy, setBusy] = useState(false);

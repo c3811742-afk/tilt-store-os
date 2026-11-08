@@ -114,8 +114,9 @@ const HandOverCard = ({ view, onDone }: { view: StaffTransferView; onDone: () =>
   const errorMessage = useErrorMessage();
   const t = text.storekeeper.transfers;
   const lines = view.lines.map((line) => ({ variantId: line.variantId, label: `${line.productName} · ${line.size} · ${line.color}`, detail: `${text.staff.transfers.requested} ${line.qty}` }));
-  const fields = [{ key: 'qty', label: text.staff.transfers.pickedUp }];
-  const [value, setValue] = useState<SignatureValue>(() => emptySignature(lines, fields, (variantId) => view.lines.find((line) => line.variantId === variantId)?.qty ?? 0));
+  const requested = (variantId: string) => view.lines.find((line) => line.variantId === variantId)?.qty ?? 0;
+  const fields = [{ key: 'qty', label: text.staff.transfers.pickedUp, max: requested }];
+  const [value, setValue] = useState<SignatureValue>(() => emptySignature(lines, fields, requested));
   const [errors, setErrors] = useState<{ name?: string; confirmed?: string }>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);

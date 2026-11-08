@@ -246,8 +246,9 @@ export const pickUpTransfer = (transferId: Id, input: PickupInput) =>
 
     const from = findById(db.branches, transfer.fromBranchId);
     const to = findById(db.branches, transfer.toBranchId);
-    const lines = transfer.lines.map((line) => ({ variantId: line.variantId, qty: Math.max(0, Math.floor(input.lines.find((current) => current.variantId === line.variantId)?.qty ?? 0)) }));
+    const lines = transfer.lines.map((line) => ({ variantId: line.variantId, qty: Math.max(0, Math.floor(input.lines.find((current) => current.variantId === line.variantId)?.qty ?? 0)), requested: line.qty }));
     if (!lines.some((line) => line.qty > 0)) throw new ApiError('notAllowed');
+    if (lines.some((line) => line.qty > line.requested)) throw new ApiError('quantityMismatch');
 
     // Defective pieces sent to the warehouse travel as defective; everything else moves from available stock.
     const moving = transfer.stockStatus ?? 'available';
@@ -270,7 +271,7 @@ export const pickUpTransfer = (transferId: Id, input: PickupInput) =>
     plan.forEach((take) =>
       db.movements.push({ id: newId(), at, byId: me.id, variantId: take.variantId, qty: take.qty, from: take.from, to: placeIn(to, to.kind === 'store' ? 'backRoom' : 'storage', 'inTransit'), kind: 'transferOut', ref: { type: 'transfer', id: transfer.id } }),
     );
-    Object.assign(transfer, { status: 'sent', sentAt: at, handedOverById, pickup: signature(input.signedName, driver, lines) });
+    Object.assign(transfer, { status: 'sent', sentAt: at, handedOverById, pickup: signature(input.signedName, driver, lines.map(({ variantId, qty }) => ({ variantId, qty }))) });
     checkStockAlerts(from.id, lines.map((line) => line.variantId));
     log(transfer, 'send');
     return transfer;
@@ -291,6 +292,8 @@ export const deliverTransfer = (transferId: Id, input: DeliveryInput) =>
     if (transfer.status !== 'sent' || transfer.delivery) throw new ApiError('alreadyDecided');
     const driver = findById(db.users, transfer.driverId);
     const lines = transfer.lines.map((line) => ({ variantId: line.variantId, qty: Math.max(0, Math.floor(input.lines.find((current) => current.variantId === line.variantId)?.qty ?? 0)) }));
+    const pickedUp = (variantId: Id) => transfer.pickup?.lines.find((current) => current.variantId === variantId)?.qty ?? 0;
+    if (lines.some((line) => line.qty > pickedUp(line.variantId))) throw new ApiError('quantityMismatch');
     Object.assign(transfer, { delivery: signature(input.signedName, driver, lines), deliveredAt: nowIso(), deliveredToId: input.deliveredToId });
     const to = findById(db.branches, transfer.toBranchId);
     if (toTransferView(transfer).driverMismatch) {
@@ -329,8 +332,10 @@ export const receiveTransfer = (transferId: Id, input: ReceiveInput) =>
     const signed: SignedLine[] = transfer.lines.map((line) => {
       const pickedUp = transfer.pickup?.lines.find((current) => current.variantId === line.variantId)?.qty ?? line.qty;
       const answer = input.lines.find((current) => current.variantId === line.variantId);
-      const received = Math.min(Math.max(0, Math.floor(answer?.received ?? 0)), pickedUp);
-      const defects = Math.min(Math.max(0, Math.floor(answer?.defects ?? 0)), received);
+      const delivered = transfer.delivery?.lines.find((current) => current.variantId === line.variantId)?.qty ?? pickedUp;
+      const received = Math.max(0, Math.floor(answer?.received ?? 0));
+      const defects = Math.max(0, Math.floor(answer?.defects ?? 0));
+      if (received > delivered || defects > received) throw new ApiError('quantityMismatch');
       const extra = Math.max(0, Math.floor(answer?.extra ?? 0));
       const missing = pickedUp - received;
       const good = received - defects;

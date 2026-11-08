@@ -18,8 +18,15 @@ export const SignatureForm = (props: SignatureFormProps) => {
   const t = text.staff.signature;
   const current: SignatureValue = value ?? { quantities: {}, name: '', confirmed: false };
   const set = (next: Partial<SignatureValue>) => onChange?.({ ...current, ...next });
-  const setQty = (variantId: string, field: string, raw: string) =>
-    set({ quantities: { ...current.quantities, [variantId]: { ...current.quantities[variantId], [field]: Math.max(0, Math.floor(Number(raw) || 0)) } } });
+  // Whole numbers from 0 up to each field's maximum. Every field is checked again after a change, so lowering
+  // "received" also lowers "defects" if they no longer fit.
+  const setQty = (variantId: string, field: string, raw: string) => {
+    const row: Record<string, number> = { ...current.quantities[variantId], [field]: Math.max(0, Math.floor(Number(raw) || 0)) };
+    fields.forEach((current) => {
+      if (current.max) row[current.key] = Math.min(row[current.key] ?? 0, Math.max(0, current.max(variantId, row)));
+    });
+    set({ quantities: { ...current.quantities, [variantId]: row } });
+  };
 
   return (
     <Stack gap={vars.spacing[4]}>
@@ -52,6 +59,7 @@ export const SignatureForm = (props: SignatureFormProps) => {
                     type="number"
                     inputMode="numeric"
                     min={0}
+                    max={field.max?.(line.variantId, current.quantities[line.variantId] ?? {})}
                     width={vars.sizes.field.qty}
                     value={String(current.quantities[line.variantId]?.[field.key] ?? 0)}
                     onChange={(raw) => setQty(line.variantId, field.key, raw)}

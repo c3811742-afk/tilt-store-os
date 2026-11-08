@@ -48,13 +48,12 @@ const SignCard = ({ job, kind, onDone }: { job: Job; kind: 'pickup' | 'delivery'
     label: `${line.productName} · ${line.size} · ${line.color}`,
     detail: pickup ? `${text.staff.transfers.requested} ${format.number(line.qty)}` : fillText(t.pickedUpQty, { qty: format.number(line.pickupQty ?? line.qty) }),
   }));
-  const fields = [{ key: 'qty', label: pickup ? text.staff.transfers.pickedUp : text.staff.transfers.delivered }];
-  const [value, setValue] = useState<SignatureValue>(() =>
-    emptySignature(lines, fields, (variantId) => {
-      const line = job.lines.find((current) => current.variantId === variantId);
-      return pickup ? (line?.qty ?? 0) : (line?.pickupQty ?? line?.qty ?? 0);
-    }),
-  );
+  const most = (variantId: string) => {
+    const line = job.lines.find((current) => current.variantId === variantId);
+    return pickup ? (line?.qty ?? 0) : (line?.pickupQty ?? line?.qty ?? 0);
+  };
+  const fields = [{ key: 'qty', label: pickup ? text.staff.transfers.pickedUp : text.staff.transfers.delivered, max: most }];
+  const [value, setValue] = useState<SignatureValue>(() => emptySignature(lines, fields, most));
   const [personId, setPersonId] = useState(people.length === 1 ? people[0] : '');
   const [errors, setErrors] = useState<{ name?: string; confirmed?: string; person?: string }>({});
   const [busy, setBusy] = useState(false);

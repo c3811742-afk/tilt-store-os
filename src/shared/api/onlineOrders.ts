@@ -240,13 +240,11 @@ export const returnOnlineOrder = (orderId: Id, input: OnlineReturnInput) =>
     if (!input.reasonId) throw new ApiError('missingReason');
     const sale = db.sales.find((current) => current.id === order.saleId);
     const branch = findById(db.branches, order.fulfilBranchId);
+    // Only items on the order, and never more than is left to return.
     const lines = input.lines
-      .map((line) => {
-        const orderLine = order.lines.find((current) => current.variantId === line.variantId);
-        const qty = orderLine ? Math.min(Math.max(Math.floor(line.qty), 0), orderLine.qty - (orderLine.returned ?? 0)) : 0;
-        return { orderLine, qty };
-      })
-      .filter((line) => line.orderLine && line.qty > 0);
+      .map((line) => ({ orderLine: order.lines.find((current) => current.variantId === line.variantId), qty: Math.floor(line.qty) }))
+      .filter((line) => line.qty !== 0);
+    if (lines.some((line) => !line.orderLine || line.qty < 0 || line.qty > line.orderLine.qty - (line.orderLine.returned ?? 0))) throw new ApiError('tooManyReturned');
     if (!lines.length) throw new ApiError('notAllowed');
     const refund = order.paid ? lines.reduce((sum, line) => sum + (line.orderLine?.unitPrice ?? 0) * line.qty, 0) : 0;
     const saleReturn: SaleReturn | undefined = sale

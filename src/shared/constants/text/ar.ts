@@ -131,6 +131,7 @@ export const ar: TextShape<typeof en> = {
     reasonRequired: 'اختر السبب.',
     returnNotAllowed: 'لا يمكن إرجاع هذه القطعة حسب سياسة الاسترجاع.',
     tooManyReturned: 'لا يمكن إرجاع أكثر من الكمية المشتراة.',
+    quantityMismatch: 'الكميات غير متطابقة. راجعها وحاول مرة أخرى.',
     noDiscountOnPromotion: 'لا يمكن إضافة خصم آخر على القطع التي عليها عرض.',
   },
   validation: {

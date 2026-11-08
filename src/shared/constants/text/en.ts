@@ -131,6 +131,7 @@ export const en = {
     reasonRequired: 'Choose a reason.',
     returnNotAllowed: "This item can't be returned under the return policy.",
     tooManyReturned: "You can't return more than was bought.",
+    quantityMismatch: "The quantities don't add up. Check them and try again.",
     noDiscountOnPromotion: "Items on promotion can't get another discount.",
   },
   validation: {

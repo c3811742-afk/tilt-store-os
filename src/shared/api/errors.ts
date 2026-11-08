@@ -35,6 +35,7 @@ export type ApiErrorCode =
   | 'reasonRequired'
   | 'returnNotAllowed'
   | 'tooManyReturned'
+  | 'quantityMismatch'
   | 'noDiscountOnPromotion';
 
 export class ApiError extends Error {

@@ -99,7 +99,7 @@ export const ReceivingDraft = ({ view, onConfirmed }: { view: ReceivingView; onC
             fields={[
               { key: 'expected', label: t.expected },
               { key: 'received', label: t.received },
-              { key: 'defective', label: t.defective },
+              { key: 'defective', label: t.defective, max: (_variantId: string, row: Record<string, number>) => row.received ?? 0 },
             ]}
             value={counts}
             onChange={(value) => {
