@@ -1,9 +1,7 @@
 import { Route, Routes } from 'react-router';
-import { AppShell, BranchSwitcher, PerRecord } from '@/shared/components';
+import { PerRecord } from '@/shared/components';
 import { relativeTo, routes } from '@/shared/constants';
 import { NotFoundPage } from '@/features/common/pages/NotFoundPage';
-import { StaffNotificationsPage } from '@/features/common/pages/StaffNotificationsPage';
-import { managerNav } from './constants/nav';
 import { DashboardPage } from './pages/DashboardPage';
 import { StaffPage } from './pages/StaffPage';
 import { StockPage } from './pages/StockPage';
@@ -24,8 +22,7 @@ const relative = (path: string) => relativeTo(base, path);
 // Paths come from routes.manager; they're matched relative to its home page.
 export const ManagerRoutes = () => (
   <Routes>
-    <Route element={<AppShell nav={managerNav} notificationsTo={routes.manager.notifications} topStart={<BranchSwitcher />} />}>
-      <Route path={relative(routes.manager.notifications)} element={<StaffNotificationsPage />} />
+    <Route>
       <Route index element={<DashboardPage />} />
       <Route path={relative(routes.manager.staff)} element={<StaffPage />} />
       <Route path={relative(routes.manager.stock)} element={<StockPage />} />

@@ -6,7 +6,12 @@ import type { Id, IsoDate, OnlineOrder } from '@/shared/types';
 // the till, registers open today and online orders. Added at the end of the seed, after the sales history exists.
 // Names, amounts and times are made up for the demo.
 
-const at = (day: IsoDate, hour: number, minute = 0) => new Date(`${day}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`).toISOString();
+// A time on `day`; minutes past 59 roll over into the next hour (e.g. a fourth till opening at 10:60 is 11:00).
+const at = (day: IsoDate, hour: number, minute = 0) => {
+  const time = new Date(`${day}T00:00:00`);
+  time.setMinutes(hour * 60 + minute);
+  return time.toISOString();
+};
 
 export const addStaffDemoData = (data: Database, newId: () => string, today: IsoDate) => {
   const userWith = (roleId: string, branchId: Id) => data.users.filter((user) => user.status === 'active' && user.roleIds.includes(roleId) && user.branchIds.includes(branchId));

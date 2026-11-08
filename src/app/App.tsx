@@ -1,33 +1,33 @@
-import type { ReactNode } from 'react';
-import { HashRouter, Navigate, Route, Routes } from 'react-router';
+import { HashRouter, Route, Routes } from 'react-router';
 import { routes } from '@/shared/constants';
 import { SignInPage } from '@/features/common/pages/SignInPage';
 import { NotFoundPage } from '@/features/common/pages/NotFoundPage';
+import { NotificationsPage } from '@/features/common/pages/NotificationsPage';
+import { AccountPage, ChangePasswordPage } from '@/features/common/pages/AccountPage';
+import { HelpPage } from '@/features/common/pages/HelpPage';
 import { OwnerRoutes } from '@/features/owner';
 import { ManagerRoutes } from '@/features/manager';
 import { StorekeeperRoutes } from '@/features/stock';
 import { DriverRoutes } from '@/features/driver';
 import { OnlineRoutes } from '@/features/online';
-import type { BuiltInRole, BranchKind } from '@/shared/types';
+import { CashierRoutes } from '@/features/cashier';
+import { ItRoutes } from '@/features/it';
+import { BrandRoutes } from '@/features/brand';
+import { installErrorLog } from '@/shared/api';
 import { AppErrorBoundary } from './AppErrorBoundary';
+import { AppFrame } from './frame/AppFrame';
 import { ThemeProvider } from './providers/ThemeProvider';
 import { SessionProvider } from './providers/SessionProvider';
 import { ReferenceProvider } from './providers/ReferenceProvider';
-import { RequireOwner } from './routing/RequireOwner';
-import { RequireRole } from './routing/RequireRole';
 import { BranchScopeProvider } from './providers/BranchScopeProvider';
+import { HomeRedirect } from './routing/HomeRedirect';
+import { RequireBranch } from './routing/RequireBranch';
+import { RequireOwner } from './routing/RequireOwner';
+import { RequirePermission } from './routing/RequirePermission';
+import { RequireSignedIn } from './routing/RequireSignedIn';
 
-// Branch staff only see their own branches: managers their stores, storekeepers their stores or the warehouse.
-// The online store is run by the online orders staff, so it is not one of a manager's branches.
-const managerBranches: readonly BranchKind[] = ['store'];
-const storekeeperBranches: readonly BranchKind[] = ['store', 'warehouse'];
-
-// A role's pages, behind its sign-in check and with the reference data loaded.
-const rolePages = (role: BuiltInRole, pages: ReactNode, branches?: readonly BranchKind[]) => (
-  <RequireRole role={role}>
-    <ReferenceProvider>{branches ? <BranchScopeProvider kinds={branches}>{pages}</BranchScopeProvider> : pages}</ReferenceProvider>
-  </RequireRole>
-);
+// Errors anywhere in the app are kept for the IT admin's error log.
+installErrorLog();
 
 // HashRouter (URLs like /#/stock/123): GitHub Pages has no server-side routing,
 // so normal paths would 404 when a page is refreshed or opened from a link.
@@ -37,22 +37,96 @@ export const App = () => (
       <AppErrorBoundary>
         <SessionProvider>
           <Routes>
-            <Route path={routes.home} element={<Navigate to={routes.signIn} replace />} />
+            <Route path={routes.home} element={<HomeRedirect />} />
             <Route path={routes.signIn} element={<SignInPage />} />
+            {/* Every signed-in page, inside the same frame. Each role's pages check the role. */}
             <Route
-              path={`${routes.owner.dashboard}/*`}
               element={
-                <RequireOwner>
+                <RequireSignedIn>
                   <ReferenceProvider>
-                    <OwnerRoutes />
+                    <BranchScopeProvider>
+                      <AppFrame />
+                    </BranchScopeProvider>
                   </ReferenceProvider>
-                </RequireOwner>
+                </RequireSignedIn>
               }
-            />
-            <Route path={`${routes.manager.dashboard}/*`} element={rolePages('manager', <ManagerRoutes />, managerBranches)} />
-            <Route path={`${routes.storekeeper.home}/*`} element={rolePages('storekeeper', <StorekeeperRoutes />, storekeeperBranches)} />
-            <Route path={`${routes.driver.jobs}/*`} element={rolePages('driver', <DriverRoutes />)} />
-            <Route path={`${routes.online.orders}/*`} element={rolePages('online', <OnlineRoutes />)} />
+            >
+              <Route
+                path={`${routes.owner.dashboard}/*`}
+                element={
+                  <RequireOwner>
+                    <OwnerRoutes />
+                  </RequireOwner>
+                }
+              />
+              {/* Branch staff only see their own branches: the pages work in the branch picked in the top bar. */}
+              <Route
+                path={`${routes.manager.dashboard}/*`}
+                element={
+                  <RequirePermission role="manager">
+                    <RequireBranch>
+                      <ManagerRoutes />
+                    </RequireBranch>
+                  </RequirePermission>
+                }
+              />
+              <Route
+                path={`${routes.storekeeper.home}/*`}
+                element={
+                  <RequirePermission role="storekeeper">
+                    <RequireBranch>
+                      <StorekeeperRoutes />
+                    </RequireBranch>
+                  </RequirePermission>
+                }
+              />
+              <Route
+                path={`${routes.cashier.sell}/*`}
+                element={
+                  <RequirePermission permission="sales.sell">
+                    <RequireBranch>
+                      <CashierRoutes />
+                    </RequireBranch>
+                  </RequirePermission>
+                }
+              />
+              <Route
+                path={`${routes.driver.jobs}/*`}
+                element={
+                  <RequirePermission role="driver">
+                    <DriverRoutes />
+                  </RequirePermission>
+                }
+              />
+              <Route
+                path={`${routes.online.orders}/*`}
+                element={
+                  <RequirePermission role="online">
+                    <OnlineRoutes />
+                  </RequirePermission>
+                }
+              />
+              <Route
+                path={`${routes.it.data}/*`}
+                element={
+                  <RequirePermission role="it">
+                    <ItRoutes />
+                  </RequirePermission>
+                }
+              />
+              <Route
+                path={`${routes.brand.home}/*`}
+                element={
+                  <RequirePermission permission="brandPortal.view">
+                    <BrandRoutes />
+                  </RequirePermission>
+                }
+              />
+              <Route path={routes.notifications} element={<NotificationsPage />} />
+              <Route path={routes.account} element={<AccountPage />} />
+              <Route path={routes.changePassword} element={<ChangePasswordPage />} />
+              <Route path={routes.help} element={<HelpPage />} />
+            </Route>
             <Route path={routes.notFound} element={<NotFoundPage />} />
           </Routes>
         </SessionProvider>

@@ -1,8 +1,8 @@
-import type { AppShellNavGroup } from '@/shared/components';
+import type { NavGroup } from '@/shared/components';
 import { routes } from '@/shared/constants';
 
 // The owner's side menu, in order.
-export const ownerNav: AppShellNavGroup[] = [
+export const ownerNav: NavGroup[] = [
   {
     key: 'overview',
     items: [

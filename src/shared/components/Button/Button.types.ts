@@ -16,4 +16,5 @@ export interface ButtonProps {
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
   onClick?: MouseEventHandler<HTMLButtonElement>;
+  href?: string; // an outside link (e.g. WhatsApp): the button opens it in a new tab. App pages use routes, not this.
 }

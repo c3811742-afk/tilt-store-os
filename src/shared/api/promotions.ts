@@ -2,7 +2,8 @@ import type { Id, Product, PromoCode, Promotion, PromotionState } from '@/shared
 import { currentTerms, nowIso, promotionCovers, promotionState, today } from '@/shared/utils';
 import { ApiError } from './errors';
 import { salesFacts, totalsOf } from './facts';
-import { actor, db, diff, findById, logActivity, mutate, newId, respond } from './server';
+import { routes } from '@/shared/constants';
+import { actor, db, diff, findById, logActivity, mutate, newId, notify, respond } from './server';
 
 export interface PromotionResults {
   units: number;
@@ -99,6 +100,8 @@ export const decidePromotion = (promotionId: Id, approve: boolean, reason?: stri
       .filter((approval) => approval.ref?.type === 'promotion' && approval.ref.id === promotionId && approval.status === 'pending')
       .forEach((approval) => Object.assign(approval, { status: approve ? 'approved' : 'rejected', decidedById: me, decidedAt: nowIso(), reason }));
     logActivity({ action: approve ? 'approve' : 'reject', target: { type: 'promotion', id: promotion.id, label: promotion.name }, changes: reason ? [{ field: 'reason', from: null, to: reason }] : undefined });
+    const brandPeople = db.users.filter((user) => promotion.requestedByBrandId && user.brandId === promotion.requestedByBrandId).map((user) => user.id);
+    notify(approve ? 'promotionApproved' : 'promotionRejected', { name: promotion.name, from: promotion.startDate, to: promotion.endDate, reason: reason ?? '' }, routes.brand.promotions, brandPeople);
     return promotion;
   });
 

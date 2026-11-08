@@ -1,8 +1,8 @@
-import type { AppShellNavGroup } from '@/shared/components';
+import type { NavGroup } from '@/shared/components';
 import { routes } from '@/shared/constants';
 
 // The online orders staff's side menu.
-export const onlineNav: AppShellNavGroup[] = [
+export const onlineNav: NavGroup[] = [
   {
     key: 'online',
     items: [

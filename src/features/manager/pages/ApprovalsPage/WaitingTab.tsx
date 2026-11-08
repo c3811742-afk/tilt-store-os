@@ -1,21 +1,20 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { decideBranchApproval, type ApprovalView } from '@/shared/api';
-import { ApprovalPinDialog, Badge, Button, Card, DecisionModal, Notice, Stack, Text } from '@/shared/components';
+import { Badge, Button, Card, DecisionModal, Notice, Stack, Text } from '@/shared/components';
 import { routes, toPath } from '@/shared/constants';
-import { useBranchScope, useFormat, useLocale } from '@/shared/hooks';
+import { useFormat, useLocale } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { fillText } from '@/shared/utils';
 
-// Requests waiting for the manager. Till requests can be approved in the app or with the PIN at the till; requests
-// about a transfer or a count open that record. Requests the manager may not decide say why.
+// Requests waiting for the manager: what the tills sent to the manager's phone, and requests about a transfer or a
+// count (which open that record). At the till itself, the manager approves with their PIN on the cashier's screen.
+// Requests the manager may not decide say why.
 export const WaitingTab = ({ views }: { views: ApprovalView[] }) => {
   const { text } = useLocale();
   const format = useFormat();
   const navigate = useNavigate();
-  const { branchId } = useBranchScope();
   const [deciding, setDeciding] = useState<{ view: ApprovalView; decision: 'approve' | 'reject' } | null>(null);
-  const [atTill, setAtTill] = useState<ApprovalView | null>(null);
   const t = text.manager.approvals;
   const kinds = text.owner.approvalsPage.kinds;
 
@@ -54,9 +53,6 @@ export const WaitingTab = ({ views }: { views: ApprovalView[] }) => {
                   </Button>
                 ) : (
                   <>
-                    <Button size="sm" variant="muted" onClick={() => setAtTill(view)}>
-                      {t.atTill}
-                    </Button>
                     <Button size="sm" variant="secondary" onClick={() => setDeciding({ view, decision: 'reject' })}>
                       {text.staff.decision.reject}
                     </Button>
@@ -77,7 +73,6 @@ export const WaitingTab = ({ views }: { views: ApprovalView[] }) => {
         onClose={() => setDeciding(null)}
         onConfirm={({ reasonId, note }) => decideBranchApproval(deciding?.view.approval.id ?? '', deciding?.decision === 'approve', reasonId, note)}
       />
-      {atTill && <ApprovalPinDialog open approvalId={atTill.approval.id} branchId={branchId} summary={atTill.approval.summary} onClose={() => setAtTill(null)} onApproved={() => setAtTill(null)} />}
     </Stack>
   );
 };

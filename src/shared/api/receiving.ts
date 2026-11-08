@@ -264,14 +264,17 @@ export const addProductWhileReceiving = (branchId: Id, input: NewProductInput) =
     return { id: product.id, name: product.name };
   });
 
-// The brand's products, to pick from when adding a size or colour. Names only.
-export const listBrandProducts = (brandId: Id) =>
-  respond(() =>
-    db.products
-      .filter((product) => product.brandId === brandId && !product.archived)
-      .map((product) => ({ id: product.id, name: product.name, sizes: [...new Set(product.variants.map((variant) => variant.size))], colors: [...new Set(product.variants.map((variant) => variant.color))] }))
-      .sort((a, b) => a.name.localeCompare(b.name)),
-  );
+// A brand's products, to pick from (adding a size or colour while receiving, asking for a discount). Names, photos,
+// sizes and colours only. A brand partner always gets their own brand, whatever `brandId` is.
+export const listBrandProducts = (brandId?: Id) =>
+  respond(() => {
+    const brand = actor().brandId ?? brandId;
+    if (!brand) throw new ApiError('notAllowed');
+    return db.products
+      .filter((product) => product.brandId === brand && !product.archived)
+      .map((product) => ({ id: product.id, name: product.name, photo: product.photo, sizes: [...new Set(product.variants.map((variant) => variant.size))], colors: [...new Set(product.variants.map((variant) => variant.color))] }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  });
 
 // Barcode labels and price tags: each item with its barcode and selling price in the branch's currency.
 export const getLabelItems = (branchId: Id, variantIds: Id[]) =>

@@ -78,6 +78,7 @@ export interface Settings {
     countReasons: ConfigOption[];
     expenseCategories: ConfigOption[];
     approvalReasons: ConfigOption[];
+    cashMoveReasons: ConfigOption[];
   };
 }
 

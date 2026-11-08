@@ -1,8 +1,8 @@
-import type { AppShellNavGroup } from '@/shared/components';
+import type { NavGroup } from '@/shared/components';
 import { routes } from '@/shared/constants';
 
 // The storekeeper's side menu, in order.
-export const storekeeperNav: AppShellNavGroup[] = [
+export const storekeeperNav: NavGroup[] = [
   {
     key: 'work',
     items: [

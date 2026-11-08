@@ -1,0 +1,24 @@
+.barcode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-1);
+  inline-size: 100%;
+  max-inline-size: var(--barcode-max-width);
+  margin: 0;
+  margin-inline: auto;
+}
+
+/* Always black on white, so it scans on screen and on paper in both themes. */
+.bars {
+  inline-size: 100%;
+  block-size: var(--barcode-height);
+  background: var(--colors-print-paper);
+  fill: var(--colors-print-ink);
+}
+
+.value {
+  font-size: var(--text-styles-caption-font-size);
+  font-variant-numeric: var(--numeric-tabular);
+  letter-spacing: var(--text-styles-label-letter-spacing);
+}

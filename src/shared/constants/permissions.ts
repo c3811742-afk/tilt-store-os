@@ -8,6 +8,7 @@ export const permissionGroups = {
   money: ['payouts.manage', 'expenses.manage', 'approvals.decide'],
   admin: ['branches.manage', 'tax.manage', 'staff.manage', 'policies.manage', 'settings.manage'],
   brandPortal: ['brandPortal.view'],
+  system: ['system.admin'],
 } as const;
 
 export type PermissionGroup = keyof typeof permissionGroups;

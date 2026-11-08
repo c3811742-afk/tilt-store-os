@@ -3,31 +3,17 @@ import { addDays, inRange, nowIso, saleTotal, toIsoDate, today } from '@/shared/
 import { ApiError } from './errors';
 import { assertBranch, hasRole } from './branchScope';
 import { actor, db, findById, isOwner, logActivity, mutate, newId, notify, respond } from './server';
+import { expectedCashOf } from './register';
 
 // Registers (tills) of a branch for its manager: who is on each one, the cash it should hold, cash checks at any
 // time, closing a register for a cashier, the difference at closing with a note, approving the closing, and the
 // day's closing report per payment method. Takings only, never cost or profit.
-
-const isCash = (methodId: Id) => db.settings.paymentMethods.find((method) => method.id === methodId)?.kind === 'cash';
 
 const assertManager = (branchId: Id) => {
   const me = actor();
   assertBranch(branchId, me);
   if (!isOwner(me) && !hasRole(me, 'manager')) throw new ApiError('notAllowed');
   return me;
-};
-
-// The cash a register should hold: its opening float, plus cash taken by its cashier while it was open, minus cash
-// given back for returns.
-export const expectedCashOf = (shift: Shift, until: string = shift.closedAt ?? nowIso()) => {
-  const within = (at: string) => at >= shift.openedAt && at <= until;
-  const taken = db.sales
-    .filter((sale) => sale.branchId === shift.branchId && sale.cashierId === shift.cashierId && !sale.voidedAt && within(sale.at))
-    .reduce((sum, sale) => sum + sale.payments.filter((payment) => isCash(payment.methodId)).reduce((total, payment) => total + payment.amount, 0), 0);
-  const given = db.returns
-    .filter((saleReturn) => saleReturn.branchId === shift.branchId && saleReturn.byId === shift.cashierId && within(saleReturn.at))
-    .reduce((sum, saleReturn) => sum + saleReturn.refunds.filter((refund) => isCash(refund.methodId)).reduce((total, refund) => total + refund.amount, 0), 0);
-  return Math.round((shift.openingCash + taken - given) * 100) / 100;
 };
 
 export interface RegisterView {

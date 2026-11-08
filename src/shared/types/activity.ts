@@ -58,7 +58,9 @@ export type ActivityAction =
   | 'lock'
   | 'signIn'
   | 'export'
-  | 'send';
+  | 'send'
+  | 'signOut'
+  | 'backup';
 
 export type ActivityTarget =
   | 'brand'
@@ -89,7 +91,12 @@ export type ActivityTarget =
   | 'sale'
   | 'return'
   | 'shift'
-  | 'eReceipt';
+  | 'eReceipt'
+  | 'customer'
+  | 'reservation'
+  | 'heldSale'
+  | 'record'
+  | 'backup';
 
 export interface ActivityChange {
   field: string;
@@ -123,7 +130,11 @@ export type AlertKind =
   | 'pickupMismatch'
   | 'defectiveReturn'
   | 'eReceiptFailed'
-  | 'approvalWaiting';
+  | 'approvalWaiting'
+  | 'approvalApproved'
+  | 'approvalRejected'
+  | 'promotionApproved'
+  | 'promotionRejected';
 
 // Alerts only branch staff receive (the owners' own alerts, which they can switch off, are AlertKind).
 export type StaffAlertKind = 'transferArrived' | 'stockRequestDecided' | 'transferAssigned' | 'transferReady' | 'lowOnFloor' | 'countSubmitted' | 'transferDecided';

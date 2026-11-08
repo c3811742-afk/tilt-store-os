@@ -1,5 +1,3 @@
-import type { BuiltInRole } from '@/shared/types';
-
 // Every path in the app, defined once. Build links with these, never by hand.
 export const routes = {
   home: '/',
@@ -42,7 +40,6 @@ export const routes = {
     report: '/owner/reports/:reportId',
     approvals: '/owner/approvals',
     policies: '/owner/policies',
-    notifications: '/owner/notifications',
     activity: '/owner/activity',
     customers: '/owner/customers',
     customer: '/owner/customers/:customerId',
@@ -62,7 +59,6 @@ export const routes = {
     approvals: '/manager/approvals',
     registers: '/manager/registers',
     reports: '/manager/reports',
-    notifications: '/manager/notifications',
   },
   storekeeper: {
     home: '/storekeeper',
@@ -80,32 +76,48 @@ export const routes = {
     brandReturns: '/storekeeper/brand-returns',
     newBrandReturn: '/storekeeper/brand-returns/new',
     brandReturn: '/storekeeper/brand-returns/:returnId',
-    notifications: '/storekeeper/notifications',
   },
   driver: {
     jobs: '/driver',
     job: '/driver/jobs/:transferId',
-    notifications: '/driver/notifications',
   },
   online: {
     orders: '/online',
     order: '/online/orders/:orderId',
     stock: '/online/stock',
-    notifications: '/online/notifications',
+  },
+  // Pages every signed-in person has
+  notifications: '/notifications',
+  account: '/account',
+  changePassword: '/account/password',
+  help: '/help',
+  lock: '/lock', // the PIN screen: switch person or come back after an automatic log-out
+  cashier: {
+    sell: '/cashier',
+    held: '/cashier/held',
+    customers: '/cashier/customers',
+    customer: '/cashier/customers/:customerId',
+    stock: '/cashier/stock',
+    stockItem: '/cashier/stock/:productId',
+    returns: '/cashier/returns',
+    receipts: '/cashier/receipts',
+    receipt: '/cashier/receipts/:saleId',
+    shift: '/cashier/shift',
+    mySales: '/cashier/my-sales',
+  },
+  it: {
+    data: '/it', // the IT admin's start page: every database table
+    errors: '/it/errors',
+    backups: '/it/backups',
+  },
+  brand: {
+    home: '/brand',
+    sales: '/brand/sales',
+    stock: '/brand/stock',
+    returns: '/brand/returns',
+    promotions: '/brand/promotions',
   },
 } as const;
-
-// The page each built-in role starts on after signing in. Roles without screens yet have no entry.
-// A person with several roles starts on the first one in this order.
-export const roleHomes = [
-  ['owner', routes.owner.dashboard],
-  ['manager', routes.manager.dashboard],
-  ['storekeeper', routes.storekeeper.home],
-  ['online', routes.online.orders],
-  ['driver', routes.driver.jobs],
-] as const satisfies readonly (readonly [BuiltInRole, string])[];
-
-export const homeFor = (roles: readonly BuiltInRole[]) => roleHomes.find(([role]) => roles.includes(role))?.[1];
 
 // A path inside a role's routes, for <Route path>: relativeTo(routes.manager.dashboard, routes.manager.stock) -> 'stock'
 export const relativeTo = (base: string, path: string) => path.replace(`${base}/`, '');

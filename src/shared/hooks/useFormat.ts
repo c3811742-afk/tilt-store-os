@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { Id, Localized } from '@/shared/types';
-import { countryName, currencyName, formatDate, formatDateTime, formatNumber, formatPercent, formatPrice, localized } from '@/shared/utils';
+import { countryName, currencyName, formatDate, formatDateTime, formatNumber, formatPercent, formatPrice, formatTime, localized } from '@/shared/utils';
 import { useLocale } from './useLocale';
 import { useReference } from './useReference';
 
@@ -26,6 +26,7 @@ export const useFormat = () => {
       percent: (value: number, digits?: number) => formatPercent(value, locale, digits),
       date: (value: string) => formatDate(value, locale),
       dateTime: (value: string) => formatDateTime(value, locale),
+      time: (value: string) => formatTime(value, locale),
       shortDate: (value: string) => formatDate(value, locale, { day: 'numeric', month: 'short' }),
       month: (value: string) => formatDate(`${value.slice(0, 7)}-01T12:00:00`, locale, { month: 'long', year: 'numeric' }),
       text: (value: Localized | undefined) => localized(value, locale),

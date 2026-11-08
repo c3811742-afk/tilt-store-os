@@ -18,6 +18,7 @@ export const Button = (props: ButtonProps) => {
     disabled,
     type,
     onClick,
+    href,
   } = withDefaults(buttonDefaults, props);
   const variantStyle = buttonVariants[variant];
 
@@ -30,6 +31,14 @@ export const Button = (props: ButtonProps) => {
     '--button-height': buttonHeights[size],
     '--button-radius': radius,
   } as CSSProperties;
+
+  if (href && !disabled) {
+    return (
+      <a className={cx(styles.button, fullWidth && styles.fullWidth)} style={style} href={href} target="_blank" rel="noreferrer">
+        {children}
+      </a>
+    );
+  }
 
   return (
     <button

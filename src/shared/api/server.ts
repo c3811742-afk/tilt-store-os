@@ -1,8 +1,9 @@
 import { mockConfig, storageKeys } from '@/shared/constants';
-import type { ActivityAction, ActivityChange, ActivityEntry, ActivityTarget, AlertKind, Id, User } from '@/shared/types';
+import type { ActivityAction, ActivityChange, ActivityEntry, ActivityTarget, AlertKind, Id, StaffAlertKind, User } from '@/shared/types';
 import { compressText, decompressText, nowIso, safeAsync, storage } from '@/shared/utils';
 import { buildSeed } from '@/shared/mocks/seed';
 import type { Database } from './database';
+import { countOfflineChange } from './connection';
 import { ApiError } from './errors';
 
 export const newId = () => crypto.randomUUID();
@@ -42,6 +43,7 @@ export const onDataChange = (listener: () => void) => {
 };
 
 const changed = () => {
+  countOfflineChange();
   save();
   setTimeout(() => listeners.forEach((listener) => listener()));
 };
@@ -62,6 +64,14 @@ export const mutate = async <T>(handle: () => T): Promise<T> => {
   const result = await respond(handle);
   changed();
   return result;
+};
+
+// Replaces all the data with a backup (IT admin › Backups › Restore).
+export const replaceDatabase = async (data: Database) => {
+  await ready;
+  await wait(mockConfig.delayMs);
+  db = data;
+  changed();
 };
 
 // Puts the seed data back (Settings › Reset demo data).
@@ -143,9 +153,11 @@ const toLogValue = (value: unknown) =>
   value === undefined || value === null ? null : typeof value === 'object' ? JSON.stringify(value) : (value as string | number | boolean);
 
 // Sends an alert to the owners who have it turned on, plus any `extraUserIds` (e.g. the branch manager).
-export const notify = (kind: AlertKind, params: Record<string, string>, link: string, extraUserIds: Id[] = []) => {
-  const owners = db.settings.ownerAlerts[kind] ? ownerIds() : [];
-  const userIds = [...new Set([...owners, ...extraUserIds])];
+// `includeOwners: false` sends it only to `extraUserIds` (e.g. a cashier's alert with a link to a cashier page).
+export const notify = (kind: AlertKind | StaffAlertKind, params: Record<string, string>, link: string, extraUserIds: readonly Id[] = [], includeOwners = true) => {
+  const owners = includeOwners && kind in db.settings.ownerAlerts && db.settings.ownerAlerts[kind as AlertKind] ? ownerIds() : [];
+  const muted = (userId: Id) => db.users.find((user) => user.id === userId)?.mutedAlerts?.some((current) => current === kind) ?? false;
+  const userIds = [...new Set([...owners, ...extraUserIds])].filter((userId) => !muted(userId));
   if (!userIds.length) return;
   db.notifications.unshift({ id: newId(), at: nowIso(), kind, userIds, openedBy: [], params, link });
 };

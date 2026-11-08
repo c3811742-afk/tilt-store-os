@@ -3,6 +3,7 @@ import type { Branch, User } from '@/shared/types';
 // The demo's staff. GenZ's owners and staff aren't named in public sources, so every name here is a
 // placeholder to replace with the real team (Staff, users & permissions).
 export const demoPassword = 'genz2026';
+export const firstLoginPassword = 'welcome2026'; // a temporary password the owner gave, changed on first sign-in
 
 export const seedPeople = (branches: Branch[], createdAt: string): User[] => {
   let count = 0;
@@ -47,5 +48,8 @@ export const seedPeople = (branches: Branch[], createdAt: string): User[] => {
     user('Mahmoud Saeed', ['role-driver'], [id('b-warehouse'), id('b-park-mall'), id('b-royal-park')]),
     user('Kracked Studios team', ['role-brand'], [], { brandId: 'br-kracked-studios' }),
     user('Ali Mostafa', ['role-cashier'], [id('b-park-mall')], { status: 'inactive' }),
+    user('Tarek Nabil', ['role-it'], all),
+    user('Nour Hesham', ['role-cashier'], [id('b-park-mall'), id('b-royal-park')]),
+    user('Mona Fathy', ['role-cashier'], [id('b-royal-park')], { password: firstLoginPassword, mustChangePassword: true }),
   ];
 };

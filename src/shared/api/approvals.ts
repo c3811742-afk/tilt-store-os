@@ -1,4 +1,5 @@
 import type { ApprovalRequest, Id } from '@/shared/types';
+import { routes } from '@/shared/constants';
 import { nowIso } from '@/shared/utils';
 import { ApiError } from './errors';
 import { decideRedistribution, decideWriteOff } from './costing';
@@ -6,7 +7,7 @@ import { decidePromotion } from './promotions';
 import { decideCount, decideStockRequest } from './stock';
 import { decideStatement } from './payouts';
 import { decideTransfer } from './transfers';
-import { actor, db, findById, logActivity, mutate, respond } from './server';
+import { actor, db, findById, logActivity, mutate, notify, respond } from './server';
 
 export const listApprovals = (filter: { status?: ApprovalRequest['status']; level?: ApprovalRequest['level'] }) =>
   respond(() =>
@@ -50,6 +51,7 @@ export const decideApproval = async (approvalId: Id, approve: boolean, reason?: 
           currency: current.currency,
           flagged: true,
         });
+        notify(approve ? 'approvalApproved' : 'approvalRejected', { summary: current.summary, user: actor().name, reason: reason ?? '' }, routes.notifications, [current.requestedById]);
         return current;
       });
   }

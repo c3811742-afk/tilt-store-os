@@ -44,3 +44,10 @@ textarea {
     animation-duration: var(--motion-none) !important;
   }
 }
+
+/* When a page has a <PrintArea> (a receipt, a shift summary), it is the only thing printed. */
+@media print {
+  body:has(> [data-print-area]) > :not([data-print-area]) {
+    display: none;
+  }
+}

@@ -1,19 +1,33 @@
-import { homeFor, storageKeys } from '@/shared/constants';
-import type { BuiltInRole, User } from '@/shared/types';
+import { storageKeys } from '@/shared/constants';
+import type { Permission } from '@/shared/constants/permissions';
+import type { AlertKind, BuiltInRole, User } from '@/shared/types';
 import { nowIso, storage } from '@/shared/utils';
 import { ApiError } from './errors';
 import { builtInRolesOf } from './branchScope';
-import { db, isOwner, logActivity, mutate, respond, sessionUserId } from './server';
+import { actor, db, isOwner, logActivity, mutate, respond, sessionUserId } from './server';
 
 export interface SessionUser {
   user: Omit<User, 'password' | 'pin' | 'approvalPin'>;
   isOwner: boolean;
-  roles: BuiltInRole[]; // the built-in roles behind the user's roles: they decide which screens open
+  roles: BuiltInRole[]; // the kinds of role the person has (owner, cashier, it...)
+  permissions: Permission[]; // everything their roles allow
 }
 
 const toSession = (user: User): SessionUser => {
   const { password: _password, pin: _pin, approvalPin: _approvalPin, ...safe } = user;
-  return { user: safe, isOwner: isOwner(user), roles: builtInRolesOf(user) };
+  const roles = db.roles.filter((role) => user.roleIds.includes(role.id));
+  return {
+    user: safe,
+    isOwner: isOwner(user),
+    roles: builtInRolesOf(user),
+    permissions: [...new Set(roles.flatMap((role) => role.permissions))],
+  };
+};
+
+const startSession = (user: User, how: 'password' | 'pin') => {
+  storage.set(storageKeys.session, user.id);
+  logActivity({ action: 'signIn', target: { type: 'user', id: user.id, label: user.name }, userId: user.id, at: nowIso(), changes: [{ field: 'method', from: null, to: how }] });
+  return toSession(user);
 };
 
 // The signed-in user, or null.
@@ -29,35 +43,88 @@ export const signIn = (login: string, password: string) =>
     const needle = login.trim().toLowerCase();
     const user = db.users.find((current) => current.status !== 'inactive' && (current.username === needle || current.email.toLowerCase() === needle));
     if (!user || user.password !== password) throw new ApiError('wrongPassword');
-    storage.set(storageKeys.session, user.id);
-    logActivity({ action: 'signIn', target: { type: 'user', id: user.id, label: user.name }, userId: user.id, at: nowIso() });
-    return toSession(user);
+    return startSession(user, 'password');
   });
 
-export const signOut = () =>
-  respond(() => {
+// Quick sign-in on a shared till: the person's own 4-digit PIN. Brand partners don't use the tills.
+export const signInWithPin = (pin: string) =>
+  mutate(() => {
+    const user = db.users.find((current) => current.status === 'active' && !current.brandId && current.pin === pin.trim());
+    if (!user) throw new ApiError('wrongPin');
+    return startSession(user, 'pin');
+  });
+
+// Logs out. `reason` 'idle' when the system logged the person out after a period of inactivity.
+export const signOut = (reason: 'manual' | 'idle' | 'switch' = 'manual') =>
+  mutate(() => {
+    const user = db.users.find((current) => current.id === sessionUserId());
+    if (user) logActivity({ action: 'signOut', target: { type: 'user', id: user.id, label: user.name }, userId: user.id, changes: [{ field: 'reason', from: null, to: reason }] });
     storage.set(storageKeys.session, '');
     return true;
   });
 
-// One account for each role that has screens, on the demo's sign-in screen, so a visitor can try each one.
+// Changes the signed-in person's password. Also used on first sign-in, to replace the owner's temporary password.
+export const changePassword = (current: string, next: string) =>
+  mutate(() => {
+    const user = actor();
+    if (user.password !== current) throw new ApiError('wrongCurrentPassword');
+    if (next === current) throw new ApiError('samePassword');
+    user.password = next;
+    user.mustChangePassword = false;
+    logActivity({ action: 'update', target: { type: 'user', id: user.id, label: user.name }, changes: [{ field: 'password', from: null, to: null }] });
+    return toSession(user);
+  });
+
+// The signed-in person's photo. Their name can only be changed by the owner.
+export const setMyPhoto = (photo: string | undefined) =>
+  mutate(() => {
+    const user = actor();
+    user.photo = photo;
+    logActivity({ action: 'update', target: { type: 'user', id: user.id, label: user.name }, changes: [{ field: 'photo', from: null, to: photo ? 'new' : null }] });
+    return toSession(user);
+  });
+
+// The alerts the signed-in person turned off.
+export const setMyMutedAlerts = (kinds: AlertKind[]) =>
+  mutate(() => {
+    const user = actor();
+    user.mutedAlerts = kinds;
+    logActivity({ action: 'update', target: { type: 'user', id: user.id, label: user.name }, changes: [{ field: 'alerts', from: null, to: kinds.length }] });
+    return toSession(user);
+  });
+
+export interface DemoAccount {
+  name: string;
+  username: string;
+  password: string;
+  pin: string;
+  role: BuiltInRole;
+  branch?: string; // branch staff: the branch the account works in
+  temporary: boolean; // a temporary password from the owner, changed on first sign-in
+}
+
+// The roles that have screens in this demo, in menu order. A person with several roles starts on the first one.
+export const rolesWithScreens: BuiltInRole[] = ['owner', 'it', 'manager', 'storekeeper', 'online', 'driver', 'cashier', 'brandPartner'];
+
+// Roles whose screens work in one branch at a time (picked in the top bar). The demo shows one account per branch
+// for them, so each branch can be tried.
+export const branchRoles: BuiltInRole[] = ['manager', 'storekeeper', 'cashier'];
+
+// The people a visitor can try on the sign-in screen: every owner, one account per branch for branch roles, one
+// account for each other role, and anyone with a temporary password (to try the first sign-in).
 export const demoAccounts = () =>
-  respond(() => {
-    const active = db.users.filter((user) => user.status === 'active');
+  respond((): DemoAccount[] => {
     const shown = new Set<string>();
-    return active.flatMap((user) => {
-      const roles = builtInRolesOf(user);
-      const home = homeFor(roles);
-      const role = roles.find((current) => homeFor([current]) === home);
-      // Every owner, and a branch manager and storekeeper for each branch, so each branch can be tried; one account for other roles.
-      if (!home || !role) return [];
-      const perBranch = role === 'manager' || role === 'storekeeper';
-      const branchOf = db.branches.find((branch) => (branch.kind === 'store' || (role === 'storekeeper' && branch.kind === 'warehouse')) && user.branchIds.includes(branch.id));
-      const key = perBranch ? `${role}|${branchOf?.id ?? ''}` : role;
-      if (role !== 'owner' && shown.has(key)) return [];
-      shown.add(key);
-      const roleName = db.roles.find((current) => current.builtIn === role)?.name;
-      const branch = perBranch ? branchOf?.name : undefined;
-      return [{ name: user.name, username: user.username, password: user.password, role, roleName, branch }];
-    });
+    return rolesWithScreens.flatMap((kind) =>
+      db.users
+        .filter((user) => user.status === 'active' && rolesWithScreens.find((role) => builtInRolesOf(user).includes(role)) === kind)
+        .flatMap((user) => {
+          const perBranch = branchRoles.includes(kind);
+          const branch = perBranch ? db.branches.find((current) => current.kind !== 'online' && user.branchIds.includes(current.id)) : undefined;
+          const key = perBranch ? `${kind}|${branch?.id ?? ''}` : kind;
+          if (kind !== 'owner' && !user.mustChangePassword && shown.has(key)) return [];
+          shown.add(key);
+          return [{ name: user.name, username: user.username, password: user.password, pin: user.brandId ? '' : user.pin, role: kind, branch: branch?.name, temporary: user.mustChangePassword }];
+        }),
+    );
   });

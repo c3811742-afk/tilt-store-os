@@ -1,9 +1,7 @@
 import { Route, Routes } from 'react-router';
-import { AppShell, BranchSwitcher, PerRecord } from '@/shared/components';
+import { PerRecord } from '@/shared/components';
 import { relativeTo, routes } from '@/shared/constants';
 import { NotFoundPage } from '@/features/common/pages/NotFoundPage';
-import { StaffNotificationsPage } from '@/features/common/pages/StaffNotificationsPage';
-import { storekeeperNav } from './constants/nav';
 import { ReceivingListPage } from './pages/ReceivingListPage';
 import { NewReceivingPage } from './pages/NewReceivingPage';
 import { ReceivingPage } from './pages/ReceivingPage';
@@ -26,8 +24,7 @@ const relative = (path: string) => relativeTo(base, path);
 // Paths come from routes.storekeeper; they're matched relative to its home page.
 export const StorekeeperRoutes = () => (
   <Routes>
-    <Route element={<AppShell nav={storekeeperNav} notificationsTo={routes.storekeeper.notifications} topStart={<BranchSwitcher />} />}>
-      <Route path={relative(routes.storekeeper.notifications)} element={<StaffNotificationsPage />} />
+    <Route>
       <Route path={relative(routes.storekeeper.receiving)} element={<ReceivingListPage />} />
       <Route path={relative(routes.storekeeper.newReceiving)} element={<NewReceivingPage />} />
       <Route path={relative(routes.storekeeper.receivingRecord)} element={<PerRecord><ReceivingPage /></PerRecord>} />

@@ -15,12 +15,14 @@ import type {
   OnlineOrder,
   Expense,
   FeeCharge,
+  HeldSale,
   PriceChange,
   PriceSchedule,
   Product,
   PromoCode,
   Promotion,
   Receiving,
+  Reservation,
   Role,
   Sale,
   SaleReturn,
@@ -78,4 +80,6 @@ export interface Database {
   cashChecks: CashCheck[];
   onlineOrders: OnlineOrder[];
   brandReturns: BrandReturn[];
+  heldSales: HeldSale[]; // sales on hold at the tills
+  reservations: Reservation[]; // pieces held for customers in another branch
 }

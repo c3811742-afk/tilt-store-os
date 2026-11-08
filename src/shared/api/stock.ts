@@ -17,6 +17,12 @@ export const describeVariant = (variantId: Id) => {
     : { productId: '', productName: '', brandId: '', size: '', color: '', sku: '' };
 };
 
+// A variant as one line, for the activity log: 'Linen shirt · M · White'.
+export const variantLabel = (variantId: Id) => {
+  const info = describeVariant(variantId);
+  return [info.productName, info.size, info.color].filter(Boolean).join(' · ');
+};
+
 // ---- Levels and value -----------------------------------------------------------------------------------------
 
 export interface StockFilter {
@@ -203,7 +209,7 @@ export const decideStockRequest = (requestId: Id, decision: 'warehouse' | 'brand
     if (decision === 'brand') request.status = 'sentToBrand';
     if (decision === 'warehouse') {
       request.status = 'sentToWarehouse';
-      const warehouse = db.branches.find((branch) => branch.kind === 'warehouse' && !branch.archived);
+      const warehouse = db.branches.find((branch) => (request.fromBranchId ? branch.id === request.fromBranchId : branch.kind === 'warehouse') && !branch.archived);
       if (warehouse) {
         const transfer = { id: newId(), number: nextNumber('TR', 4), fromBranchId: warehouse.id, toBranchId: request.branchId, lines: request.lines.map((line) => ({ ...line })), status: 'approved' as const, requestedById: request.requestedById, createdAt: nowIso(), note: request.number, decidedById: actor().id, decidedAt: nowIso() };
         db.transfers.push(transfer);

@@ -40,7 +40,7 @@ export interface StockMovement {
   from?: StockPlace;
   to?: StockPlace;
   kind: MovementKind;
-  ref?: { type: 'sale' | 'return' | 'transfer' | 'receiving' | 'count' | 'writeOff' | 'brandReturn' | 'defect' | 'onlineOrder'; id: Id };
+  ref?: { type: 'sale' | 'return' | 'transfer' | 'receiving' | 'count' | 'writeOff' | 'brandReturn' | 'reservation' | 'defect' | 'onlineOrder'; id: Id };
   reason?: string;
   batchId?: Id;
 }
@@ -194,6 +194,8 @@ export interface StockRequest {
   decidedById?: Id;
   decidedAt?: IsoDateTime;
   note?: string;
+  fromBranchId?: Id; // asked from another branch (a cashier for a customer); otherwise from the warehouse
+  customer?: { name: string; phone: string };
 }
 
 export interface StockCount {

@@ -16,10 +16,26 @@ export type ApiErrorCode =
   | 'alreadyDecided'
   | 'wrongPassword'
   | 'notEnoughStock'
-  | 'wrongPin'
-  | 'pinLocked'
   | 'ownRequest'
-  | 'missingReason';
+  | 'missingReason'
+  | 'wrongPin'
+  | 'wrongCurrentPassword'
+  | 'samePassword'
+  | 'shiftClosed'
+  | 'shiftAlreadyOpen'
+  | 'customerRequired'
+  | 'outOfStock'
+  | 'notPaid'
+  | 'approvalNeeded'
+  | 'notEnoughCredit'
+  | 'invalidCode'
+  | 'wrongApprovalPin'
+  | 'approvalPinLocked'
+  | 'noteRequired'
+  | 'reasonRequired'
+  | 'returnNotAllowed'
+  | 'tooManyReturned'
+  | 'noDiscountOnPromotion';
 
 export class ApiError extends Error {
   code: ApiErrorCode;

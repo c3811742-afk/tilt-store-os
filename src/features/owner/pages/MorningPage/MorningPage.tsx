@@ -43,7 +43,7 @@ export const MorningPage = () => {
                     color={vars.colors.warning}
                     items={[
                       { key: 'approvals', label: t.approvals, value: data.pendingApprovals, display: format.number(data.pendingApprovals), to: routes.owner.approvals },
-                      { key: 'alerts', label: t.alerts, value: data.newAlerts, display: format.number(data.newAlerts), to: routes.owner.notifications },
+                      { key: 'alerts', label: t.alerts, value: data.newAlerts, display: format.number(data.newAlerts), to: routes.notifications },
                       { key: 'lowStock', label: t.lowStock, value: data.lowStockItems, display: format.number(data.lowStockItems), to: withQuery(routes.owner.stock, { tab: 'low' }) },
                       { key: 'receipts', label: t.failedReceipts, value: data.failedReceipts, display: format.number(data.failedReceipts), to: withQuery(routes.owner.tax, { tab: 'receipts' }) },
                     ]}

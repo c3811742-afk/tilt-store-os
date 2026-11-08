@@ -1,21 +1,22 @@
-import type { Defect, DefectFoundAt, DefectLiability, Id, LocationKind, StoredFile, WriteOff } from '@/shared/types';
+import { routes } from '@/shared/constants';
+import type { BuiltInRole, Defect, DefectFoundAt, DefectLiability, Id, LocationKind, StoredFile, WriteOff } from '@/shared/types';
 import { currentTerms, nowIso, stockLevels } from '@/shared/utils';
 import { ApiError } from './errors';
-import { assertBranch, hasRole } from './branchScope';
+import { assertBranch, hasRole, staffWithRole } from './branchScope';
 import { currentUnitCost, placeIn } from './engine';
-import { describeVariant } from './stock';
+import { describeVariant, variantLabel } from './stock';
 import { actor, db, findById, isOwner, logActivity, mutate, newId, notify, respond } from './server';
 import { checkStockAlerts } from './stockAlerts';
 
-// Defects and lost stock in a branch, for its manager and storekeeper. Reporting a defect takes the pieces out of
+// Defects and lost stock in a branch, for its manager and storekeeper (a cashier can report a defect from the counter). Reporting a defect takes the pieces out of
 // sellable stock (they become "defective"); marking them to return sets them aside for the brand; lost pieces are
 // written off once the owner approves. The cost of each piece is kept on the record for the owner's reports, but
 // never returned to branch staff.
 
-const assertStaff = (branchId: Id) => {
+const assertStaff = (branchId: Id, roles: BuiltInRole[] = ['manager', 'storekeeper']) => {
   const me = actor();
   assertBranch(branchId, me);
-  if (!isOwner(me) && !hasRole(me, 'manager') && !hasRole(me, 'storekeeper')) throw new ApiError('notAllowed');
+  if (!isOwner(me) && !roles.some((role) => hasRole(me, role))) throw new ApiError('notAllowed');
   return me;
 };
 
@@ -23,6 +24,14 @@ const availableAt = (variantId: Id, branchId: Id, locationId: Id) =>
   stockLevels(db.movements.filter((movement) => movement.variantId === variantId))
     .filter((level) => level.branchId === branchId && level.locationId === locationId && level.status === 'available')
     .reduce((sum, level) => sum + level.qty, 0);
+
+// The location in the branch with the most available pieces of a variant, when there are at least `qty`.
+const fullestPlace = (variantId: Id, branchId: Id, qty: number) => {
+  const level = stockLevels(db.movements.filter((movement) => movement.variantId === variantId))
+    .filter((current) => current.branchId === branchId && current.status === 'available' && current.qty >= qty)
+    .sort((a, b) => b.qty - a.qty)[0];
+  return level && { branchId, locationId: level.locationId, status: 'available' as const };
+};
 
 // The brand carries the cost when its terms say it replaces defects, the store otherwise.
 export const defaultLiability = (variantId: Id): DefectLiability => {
@@ -34,7 +43,7 @@ export interface ReportDefectInput {
   branchId: Id;
   variantId: Id;
   qty: number;
-  locationKind: LocationKind; // where the pieces are: shop floor, back room or storage
+  locationKind?: LocationKind; // where the pieces are: shop floor, back room or storage; when not given, where most are
   reasonId: Id; // the defect type, from the owner's list
   foundAt: DefectFoundAt;
   liability?: DefectLiability; // who carries the cost; the brand's terms decide when not given
@@ -46,13 +55,13 @@ export interface ReportDefectInput {
 // Records a defect and takes the pieces out of sellable stock, against their batch.
 export const reportDefect = (input: ReportDefectInput) =>
   mutate(() => {
-    const me = assertStaff(input.branchId);
+    const me = assertStaff(input.branchId, ['manager', 'storekeeper', 'cashier']);
     const branch = findById(db.branches, input.branchId);
     const info = describeVariant(input.variantId);
     if (!info.productId || !input.reasonId) throw new ApiError('notAllowed');
     const qty = Math.floor(input.qty);
     if (qty < 1) throw new ApiError('notAllowed');
-    const from = placeIn(branch, input.locationKind);
+    const from = input.locationKind ? placeIn(branch, input.locationKind) : (fullestPlace(input.variantId, branch.id, qty) ?? placeIn(branch, 'floor'));
     if (availableAt(input.variantId, branch.id, from.locationId) < qty) throw new ApiError('notEnoughStock');
     const batch =
       (input.batchId && db.batches.find((current) => current.id === input.batchId)) ||
@@ -79,7 +88,9 @@ export const reportDefect = (input: ReportDefectInput) =>
     db.defects.push(defect);
     db.movements.push({ id: newId(), at, byId: me.id, variantId: input.variantId, qty, from, to: { ...from, status: 'defective' }, kind: 'statusChange', ref: { type: 'defect', id: defect.id }, reason: input.reasonId });
     checkStockAlerts(branch.id, [input.variantId]);
-    logActivity({ action: 'create', target: { type: 'defect', id: defect.id, label: `${info.productName} · ${info.size} · ${info.color}` }, branchId: branch.id });
+    logActivity({ action: 'create', target: { type: 'defect', id: defect.id, label: variantLabel(input.variantId) }, branchId: branch.id });
+    // Reported at the counter: the branch's managers are told, so they can check the piece.
+    if (!hasRole(me, 'manager')) notify('defectiveReturn', { branch: branch.name, product: info.productName }, routes.manager.defects, staffWithRole('manager', branch.id));
     return defect;
   });
 
@@ -254,6 +265,6 @@ export const inspectReturnedItem = (input: InspectInput) =>
       ref = { type: 'defect', id: defect.id };
     }
     db.movements.push({ id: newId(), at, byId: me.id, variantId: input.variantId, qty, from, to: { ...from, status: input.outcome }, kind: 'statusChange', ref, reason: input.note });
-    logActivity({ action: 'update', target: { type: 'stock', id: input.variantId, label: `${info.productName} · ${info.size} · ${info.color}` }, branchId: input.branchId, changes: [{ field: 'status', from: 'pendingInspection', to: input.outcome }] });
+    logActivity({ action: 'update', target: { type: 'stock', id: input.variantId, label: variantLabel(input.variantId) }, branchId: input.branchId, changes: [{ field: 'status', from: 'pendingInspection', to: input.outcome }] });
     return { outcome: input.outcome, qty };
   });

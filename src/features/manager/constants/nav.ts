@@ -1,8 +1,8 @@
-import type { AppShellNavGroup } from '@/shared/components';
+import type { NavGroup } from '@/shared/components';
 import { routes } from '@/shared/constants';
 
 // The branch manager's side menu, in order.
-export const managerNav: AppShellNavGroup[] = [
+export const managerNav: NavGroup[] = [
   {
     key: 'overview',
     items: [
