@@ -16,7 +16,7 @@
 
 .table th,
 .table td {
-  padding: var(--spacing-3) var(--spacing-4);
+  padding: var(--spacing-2) var(--spacing-3);
   border-block-end: var(--borders-width-thin) var(--borders-style) var(--colors-border);
   text-align: start;
   vertical-align: middle;
@@ -120,7 +120,7 @@
 
   .stacked tbody td {
     display: table-cell;
-    padding-block: var(--spacing-3);
+    padding-block: var(--spacing-2);
     border-block-end: var(--borders-width-thin) var(--borders-style) var(--colors-border);
   }
 

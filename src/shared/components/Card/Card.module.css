@@ -15,6 +15,21 @@
   border-inline-start: var(--borders-width-accent) var(--borders-style) var(--card-accent);
 }
 
+/* A table inside a card has no frame of its own: it runs to the card's sides, with lines only between rows
+   (cards are never nested in a box inside a box). */
+.card [data-table] {
+  max-inline-size: none;
+  margin-inline: calc(-1 * var(--card-padding));
+  border-inline: none;
+  border-radius: 0;
+}
+
+/* A table that ends the card also reaches its bottom edge. */
+.card > [data-table]:last-child {
+  margin-block-end: calc(-1 * var(--card-padding));
+  border-block-end: none;
+}
+
 .header {
   display: flex;
   flex-wrap: wrap;

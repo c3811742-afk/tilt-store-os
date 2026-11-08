@@ -18,19 +18,19 @@ export const sizes = {
   logo: { height: { sm: '1.25rem', md: '1.75rem', lg: '3rem' } }, // 20 / 28 / 48; width follows the logo's shape
 
   button: {
-    height: { sm: '2rem', md: '2.5rem', lg: '3rem' }, // 32 / 40 / 48
+    height: { sm: '2rem', md: '2.25rem', lg: '2.75rem' }, // 32 / 36 / 44
     paddingX: spacing[4],
     gap: spacing[2],
   },
-  input: { height: '2.5rem', paddingX: spacing[3] }, // 40
-  tag: { height: '1.375rem', paddingX: spacing[2] }, // 22
-  card: { padding: spacing[5], minWidth: 'min(17rem, 100%)' }, // 272, never wider than its column; roomy padding
+  input: { height: '2.25rem', paddingX: spacing[3] }, // 36, the same as a button
+  tag: { height: '1.25rem', paddingX: spacing[2] }, // 20
+  card: { padding: spacing[4], minWidth: 'min(15rem, 100%)' }, // 16 / 240, never wider than its column
   avatar: { sm: '2rem', md: '3rem', lg: '4rem', xl: '6rem' }, // 32 / 48 / 64 / 96
   icon: { sm: '1rem', md: '1.5rem', lg: '2rem' }, // 16 / 24 / 32
   spinner: { size: '2.5rem' }, // 40
   stateMessage: { minHeight: '40dvh', maxWidth: '32rem' }, // loading / error / empty / not found
-  tapTarget: '2.5rem', // 40, icon-only buttons
-  statCard: { minHeight: '6.5rem', minWidth: 'min(13rem, 100%)' }, // 104 / 208: four figures fit in one row on a laptop
+  tapTarget: '2.25rem', // 36, icon-only buttons, the same height as a button
+  statCard: { minHeight: 'auto', minWidth: 'min(12rem, 100%)' }, // as tall as its content / 192: four figures fit in one row on a laptop
   table: { firstColumn: 'min(14rem, 40%)', thumbnail: '2.5rem' }, // 224 / 40
   field: { maxWidth: '28rem', narrow: '10rem', textareaHeight: '6rem', qty: '6rem', wide: 'min(28rem, 100%)' }, // 448 / 160 / 96 / 96 (a quantity in a list); wide: a search field in a filter bar, never wider than the screen
   bar: { height: '0.5rem', chartHeight: '10rem', columnWidth: '1.5rem', columnSlot: '4rem' }, // 8 / 160 / 24 / 64: bar lists, the column chart, its widest column and the most room a column gets

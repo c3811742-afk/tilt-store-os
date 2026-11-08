@@ -24,7 +24,7 @@ export const Table = (props: TableProps) => {
   };
 
   return (
-    <div className={styles.scroller}>
+    <div className={styles.scroller} data-table>
       <table className={cx(styles.table, stackOnMobile && styles.stacked)} aria-label={label}>
         <thead>
           <tr>

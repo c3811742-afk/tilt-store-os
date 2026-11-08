@@ -3,5 +3,5 @@ import type { NotificationListProps } from './NotificationList.types';
 
 export const notificationListDefaults: Required<Pick<NotificationListProps, 'items' | 'gap'>> = {
   items: [],
-  gap: vars.spacing[2],
+  gap: vars.spacing[3],
 };

@@ -19,19 +19,20 @@ export const fontWeight = {
   bold: 700,
 } as const;
 
-// Every rem in the theme scales from this. It never drops below the browser default (100%),
-// and grows slightly on large screens so the whole layout scales with it.
-export const rootFontSize = 'clamp(100%, 0.875rem + 0.25vw, 112.5%)';
+// Every rem in the theme scales from this: the browser's own size (16px by default), so the layout keeps the
+// standard admin density on every screen and still grows when someone zooms or sets a bigger font.
+export const rootFontSize = '100%';
 
-// Admin software scale: small and steady. Only the display size is fluid.
+// Standard admin software scale (as in Shopify's admin and Odoo): 14px body text, 13px tables and buttons,
+// 24px page titles. Only the display size is fluid.
 export const fontSize = {
-  xs: '0.75rem', // 12
-  sm: '0.875rem', // 14
-  md: '1rem', // 16
-  lg: '1.125rem', // 18
-  xl: '1.375rem', // 22
-  xxl: '1.75rem', // 28
-  display: 'clamp(1.75rem, 1.25rem + 2vw, 2.5rem)', // 28–40
+  xs: '0.75rem', // 12: captions, labels
+  sm: '0.8125rem', // 13: tables, buttons, secondary text
+  md: '0.875rem', // 14: body text, card titles
+  lg: '1rem', // 16: section titles
+  xl: '1.25rem', // 20
+  xxl: '1.5rem', // 24: page titles, big numbers
+  display: 'clamp(1.5rem, 1.25rem + 1vw, 2rem)', // 24–32
 } as const;
 
 // Numbers in tables and stat cards line up when every digit has the same width.

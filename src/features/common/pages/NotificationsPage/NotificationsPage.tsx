@@ -41,7 +41,11 @@ export const NotificationsPage = () => {
       >
         {tab === 'all' && (
           <AsyncContent state={state} empty={<Notice>{t.empty}</Notice>}>
-            {(items) => <NotificationList items={items} onError={(error) => action.run('read', () => Promise.reject(error))} />}
+            {(items) => (
+              <Card>
+                <NotificationList items={items} onError={(error) => action.run('read', () => Promise.reject(error))} />
+              </Card>
+            )}
           </AsyncContent>
         )}
         {tab === 'settings' && !session?.isOwner && (
