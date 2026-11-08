@@ -112,7 +112,7 @@ export const CategoriesPage = () => {
         {draft && (
           <>
             <LocalizedField label={text.common.name} value={draft.name} onChange={(name) => setDraft({ ...draft, name })} error={nameMissing ? text.validation.required : undefined} required />
-            <TextField label={t.minMargin} hint={t.minMarginHint} type="number" min={0} max={100} prefix="%" value={draft.minMargin} onChange={(minMargin) => setDraft({ ...draft, minMargin })} />
+            <TextField label={t.minMargin} hint={t.minMarginHint} type="number" min={0} max={100} suffix={text.common.percentSuffix} value={draft.minMargin} onChange={(minMargin) => setDraft({ ...draft, minMargin })} />
           </>
         )}
       </Modal>

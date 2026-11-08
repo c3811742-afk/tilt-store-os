@@ -36,7 +36,9 @@ export const PromotionPage = () => {
           : { name: '', target: { kind: 'brand', ids: [] }, discountType: 'percent', value: 10, startDate: today(), endDate: addDays(today(), 7), branchIds: sellingBranches.map((branch) => branch.id), brandSharePercent: 50, commissionOnOriginal: false };
         const value = draft ?? base;
         const set = (patch: Partial<PromotionInput>) => setDraft({ ...value, ...patch });
-        const editable = !data || data.state === 'scheduled' || data.state === 'requested' || data.state === 'active';
+        // A brand's request isn't changed by the owner: it is approved as sent, or rejected with a reason so the brand
+        // can change it and send it again.
+        const editable = !data || data.state === 'scheduled' || data.state === 'active';
         const allowed = brands.filter((brand) => brand.allowDiscounts);
         const invalid = !value.name.trim() || !(value.value > 0) || !value.target.ids.length || !value.branchIds.length || value.endDate < value.startDate;
         const money = (amount: number) => format.money(amount, settings.reportingCurrency);
@@ -62,7 +64,7 @@ export const PromotionPage = () => {
             />
             {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
             {data?.blockedBrandIds.length ? <Notice tone="warning">{fillText(t.blocked, { brands: data.blockedBrandIds.map(format.brand).join(', ') })}</Notice> : null}
-            {data && data.state !== 'requested' && (
+            {data && data.state !== 'requested' && data.state !== 'rejected' && (
               <Grid>
                 <StatCard label={t.results.units} value={format.number(data.results.units)} />
                 <StatCard label={t.results.sales} value={money(data.results.sales)} highlight />
@@ -73,7 +75,7 @@ export const PromotionPage = () => {
             )}
             {data?.state === 'requested' && (
               <Card title={t.decide}>
-                <TextField label={text.common.reason} value={reason} onChange={setReason} />
+                <TextField label={text.common.reason} hint={t.decideHint} value={reason} onChange={setReason} width="100%" />
                 <Stack direction="row" gap={vars.spacing[2]}>
                   <Button disabled={Boolean(action.busy)} onClick={() => action.run('approve', () => decidePromotion(data.promotion.id, true, reason || undefined))}>
                     {text.common.approve}
@@ -115,7 +117,7 @@ export const PromotionPage = () => {
                   </Stack>
                   <CheckboxGroup label={t.branches} options={sellingBranches.map((branch) => ({ value: branch.id, label: branch.name }))} value={value.branchIds} onChange={(branchIds) => set({ branchIds })} />
                   <Grid>
-                    <TextField label={t.brandShare} hint={fillText(t.splitHint, { store: format.percent(100 - value.brandSharePercent, 0) })} type="number" min={0} max={100} prefix="%" value={String(value.brandSharePercent)} onChange={(input) => set({ brandSharePercent: Number(input) })} />
+                    <TextField label={t.brandShare} hint={fillText(t.splitHint, { store: format.percent(100 - value.brandSharePercent, 0) })} type="number" min={0} max={100} suffix={text.common.percentSuffix} value={String(value.brandSharePercent)} onChange={(input) => set({ brandSharePercent: Number(input) })} />
                     <Checkbox label={t.commissionOnOriginal} hint={t.commissionOnOriginalHint} checked={value.commissionOnOriginal} onChange={(commissionOnOriginal) => set({ commissionOnOriginal })} />
                   </Grid>
                   <Stack direction="row" justify="flex-end">
@@ -137,7 +139,8 @@ export const PromotionPage = () => {
                 <DetailList
                   items={[
                     { key: 'dates', label: text.common.date, value: `${format.date(value.startDate)} – ${format.date(value.endDate)}` },
-                    { key: 'target', label: t.appliesTo, value: `${t.targets[value.target.kind]} (${value.target.ids.length})` },
+                    { key: 'discount', label: t.value, value: value.discountType === 'percent' ? format.percent(value.value, 0) : format.money(value.value, value.currency) },
+                    { key: 'target', label: t.appliesTo, value: data?.itemNames.length ? data.itemNames.join(text.common.listSeparator) : value.target.kind === 'brand' ? value.target.ids.map(format.brand).join(text.common.listSeparator) : `${t.targets[value.target.kind]} (${value.target.ids.length})` },
                     { key: 'branches', label: t.branches, value: value.branchIds.map(format.branch).join(', ') },
                     { key: 'split', label: t.brandShare, value: format.percent(value.brandSharePercent, 0) },
                   ]}

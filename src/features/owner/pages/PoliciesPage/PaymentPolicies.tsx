@@ -39,7 +39,7 @@ export const PaymentPolicies = () => {
             cells: {
               name: format.text(method.name),
               kind: t.methodKinds[method.kind],
-              fee: <TextField label="" type="number" min={0} step="0.05" prefix="%" value={String(method.feePercent)} onChange={(value) => update(method.id, { feePercent: Number(value) || 0 })} width={vars.sizes.field.narrow} />,
+              fee: <TextField label="" type="number" min={0} step="0.05" suffix={text.common.percentSuffix} value={String(method.feePercent)} onChange={(value) => update(method.id, { feePercent: Number(value) || 0 })} width={vars.sizes.field.narrow} />,
               active: <Checkbox label={method.active ? t.on : t.off} checked={method.active} onChange={(active) => update(method.id, { active })} />,
             },
           }))}
@@ -49,7 +49,7 @@ export const PaymentPolicies = () => {
             <LocalizedField label={text.common.name} value={adding.name} onChange={(name) => setAdding({ ...adding, name })} required />
             <Grid minColumnWidth={vars.sizes.field.narrow}>
               <SelectField label={t.methodKind} value={adding.kind} onChange={(kind) => setAdding({ ...adding, kind })} options={kinds.map((value) => ({ value, label: t.methodKinds[value] }))} />
-              <TextField label={t.fee} type="number" min={0} prefix="%" value={String(adding.feePercent)} onChange={(value) => setAdding({ ...adding, feePercent: Number(value) || 0 })} />
+              <TextField label={t.fee} type="number" min={0} suffix={text.common.percentSuffix} value={String(adding.feePercent)} onChange={(value) => setAdding({ ...adding, feePercent: Number(value) || 0 })} />
             </Grid>
             <Stack direction="row" gap={vars.spacing[2]}>
               <Button

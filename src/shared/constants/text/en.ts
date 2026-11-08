@@ -746,6 +746,7 @@ export const en = {
       endNow: 'End now',
       blocked: "These brands' terms don't allow discounts, so their items can't be in this promotion: {brands}.",
       decide: 'Approve or reject',
+      decideHint: 'Needed to reject. The brand sees it and can change the request and send it again.',
       details: 'Details',
       discountType: 'Discount type',
       discountTypes: { percent: 'Percentage', amount: 'Fixed amount' },
@@ -2487,6 +2488,9 @@ export const en = {
       send: 'Send request',
       sent: 'Request sent. The owner will review it.',
       rejectedBecause: 'Rejected: {reason}',
+      edit: 'Edit and send again',
+      editForm: 'Edit your request',
+      resent: 'Request sent again. The owner will review it.',
     },
   },
 };

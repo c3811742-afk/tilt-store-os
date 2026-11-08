@@ -87,7 +87,7 @@ export const PromoCodesTab = () => {
             {draft.kind === 'influencer' && <TextField label={t.influencer} value={draft.influencer ?? ''} onChange={(influencer) => setDraft({ ...draft, influencer })} />}
             <SelectField label={t.discountType} value={draft.discountType} onChange={(discountType) => setDraft({ ...draft, discountType })} options={(['percent', 'amount'] as const).map((value) => ({ value, label: t.discountTypes[value] }))} />
             <TextField label={t.value} type="number" min={0} value={String(draft.value)} onChange={(value) => setDraft({ ...draft, value: Number(value) })} />
-            <TextField label={t.brandShare} hint={t.brandShareHint} type="number" min={0} max={100} prefix="%" value={String(draft.brandSharePercent)} onChange={(value) => setDraft({ ...draft, brandSharePercent: Number(value) })} />
+            <TextField label={t.brandShare} hint={t.brandShareHint} type="number" min={0} max={100} suffix={text.common.percentSuffix} value={String(draft.brandSharePercent)} onChange={(value) => setDraft({ ...draft, brandSharePercent: Number(value) })} />
             <TextField label={text.owner.fields.startDate} type="date" value={draft.startDate} onChange={(startDate) => setDraft({ ...draft, startDate })} />
             <TextField label={text.owner.fields.endDate} type="date" min={draft.startDate} value={draft.endDate} onChange={(endDate) => setDraft({ ...draft, endDate })} />
             <Checkbox label={t.codeActive} checked={draft.active} onChange={(active) => setDraft({ ...draft, active })} />

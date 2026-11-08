@@ -60,7 +60,7 @@ export const RegistrationsTab = () => {
                   {t.vatHint}
                 </Text>
                 <Stack direction="row" wrap align="flex-end" gap={vars.spacing[3]}>
-                  <TextField label={t.newRate} type="number" min={0} max={100} prefix="%" value={vatDraft.rate} onChange={(rate) => setVat((current) => ({ ...current, [country.countryCode]: { ...vatDraft, rate } }))} width={vars.sizes.field.narrow} />
+                  <TextField label={t.newRate} type="number" min={0} max={100} suffix={text.common.percentSuffix} value={vatDraft.rate} onChange={(rate) => setVat((current) => ({ ...current, [country.countryCode]: { ...vatDraft, rate } }))} width={vars.sizes.field.narrow} />
                   <TextField label={t.startsOn} type="date" value={vatDraft.startDate} onChange={(startDate) => setVat((current) => ({ ...current, [country.countryCode]: { ...vatDraft, startDate } }))} width={vars.sizes.field.narrow} />
                   <Button
                     variant="secondary"

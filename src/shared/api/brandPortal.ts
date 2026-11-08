@@ -4,7 +4,7 @@ import { datesIn, nowIso, promotionState, stockLevels, today, toIsoDate, type Da
 import { variantIndex } from './engine';
 import { ApiError } from './errors';
 import { salesFacts, type Fact } from './facts';
-import { actor, db, logActivity, mutate, newId, notify, respond } from './server';
+import { actor, db, findById, logActivity, mutate, newId, notify, respond } from './server';
 
 // The brand portal: a brand partner sees only their own brand's units, stock, returns, defects and promotions.
 // Never GenZ's costs, margins, commission, other brands or customers: only quantities and their own requests.
@@ -208,6 +208,8 @@ export interface BrandPromotionRow {
   endDate: string;
   branchNames: string[];
   products: string[];
+  productIds: Id[]; // to fill the form when a rejected request is changed and sent again
+  branchIds: Id[];
   requested: boolean;
   decisionReason?: string;
   units: number; // pieces of the brand sold with this promotion
@@ -231,6 +233,9 @@ export const listBrandPromotions = () =>
           endDate: promotion.endDate,
           branchNames: promotion.branchIds.map(branchName),
           products: promotion.target.kind === 'products' ? promotion.target.ids.map((id) => db.products.find((product) => product.id === id)?.name ?? '').filter(Boolean) : [],
+          // A request for the whole brand opens with every product chosen.
+          productIds: promotion.target.kind === 'products' ? promotion.target.ids : db.products.filter((product) => product.brandId === brand.id && !product.archived).map((product) => product.id),
+          branchIds: promotion.branchIds,
           requested: promotion.requestedByBrandId === brand.id,
           decisionReason: promotion.decisionReason,
           units: facts.reduce((sum, fact) => sum + fact.figures.units, 0),
@@ -249,13 +254,26 @@ export interface PromotionRequestInput {
 }
 
 // The brand asks for a discount on its products; the owner approves or rejects it on Promotions or Approvals.
-export const requestBrandPromotion = (input: PromotionRequestInput) =>
+// The owner never changes a request: they reject it with a reason, and the brand changes it and sends it again
+// (`promotionId`: the rejected request, which goes back to waiting for the owner).
+export const requestBrandPromotion = (input: PromotionRequestInput, promotionId?: Id) =>
   mutate((): Promotion => {
     const brand = myBrand();
     const me = actor();
     const own = new Set(db.products.filter((product) => product.brandId === brand.id).map((product) => product.id));
     if (!input.productIds.length || input.productIds.some((id) => !own.has(id))) throw new ApiError('notAllowed');
     if (input.endDate < input.startDate || input.startDate < today()) throw new ApiError('notAllowed');
+    const name = input.name.trim();
+    const summary = name.startsWith(brand.name) ? name : `${brand.name}: ${name}`; // the brand, once
+    if (promotionId) {
+      const promotion = findById(db.promotions, promotionId);
+      if (promotion.requestedByBrandId !== brand.id || promotion.decision !== 'rejected') throw new ApiError('notAllowed');
+      Object.assign(promotion, { name: input.name.trim(), target: { kind: 'products', ids: input.productIds }, value: input.percent, startDate: input.startDate, endDate: input.endDate, branchIds: input.branchIds, decision: undefined, decisionReason: undefined, byId: me.id, at: nowIso() });
+      db.approvals.unshift({ id: newId(), kind: 'promotion', level: 'owner', requestedById: me.id, at: promotion.at, percent: input.percent, ref: { type: 'promotion', id: promotion.id }, summary, status: 'pending', channel: 'app' });
+      notify('approvalWaiting', { summary, user: me.name }, routes.owner.approvals);
+      logActivity({ action: 'update', target: { type: 'promotion', id: promotion.id, label: promotion.name }, amount: input.percent });
+      return promotion;
+    }
     const promotion: Promotion = {
       id: newId(),
       name: input.name.trim(),
@@ -272,8 +290,8 @@ export const requestBrandPromotion = (input: PromotionRequestInput) =>
       at: nowIso(),
     };
     db.promotions.push(promotion);
-    db.approvals.unshift({ id: newId(), kind: 'promotion', level: 'owner', requestedById: me.id, at: promotion.at, percent: input.percent, ref: { type: 'promotion', id: promotion.id }, summary: `${brand.name}: ${promotion.name}`, status: 'pending', channel: 'app' });
-    notify('approvalWaiting', { summary: `${brand.name}: ${promotion.name}`, user: me.name }, routes.owner.approvals);
+    db.approvals.unshift({ id: newId(), kind: 'promotion', level: 'owner', requestedById: me.id, at: promotion.at, percent: input.percent, ref: { type: 'promotion', id: promotion.id }, summary, status: 'pending', channel: 'app' });
+    notify('approvalWaiting', { summary, user: me.name }, routes.owner.approvals);
     logActivity({ action: 'create', target: { type: 'promotion', id: promotion.id, label: promotion.name }, amount: input.percent });
     return promotion;
   });

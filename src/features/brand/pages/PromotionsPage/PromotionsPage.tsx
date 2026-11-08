@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { listBrandPromotions, listBrandProducts, requestBrandPromotion } from '@/shared/api';
+import { listBrandPromotions, listBrandProducts, requestBrandPromotion, type BrandPromotionRow } from '@/shared/api';
 import { AsyncContent, Badge, Button, CheckboxGroup, Modal, Notice, PageHeader, Stack, Table, Text, TextField } from '@/shared/components';
 import { promotionStateTone } from '@/shared/constants';
 import { useAsync, useErrorMessage, useForm, useFormat, useLiveVersion, useLocale, useReference } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { addDays, fillText, today } from '@/shared/utils';
 
-// The brand's promotions with the units sold during each, and asking for a new discount.
+// The brand's promotions with the units sold during each, and asking for a new discount. A rejected request shows
+// the owner's reason and can be changed and sent again.
 export const PromotionsPage = () => {
   const { text } = useLocale();
   const format = useFormat();
@@ -17,7 +18,8 @@ export const PromotionsPage = () => {
   const state = useAsync(listBrandPromotions, [version]);
   const products = useAsync(() => listBrandProducts(), []);
   const [open, setOpen] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null); // the rejected request being changed
+  const [sent, setSent] = useState<'sent' | 'resent' | null>(null);
   const stores = branches.filter((branch) => !branch.archived && branch.kind !== 'warehouse');
   const empty = { name: '', percent: '', startDate: addDays(today(), 7), endDate: addDays(today(), 14), productIds: [] as string[], branchIds: stores.map((branch) => branch.id) };
   const form = useForm(empty, {
@@ -30,16 +32,31 @@ export const PromotionsPage = () => {
   });
 
   const onSubmit = form.submit(async (values) => {
-    await requestBrandPromotion({ name: values.name, percent: Number(values.percent), startDate: values.startDate, endDate: values.endDate, productIds: values.productIds, branchIds: values.branchIds });
+    await requestBrandPromotion({ name: values.name, percent: Number(values.percent), startDate: values.startDate, endDate: values.endDate, productIds: values.productIds, branchIds: values.branchIds }, editing ?? undefined);
     form.reset(empty);
     setOpen(false);
-    setSent(true);
+    setSent(editing ? 'resent' : 'sent');
+    setEditing(null);
   });
+
+  const openNew = () => {
+    form.reset(empty);
+    setEditing(null);
+    setOpen(true);
+  };
+
+  // The rejected request in the form, as it was sent; a start date already past moves to the earliest allowed.
+  const openEdit = (row: BrandPromotionRow) => {
+    const startDate = row.startDate < today() ? empty.startDate : row.startDate;
+    form.reset({ name: row.name, percent: String(row.value), startDate, endDate: row.endDate < startDate ? addDays(startDate, 7) : row.endDate, productIds: row.productIds, branchIds: row.branchIds });
+    setEditing(row.id);
+    setOpen(true);
+  };
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} actions={<Button onClick={() => setOpen(true)}>{t.request}</Button>} />
-      {sent && <Notice tone="success">{t.sent}</Notice>}
+      <PageHeader title={t.title} subtitle={t.subtitle} actions={<Button onClick={openNew}>{t.request}</Button>} />
+      {sent && <Notice tone="success">{sent === 'resent' ? t.resent : t.sent}</Notice>}
       <AsyncContent state={state} empty={<Notice>{t.empty}</Notice>}>
         {(rows) => (
           <Table
@@ -71,6 +88,13 @@ export const PromotionsPage = () => {
                         {fillText(t.rejectedBecause, { reason: row.decisionReason })}
                       </Text>
                     )}
+                    {row.state === 'rejected' && row.requested && (
+                      <span>
+                        <Button size="sm" variant="secondary" onClick={() => openEdit(row)}>
+                          {t.edit}
+                        </Button>
+                      </span>
+                    )}
                   </Stack>
                 ),
                 discount: row.discountType === 'percent' ? format.percent(row.value, 0) : format.money(row.value, row.currency),
@@ -86,7 +110,7 @@ export const PromotionsPage = () => {
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title={t.form}
+        title={editing ? t.editForm : t.form}
         width={vars.sizes.modal.wide}
         onSubmit={onSubmit}
         actions={
@@ -104,6 +128,7 @@ export const PromotionsPage = () => {
           <Text variant="caption" color={vars.colors.textMuted}>
             {t.formHint}
           </Text>
+          {editing && <Notice tone="warning">{fillText(t.rejectedBecause, { reason: (state.status === 'success' ? state.data.find((row) => row.id === editing)?.decisionReason : undefined) ?? '' })}</Notice>}
           {Boolean(form.requestError) && <Notice tone="danger">{errorMessage(form.requestError)}</Notice>}
           <TextField label={t.name} {...form.field('name')} width="100%" />
           <TextField label={t.percent} type="number" inputMode="decimal" min={1} max={100} suffix={text.common.percentSuffix} {...form.field('percent')} width={vars.sizes.field.narrow} />

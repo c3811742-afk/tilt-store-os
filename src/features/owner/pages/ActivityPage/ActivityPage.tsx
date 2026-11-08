@@ -111,7 +111,7 @@ export const ActivityPage = () => {
               {t.flagsHint}
             </Text>
             <Grid minColumnWidth={vars.sizes.field.narrow}>
-              <TextField label={t.flagDiscountAbove} type="number" min={0} max={100} prefix="%" value={String(current.discountAbovePercent)} onChange={(value) => setRules({ ...current, discountAbovePercent: Number(value) || 0 })} />
+              <TextField label={t.flagDiscountAbove} type="number" min={0} max={100} suffix={text.common.percentSuffix} value={String(current.discountAbovePercent)} onChange={(value) => setRules({ ...current, discountAbovePercent: Number(value) || 0 })} />
               <TextField label={t.flagRefundAbove} type="number" min={0} prefix={settings.baseCurrency} value={String(current.refundAbove)} onChange={(value) => setRules({ ...current, refundAbove: Number(value) || 0 })} />
             </Grid>
             {flagToggles.map((key) => (

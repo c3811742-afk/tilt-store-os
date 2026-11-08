@@ -2,6 +2,7 @@ import type { Id, Product, PromoCode, Promotion, PromotionState } from '@/shared
 import { currentTerms, nowIso, promotionCovers, promotionState, today } from '@/shared/utils';
 import { ApiError } from './errors';
 import { salesFacts, totalsOf } from './facts';
+import { variantLabel } from './stock';
 import { routes } from '@/shared/constants';
 import { actor, db, diff, findById, logActivity, mutate, newId, notify, respond } from './server';
 
@@ -43,6 +44,13 @@ export const getPromotion = (promotionId: Id) =>
       state: promotionState(promotion),
       results: resultsFor({ promotionId, from: promotion.startDate, to: promotion.endDate }),
       blockedBrandIds: blockedBrands(promotion),
+      // The products or items it covers, by name, so a request can be checked without opening each one.
+      itemNames:
+        promotion.target.kind === 'products'
+          ? promotion.target.ids.map((id) => db.products.find((product) => product.id === id)?.name ?? '').filter(Boolean)
+          : promotion.target.kind === 'variants'
+            ? promotion.target.ids.map(variantLabel)
+            : [],
     };
   });
 

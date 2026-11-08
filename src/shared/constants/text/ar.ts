@@ -746,6 +746,7 @@ export const ar: TextShape<typeof en> = {
       endNow: 'إنهاء الآن',
       blocked: 'شروط هذه البراندات لا تسمح بالخصومات، لذا لا يمكن إدراج منتجاتها في هذا العرض: {brands}.',
       decide: 'الموافقة أو الرفض',
+      decideHint: 'مطلوب عند الرفض. يظهر للبراند، ويمكنه تعديل الطلب وإرساله مرة أخرى.',
       details: 'التفاصيل',
       discountType: 'نوع الخصم',
       discountTypes: { percent: 'نسبة مئوية', amount: 'مبلغ ثابت' },
@@ -2487,6 +2488,9 @@ export const ar: TextShape<typeof en> = {
       send: 'إرسال الطلب',
       sent: 'تم إرسال الطلب. سيراجعه المالك.',
       rejectedBecause: 'مرفوض: {reason}',
+      edit: 'تعديل وإعادة الإرسال',
+      editForm: 'تعديل طلبك',
+      resent: 'تم إرسال الطلب مرة أخرى. سيراجعه المالك.',
     },
   },
 };

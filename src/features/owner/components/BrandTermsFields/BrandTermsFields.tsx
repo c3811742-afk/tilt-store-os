@@ -24,7 +24,7 @@ export const BrandTermsFields = ({ value, onChange, errors = {} }: BrandTermsFie
     <Grid minColumnWidth={vars.sizes.card.minWidth}>
       <SelectField label={t.model} hint={t.modelHints[value.model]} value={value.model} onChange={(model) => set('model', model)} options={brandModels.map((model) => ({ value: model, label: t.models[model] }))} />
       {value.model === 'commission' && (
-        <TextField label={t.commissionRate} type="number" min={0} max={100} step="0.5" prefix="%" value={String(value.commissionRate)} error={errors.commissionRate} onChange={(input) => set('commissionRate', number(input))} />
+        <TextField label={t.commissionRate} type="number" min={0} max={100} step="0.5" suffix={text.common.percentSuffix} value={String(value.commissionRate)} error={errors.commissionRate} onChange={(input) => set('commissionRate', number(input))} />
       )}
       {!own && (
         <>
@@ -40,7 +40,7 @@ export const BrandTermsFields = ({ value, onChange, errors = {} }: BrandTermsFie
         <SelectField label={t.discountFunding} value={value.discountFunding} onChange={(funding) => set('discountFunding', funding)} options={discountFundings.map((funding) => ({ value: funding, label: t.fundings[funding] }))} />
       )}
       {!own && value.allowDiscounts && value.discountFunding === 'shared' && (
-        <TextField label={t.brandShare} hint={t.brandShareHint} type="number" min={0} max={100} prefix="%" value={String(value.brandSharePercent)} error={errors.brandSharePercent} onChange={(input) => set('brandSharePercent', number(input))} />
+        <TextField label={t.brandShare} hint={t.brandShareHint} type="number" min={0} max={100} suffix={text.common.percentSuffix} value={String(value.brandSharePercent)} error={errors.brandSharePercent} onChange={(input) => set('brandSharePercent', number(input))} />
       )}
       {!own && (
         <SelectField label={t.defectPolicy} value={value.defectPolicy} onChange={(policy) => set('defectPolicy', policy)} options={defectPolicies.map((policy) => ({ value: policy, label: t.defectPolicies[policy] }))} />
@@ -51,7 +51,7 @@ export const BrandTermsFields = ({ value, onChange, errors = {} }: BrandTermsFie
         type="number"
         min={0}
         max={100}
-        prefix="%"
+        suffix={text.common.percentSuffix}
         value={value.minMargin === null ? '' : String(value.minMargin)}
         error={errors.minMargin}
         onChange={(input) => set('minMargin', input.trim() === '' ? null : Number(input))}
