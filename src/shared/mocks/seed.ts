@@ -224,8 +224,8 @@ export const buildSeed = (): Database => {
   settings.sizes = [...new Set(data.products.flatMap((product) => product.variants.map((variant) => variant.size)))];
   settings.colors = [...new Set(data.products.flatMap((product) => product.variants.map((variant) => variant.color)))].sort();
 
-  // ---- Receiving: each store, and the warehouse, gets a batch of most products ----
-  const stockBranches = branches.filter((branch) => branch.kind !== 'online');
+  // ---- Receiving: each store, the online store and the warehouse get a batch of most products ----
+  const stockBranches = branches;
   const storekeeper = (branchId: Id) => people.find((user) => user.roleIds.includes('role-storekeeper') && user.branchIds.includes(branchId))?.id ?? ownerId;
   const stock = new Map<string, number>(); // variant|branch -> available pieces, so the seed never sells what isn't there
   const stockKey = (variantId: Id, branchId: Id) => `${variantId}|${branchId}`;
@@ -234,7 +234,7 @@ export const buildSeed = (): Database => {
 
   stockBranches.forEach((branch) => {
     data.products.forEach((product, productIndex) => {
-      const carries = branch.kind === 'warehouse' ? productIndex % 3 === 0 : branch.countryCode === 'SA' ? productIndex % 4 !== 1 : productIndex % 5 !== 2 || branch.id === 'b-park-mall';
+      const carries = branch.kind === 'warehouse' ? productIndex % 3 === 0 : branch.kind === 'online' ? productIndex % 4 !== 3 : branch.countryCode === 'SA' ? productIndex % 4 !== 1 : productIndex % 5 !== 2 || branch.id === 'b-park-mall';
       if (!carries) return;
       const receivedAt = atTime(addDays(setupDay, random.int(0, 8)), 10, random.int(0, 59));
       let batchQty = 0;
@@ -244,8 +244,11 @@ export const buildSeed = (): Database => {
         batchQty += qty;
         const floorQty = Math.ceil(qty * 0.6);
         const user = storekeeper(branch.id);
-        if (branch.kind === 'warehouse') {
+        if (branch.kind === 'warehouse' || branch.kind === 'online') {
+          // One storage room: the warehouse, and the online store's own stock (orders ship from it first).
           addMovement(data, { variantId: variant.id, qty, to: placeIn(branch, 'storage'), kind: 'receive', ref: { type: 'receiving', id: batchId }, batchId, at: receivedAt, byId: user }, newId);
+          track(variant.id, placeIn(branch, 'storage').locationId, qty);
+          stock.set(stockKey(variant.id, branch.id), qty);
         } else {
           addMovement(data, { variantId: variant.id, qty: floorQty, to: placeIn(branch, 'floor'), kind: 'receive', ref: { type: 'receiving', id: batchId }, batchId, at: receivedAt, byId: user }, newId);
           addMovement(data, { variantId: variant.id, qty: qty - floorQty, to: placeIn(branch, 'backRoom'), kind: 'receive', ref: { type: 'receiving', id: batchId }, batchId, at: receivedAt, byId: user }, newId);
@@ -291,7 +294,6 @@ export const buildSeed = (): Database => {
       }
     });
   });
-  // Online orders ship from the Park Mall back room, so the online store uses Park Mall's stock in the seed.
 
   // ---- Customers ----
   const firstNames = ['Omar', 'Youssef', 'Mariam', 'Nour', 'Ahmed', 'Salma', 'Karim', 'Farida', 'Ali', 'Hana', 'Mostafa', 'Jana', 'Ziad', 'Laila', 'Adam', 'Malak', 'Seif', 'Habiba'];
@@ -359,10 +361,7 @@ export const buildSeed = (): Database => {
 
   // ---- Sales ----
   const cashiersOf = (branchId: Id) => people.filter((user) => user.branchIds.includes(branchId) && (user.roleIds.includes('role-cashier') || user.roleIds.includes('role-online')));
-  const sellable = (branch: Branch) => {
-    const stockBranch = branch.kind === 'online' ? 'b-park-mall' : branch.id;
-    return { stockBranch, variants: data.products.flatMap((product) => product.variants.filter((variant) => (stock.get(stockKey(variant.id, stockBranch)) ?? 0) > 0)) };
-  };
+  const sellable = (branch: Branch) => ({ stockBranch: branch.id, variants: data.products.flatMap((product) => product.variants.filter((variant) => (stock.get(stockKey(variant.id, branch.id)) ?? 0) > 0)) });
   const salesBranches = branches.filter((branch) => branch.kind === 'store' || branch.kind === 'online');
   for (let day = historyStart; day <= today; day = addDays(day, 1)) {
     const weekday = new Date(`${day}T12:00:00`).getDay();
@@ -403,23 +402,12 @@ export const buildSeed = (): Database => {
           payments: split ? [{ methodId: methodIds[0], share: 0.5 }, { methodId: methodIds[1], share: 0.5 }] : [{ methodId: random.pick(methodIds), share: 1 }],
           promoCodeId: random.chance(0.04) ? random.pick(data.promoCodes).id : undefined,
           eReceiptFails: day >= addDays(today, -3) && random.chance(mockConfig.eReceiptFailureRate * 3),
-          availableAt: (variantId, locationId) => (branch.kind === 'online' ? 0 : (located.get(`${variantId}|${locationId}`) ?? 0)),
+          availableAt: (variantId, locationId) => located.get(`${variantId}|${locationId}`) ?? 0,
           newId,
           number: number('S', 6),
         });
-        // The online store's stock comes from Park Mall in the seed: move the sale movement there.
-        if (branch.kind === 'online') {
-          data.movements
-            .filter((movement) => movement.ref?.id === sale.id && movement.from)
-            .forEach((movement) => {
-              const park = branches.find((current) => current.id === 'b-park-mall');
-              if (!park) return;
-              movement.from = placeIn(park, 'backRoom');
-              track(movement.variantId, movement.from.locationId, -movement.qty);
-            });
-        }
         data.movements.slice(movementsBefore).forEach((movement) => {
-          if (movement.from && branch.kind !== 'online') track(movement.variantId, movement.from.locationId, -movement.qty);
+          if (movement.from) track(movement.variantId, movement.from.locationId, -movement.qty);
         });
         sale.lines.forEach((line) => stock.set(stockKey(line.variantId, stockBranch), (stock.get(stockKey(line.variantId, stockBranch)) ?? 0) - line.qty));
       }
@@ -449,8 +437,7 @@ export const buildSeed = (): Database => {
         refunds: [{ methodId: sale.payments[0].methodId, amount: line.unitPrice - line.discount / line.qty }],
       };
       data.returns.push(saleReturn);
-      const stockBranch = branch.kind === 'online' ? branches.find((current) => current.id === 'b-park-mall') ?? branch : branch;
-      addMovement(data, { variantId: line.variantId, qty: 1, to: placeIn(stockBranch, defective ? 'backRoom' : 'floor', defective ? 'defective' : 'available'), kind: 'return', ref: { type: 'return', id: saleReturn.id }, at, byId: sale.cashierId }, newId);
+      addMovement(data, { variantId: line.variantId, qty: 1, to: placeIn(branch, defective ? 'backRoom' : 'floor', defective ? 'defective' : 'available'), kind: 'return', ref: { type: 'return', id: saleReturn.id }, at, byId: sale.cashierId }, newId);
     });
 
   // ---- Shifts: one register per store per day, a few with cash differences ----
@@ -537,6 +524,8 @@ export const buildSeed = (): Database => {
       .slice(0, count);
   const transferFrom = (from: Branch, to: Branch, daysAgo: number, missing: boolean, received: boolean) => {
     const lines = pickVariants(from.id, 3).map((variant) => ({ variantId: variant.id, qty: 2 }));
+    // Taken out of the sending branch's stock now, so the next transfer never sends pieces that already left.
+    lines.forEach((line) => stock.set(stockKey(line.variantId, from.id), (stock.get(stockKey(line.variantId, from.id)) ?? 0) - line.qty));
     const sentAt = atTime(addDays(today, -daysAgo), 13);
     const id = newId();
     const transfer = {
