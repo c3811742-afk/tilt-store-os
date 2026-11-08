@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { Id, Localized } from '@/shared/types';
-import { countryName, currencyName, formatAxisNumber, formatDate, formatDateTime, formatNumber, formatPercent, formatPrice, formatTime, localized } from '@/shared/utils';
+import { countryName, currencyName, formatAxisNumber, formatDate, formatDateTime, formatNumber, formatPercent, formatPrice, fillText, formatTime, localized } from '@/shared/utils';
 import { useLocale } from './useLocale';
 import { useReference } from './useReference';
 
@@ -23,6 +23,7 @@ export const useFormat = () => {
     return {
       money: (amount: number, currency: string = reference.settings.reportingCurrency) => formatPrice(amount, currency, locale),
       number: (value: number) => formatNumber(value, locale),
+      pieces: (count: number) => (count === 1 ? text.common.piece : fillText(text.common.pieceCount, { count: formatNumber(count, locale) })), // "1 piece", "3 pieces"
       axis: (value: number, top: number) => formatAxisNumber(value, top, locale), // a chart's y-axis tick
       percent: (value: number, digits?: number) => formatPercent(value, locale, digits),
       date: (value: string) => formatDate(value, locale),

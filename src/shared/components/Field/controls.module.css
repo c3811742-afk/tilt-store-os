@@ -49,6 +49,36 @@
   font-size: var(--text-styles-caption-font-size);
 }
 
+/* Quiet text inside the box, at its end: the most you can enter ("of 4") or how many the chosen option has
+   ("4 available"). The value never runs under it; in a select it sits before the arrow. */
+.withAside {
+  position: relative;
+}
+
+.withAside .control {
+  padding-inline-end: calc(var(--aside-width) + 2 * var(--sizes-input-padding-x));
+}
+
+.withAside select.control {
+  padding-inline-end: calc(var(--aside-width) + 2 * var(--sizes-input-padding-x) + var(--spacing-4));
+}
+
+.aside {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  inset-block: 0;
+  inset-inline-end: var(--sizes-input-padding-x);
+  color: var(--colors-text-muted);
+  font-size: var(--text-styles-caption-font-size);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.withAside select.control + .aside {
+  inset-inline-end: calc(var(--sizes-input-padding-x) + var(--spacing-4));
+}
+
 /* After the value (a percent sign): the same box, on the other side. */
 .affixEnd {
   border-inline-start: none;

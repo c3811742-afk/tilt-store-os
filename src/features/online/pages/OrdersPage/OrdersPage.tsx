@@ -22,7 +22,6 @@ export const OrdersPage = () => {
   const action = useAction();
   const [done, setDone] = useState('');
   const t = text.online.orders;
-  const piecesText = (count: number) => (count === 1 ? t.piece : fillText(t.pieces, { count: format.number(count) }));
   const views = state.status === 'success' ? state.data : [];
 
   const card = ({ order, total }: OnlineOrderView) => (
@@ -40,7 +39,7 @@ export const OrdersPage = () => {
       <Text variant="caption" color={vars.colors.textMuted}>
         {[
           format.dateTime(order.at),
-          fillText(t.summary, { items: piecesText(order.lines.reduce((sum, line) => sum + line.qty, 0)), total: format.money(total, order.currency), payment: format.payment(order.methodId), branch: format.branch(order.fulfilBranchId) }),
+          fillText(t.summary, { items: format.pieces(order.lines.reduce((sum, line) => sum + line.qty, 0)), total: format.money(total, order.currency), payment: format.payment(order.methodId), branch: format.branch(order.fulfilBranchId) }),
         ].join(' · ')}
       </Text>
     </Card>

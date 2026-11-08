@@ -1,6 +1,6 @@
 import { getOnlineStock, type OnlineAvailability, type OnlineSource } from '@/shared/api';
-import { AsyncContent, Badge, BrandSelect, Button, CategorySelect, FilterBar, Notice, PageHeader, SelectField, Stack, Table, Text, TextField } from '@/shared/components';
-import { useAsync, useFormat, useLiveVersion, useLocale, useQueryState, useReference } from '@/shared/hooks';
+import { AsyncContent, Badge, BrandSelect, Button, CategorySelect, ColorSelect, FilterBar, Notice, PageHeader, SelectField, SizeSelect, Stack, Table, Text, TextField } from '@/shared/components';
+import { useAsync, useFormat, useLiveVersion, useLocale, useQueryState } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { fillText } from '@/shared/utils';
 
@@ -13,7 +13,6 @@ const sources: OnlineSource[] = ['online', 'elsewhere'];
 export const OnlineStockPage = () => {
   const { text } = useLocale();
   const format = useFormat();
-  const { settings } = useReference();
   const version = useLiveVersion();
   const [query, setQuery] = useQueryState('q', '');
   const [brandId, setBrandId] = useQueryState('brand', '');
@@ -55,8 +54,8 @@ export const OnlineStockPage = () => {
         <TextField type="search" label={text.common.search} placeholder={t.searchPlaceholder} value={query} onChange={setQuery} />
         <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />
         <CategorySelect allLabel={text.owner.fields.allCategories} value={categoryId} onChange={setCategoryId} />
-        <SelectField label={text.owner.fields.size} placeholder={text.common.all} value={size} onChange={setSize} options={settings.sizes.map((value) => ({ value, label: value }))} />
-        <SelectField label={text.owner.fields.color} placeholder={text.common.all} value={color} onChange={setColor} options={settings.colors.map((value) => ({ value, label: value }))} />
+        <SizeSelect allLabel={text.common.all} value={size} onChange={setSize} />
+        <ColorSelect allLabel={text.common.all} value={color} onChange={setColor} />
         <SelectField<OnlineAvailability | ''>
           label={t.availability}
           placeholder={text.common.all}

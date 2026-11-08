@@ -1,4 +1,4 @@
-import type { Batch, Id, Product, Receiving, SignedLine, Variant } from '@/shared/types';
+import type { Batch, DefectReasonQty, Id, Product, Receiving, SignedLine, Variant } from '@/shared/types';
 import { currentTerms, nowIso } from '@/shared/utils';
 import { ApiError } from './errors';
 import { assertBranch, hasRole } from './branchScope';
@@ -27,6 +27,7 @@ export interface ReceivingLineView {
   received: number;
   defective: number;
   missing: number;
+  defectReasons?: DefectReasonQty[];
   productName: string;
   size: string;
   color: string;
@@ -106,6 +107,7 @@ export interface ReceivingLineInput {
   expected: number;
   received: number;
   defective: number;
+  defectReasons?: DefectReasonQty[]; // the defective pieces by reason; a draft can be partly filled
 }
 
 const whole = (value: number) => Math.max(0, Math.floor(value || 0));
@@ -117,7 +119,10 @@ const cleanLines = (lines: readonly ReceivingLineInput[]) =>
     const defective = whole(line.defective);
     // Defective pieces are part of what was received.
     if (defective > received) throw new ApiError('quantityMismatch');
-    return { variantId: line.variantId, expected, received, defective, missing: Math.max(expected - received, 0) };
+    // Reasons for the defective pieces, never for more pieces than are defective.
+    const defectReasons = defective ? (line.defectReasons ?? []).map((row) => ({ reasonId: row.reasonId, qty: whole(row.qty) })).filter((row) => row.reasonId && row.qty > 0) : [];
+    if (defectReasons.reduce((sum, row) => sum + row.qty, 0) > defective) throw new ApiError('quantityMismatch');
+    return { variantId: line.variantId, expected, received, defective, missing: Math.max(expected - received, 0), ...(defectReasons.length ? { defectReasons } : {}) };
   });
 
 // Saves the list while it is a draft (scanned items, expected and received quantities, defective pieces).
@@ -135,7 +140,6 @@ export interface ConfirmReceivingInput {
   courierName: string; // the brand's driver or courier, typed as their signature
   courierLines: { variantId: Id; qty: number }[]; // what the courier says they delivered, per product
   storekeeperName: string;
-  defectReasonId?: Id;
 }
 
 export const confirmReceiving = (receivingId: Id, input: ConfirmReceivingInput) =>
@@ -151,7 +155,8 @@ export const confirmReceiving = (receivingId: Id, input: ConfirmReceivingInput) 
     const kind = branch.kind === 'store' ? 'backRoom' : 'storage';
     const brand = findById(db.brands, receiving.brandId);
     const liability = currentTerms(brand).defectPolicy === 'storeAbsorbs' ? 'store' : 'brand';
-    const reasonId = input.defectReasonId ?? db.settings.lists.defectReasons[0]?.id ?? '';
+    // Every defective piece has a reason (one defect is recorded per reason).
+    if (lines.some((line) => line.defective > 0 && (line.defectReasons ?? []).reduce((sum, row) => sum + row.qty, 0) !== line.defective)) throw new ApiError('quantityMismatch');
 
     // One batch per product in the delivery.
     const byProduct = new Map<Id, typeof lines>();
@@ -191,7 +196,9 @@ export const confirmReceiving = (receivingId: Id, input: ConfirmReceivingInput) 
       if (line.defective > 0) {
         db.movements.push({ id: newId(), at, byId: me.id, variantId: line.variantId, qty: line.defective, to: placeIn(branch, kind, 'defective'), kind: 'receive', ref: { type: 'receiving', id: receiving.id }, batchId: batch?.id });
         const product = findById(db.products, info.productId);
-        db.defects.push({ id: newId(), at, byId: me.id, productId: info.productId, variantId: line.variantId, batchId: batch?.id, branchId: branch.id, qty: line.defective, reasonId, foundAt: 'receiving', liability, status: 'open', unitCost: product.cost, note: receiving.number, locationId: placeIn(branch, kind).locationId });
+        (line.defectReasons ?? []).forEach((row) =>
+          db.defects.push({ id: newId(), at, byId: me.id, productId: info.productId, variantId: line.variantId, batchId: batch?.id, branchId: branch.id, qty: row.qty, reasonId: row.reasonId, foundAt: 'receiving', liability, status: 'open', unitCost: product.cost, note: receiving.number, locationId: placeIn(branch, kind).locationId }),
+        );
       }
     });
 

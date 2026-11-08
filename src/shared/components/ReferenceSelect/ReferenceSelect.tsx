@@ -37,6 +37,39 @@ export const BrandSelect = (props: ReferenceSelectProps) => {
   );
 };
 
+// The sizes and colours used across the catalogue (from the settings), e.g. to filter stock.
+export const SizeSelect = (props: ReferenceSelectProps) => {
+  const { settings } = useReference();
+  const { text } = useLocale();
+  return (
+    <SelectField
+      label={props.label ?? text.owner.fields.size}
+      placeholder={props.allLabel}
+      value={props.value}
+      onChange={props.onChange}
+      error={props.error}
+      width={props.width}
+      options={settings.sizes.map((value) => ({ value, label: value }))}
+    />
+  );
+};
+
+export const ColorSelect = (props: ReferenceSelectProps) => {
+  const { settings } = useReference();
+  const { text } = useLocale();
+  return (
+    <SelectField
+      label={props.label ?? text.owner.fields.color}
+      placeholder={props.allLabel}
+      value={props.value}
+      onChange={props.onChange}
+      error={props.error}
+      width={props.width}
+      options={settings.colors.map((value) => ({ value, label: value }))}
+    />
+  );
+};
+
 export const CategorySelect = (props: ReferenceSelectProps & { includeArchived?: boolean }) => {
   const { categories } = useReference();
   const { text } = useLocale();

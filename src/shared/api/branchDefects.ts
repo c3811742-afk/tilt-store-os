@@ -1,5 +1,5 @@
 import { routes } from '@/shared/constants';
-import type { BuiltInRole, Defect, DefectFoundAt, DefectLiability, Id, LocationKind, StoredFile, WriteOff } from '@/shared/types';
+import type { BuiltInRole, Defect, DefectFoundAt, DefectLiability, DefectReasonQty, Id, LocationKind, StoredFile, WriteOff } from '@/shared/types';
 import { currentTerms, nowIso, stockLevels } from '@/shared/utils';
 import { ApiError } from './errors';
 import { assertBranch, hasRole, staffWithRole } from './branchScope';
@@ -44,7 +44,8 @@ export interface ReportDefectInput {
   variantId: Id;
   qty: number;
   locationKind?: LocationKind; // where the pieces are: shop floor, back room or storage; when not given, where most are
-  reasonId: Id; // the defect type, from the owner's list
+  reasonId?: Id; // the defect type, from the owner's list, when every piece has the same one
+  reasons?: DefectReasonQty[]; // or the pieces split by defect type; they add up to qty
   foundAt: DefectFoundAt;
   liability?: DefectLiability; // who carries the cost; the brand's terms decide when not given
   batchId?: Id; // the delivery it came in, for defects found later in storage
@@ -58,16 +59,19 @@ export const reportDefect = (input: ReportDefectInput) =>
     const me = assertStaff(input.branchId, ['manager', 'storekeeper', 'cashier']);
     const branch = findById(db.branches, input.branchId);
     const info = describeVariant(input.variantId);
-    if (!info.productId || !input.reasonId) throw new ApiError('notAllowed');
     const qty = Math.floor(input.qty);
-    if (qty < 1) throw new ApiError('notAllowed');
+    if (!info.productId || qty < 1) throw new ApiError('notAllowed');
+    // One defect per reason; together they cover every piece.
+    const reasons = input.reasons?.length ? input.reasons.map((row) => ({ reasonId: row.reasonId, qty: Math.floor(row.qty) })) : [{ reasonId: input.reasonId ?? '', qty }];
+    if (reasons.some((row) => !row.reasonId || row.qty < 1)) throw new ApiError('notAllowed');
+    if (reasons.reduce((sum, row) => sum + row.qty, 0) !== qty) throw new ApiError('quantityMismatch');
     const from = input.locationKind ? placeIn(branch, input.locationKind) : (fullestPlace(input.variantId, branch.id, qty) ?? placeIn(branch, 'floor'));
     if (availableAt(input.variantId, branch.id, from.locationId) < qty) throw new ApiError('notEnoughStock');
     const batch =
       (input.batchId && db.batches.find((current) => current.id === input.batchId)) ||
       db.batches.filter((current) => current.productId === info.productId).sort((a, b) => Number(b.branchId === branch.id) - Number(a.branchId === branch.id) || b.receivedAt.localeCompare(a.receivedAt))[0];
     const at = nowIso();
-    const defect: Defect = {
+    const defects = reasons.map((row): Defect => ({
       id: newId(),
       at,
       byId: me.id,
@@ -75,8 +79,8 @@ export const reportDefect = (input: ReportDefectInput) =>
       variantId: input.variantId,
       batchId: batch?.id,
       branchId: branch.id,
-      qty,
-      reasonId: input.reasonId,
+      qty: row.qty,
+      reasonId: row.reasonId,
       foundAt: input.foundAt,
       liability: input.liability ?? defaultLiability(input.variantId),
       status: 'open',
@@ -84,14 +88,16 @@ export const reportDefect = (input: ReportDefectInput) =>
       note: input.note,
       photos: input.photos?.length ? input.photos : undefined,
       locationId: from.locationId,
-    };
-    db.defects.push(defect);
-    db.movements.push({ id: newId(), at, byId: me.id, variantId: input.variantId, qty, from, to: { ...from, status: 'defective' }, kind: 'statusChange', ref: { type: 'defect', id: defect.id }, reason: input.reasonId });
+    }));
+    defects.forEach((defect) => {
+      db.defects.push(defect);
+      db.movements.push({ id: newId(), at, byId: me.id, variantId: input.variantId, qty: defect.qty, from, to: { ...from, status: 'defective' }, kind: 'statusChange', ref: { type: 'defect', id: defect.id }, reason: defect.reasonId });
+    });
     checkStockAlerts(branch.id, [input.variantId]);
-    logActivity({ action: 'create', target: { type: 'defect', id: defect.id, label: variantLabel(input.variantId) }, branchId: branch.id });
+    logActivity({ action: 'create', target: { type: 'defect', id: defects[0].id, label: variantLabel(input.variantId) }, branchId: branch.id });
     // Reported at the counter: the branch's managers are told, so they can check the piece.
     if (!hasRole(me, 'manager')) notify('defectiveReturn', { branch: branch.name, product: info.productName }, routes.manager.defects, staffWithRole('manager', branch.id));
-    return defect;
+    return defects;
   });
 
 export interface BranchDefectRow {

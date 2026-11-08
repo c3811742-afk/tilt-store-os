@@ -38,3 +38,13 @@ export const matchesText = (query: string, ...fields: (string | undefined)[]) =>
   const needle = query.trim().toLowerCase();
   return !needle || fields.some((field) => field?.toLowerCase().includes(needle));
 };
+
+// A stock search: every word has to match the product name, SKU or barcode, the exact size ("XL") or the colour
+// ("black"), so "hoodie black xl" finds that piece.
+export const matchesVariant = (query: string, item: { name: string; sku: string; barcode: string; size: string; color: string }) =>
+  query
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((word) => item.name.toLowerCase().includes(word) || item.sku.toLowerCase().includes(word) || item.barcode.includes(word) || item.size.toLowerCase() === word || item.color.toLowerCase().includes(word));

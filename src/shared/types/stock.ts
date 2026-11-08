@@ -163,6 +163,12 @@ export interface Transfer {
   stockStatus?: 'defective'; // damaged pieces sent to the warehouse travel as defective (default: available pieces)
 }
 
+// Defective pieces of one item split by reason (each piece can be damaged differently).
+export interface DefectReasonQty {
+  reasonId: Id; // from the owner's list of defect reasons
+  qty: number;
+}
+
 export interface Receiving {
   id: Id;
   number: string;
@@ -171,7 +177,7 @@ export interface Receiving {
   at: IsoDateTime;
   byId: Id;
   batchIds: Id[];
-  lines: { variantId: Id; expected: number; received: number; defective: number; missing: number }[];
+  lines: { variantId: Id; expected: number; received: number; defective: number; missing: number; defectReasons?: DefectReasonQty[] }[];
   courier?: Signature;
   storekeeper?: Signature;
   status?: 'draft' | 'confirmed'; // a draft is still being counted; confirming adds the stock

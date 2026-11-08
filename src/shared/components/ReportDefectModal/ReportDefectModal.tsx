@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { reportDefect, type VariantHit } from '@/shared/api';
 import { useBranchScope, useErrorMessage, useFormat, useLocale, useReference } from '@/shared/hooks';
-import type { DefectFoundAt, DefectLiability, LocationKind, StoredFile } from '@/shared/types';
+import type { DefectFoundAt, DefectLiability, DefectReasonQty, LocationKind, StoredFile } from '@/shared/types';
 import { vars } from '@/shared/theme';
 import { safeAsync, withDefaults } from '@/shared/utils';
 import { Button } from '../Button';
+import { DefectReasons, defectReasonsComplete, splitDefectReasons } from '../DefectReasons';
 import { FileField } from '../FileField';
 import { Modal } from '../Modal';
 import { Notice } from '../Notice';
@@ -24,7 +25,7 @@ export const ReportDefectModal = (props: ReportDefectModalProps) => {
   const p = withDefaults(reportDefectModalDefaults, props);
   const { text } = useLocale();
   const format = useFormat();
-  const { branches, brands, settings } = useReference();
+  const { branches, brands } = useReference();
   // The brand carries the cost when its terms say it replaces defects, the store otherwise.
   const liabilityFor = (brandId: string): DefectLiability => (brands.find((brand) => brand.id === brandId)?.defectPolicy === 'storeAbsorbs' ? 'store' : 'brand');
   const { branchId } = useBranchScope();
@@ -34,7 +35,7 @@ export const ReportDefectModal = (props: ReportDefectModalProps) => {
   const [item, setItem] = useState<VariantHit | null>(p.initialItem ?? null);
   const [qty, setQty] = useState('1');
   const [locationKind, setLocationKind] = useState<LocationKind>(kinds[0]);
-  const [reasonId, setReasonId] = useState('');
+  const [reasons, setReasons] = useState<DefectReasonQty[]>([]);
   const [foundAt, setFoundAt] = useState<DefectFoundAt>(p.foundAtOptions[0]);
   const [liability, setLiability] = useState<DefectLiability>(p.initialItem ? liabilityFor(p.initialItem.brandId) : 'brand');
   const [note, setNote] = useState('');
@@ -46,13 +47,13 @@ export const ReportDefectModal = (props: ReportDefectModalProps) => {
 
   const submit = async () => {
     const count = Math.floor(Number(qty));
-    const found = { item: item ? undefined : t.chooseItem, qty: count >= 1 ? undefined : text.validation.positive, reason: reasonId ? undefined : text.validation.required };
+    const found = { item: item ? undefined : t.chooseItem, qty: count >= 1 ? undefined : text.validation.positive, reason: count >= 1 && !defectReasonsComplete(reasons, count) ? t.reasonsIncomplete : undefined };
     setErrors(found);
     if (found.item || found.qty || found.reason || !item) return;
     setBusy(true);
     setError(null);
     const result = await safeAsync(() =>
-      reportDefect({ branchId, variantId: item.variantId, qty: count, locationKind, reasonId, foundAt, liability: p.showLiability ? liability : undefined, note: note.trim() || undefined, photos }),
+      reportDefect({ branchId, variantId: item.variantId, qty: count, locationKind, reasons: splitDefectReasons(reasons, count), foundAt, liability: p.showLiability ? liability : undefined, note: note.trim() || undefined, photos }),
     );
     setBusy(false);
     if (!result.ok) return setError(result.error);
@@ -104,15 +105,7 @@ export const ReportDefectModal = (props: ReportDefectModalProps) => {
             <SelectField<LocationKind> label={t.where} value={locationKind} onChange={setLocationKind} options={kinds.map((kind) => ({ value: kind, label: kind === 'floor' ? text.staff.stock.floor : text.staff.stock.backRoom }))} width={vars.sizes.field.narrow} />
           )}
         </Stack>
-        <SelectField
-          label={t.defectType}
-          required
-          placeholder={text.staff.decision.chooseReason}
-          value={reasonId}
-          onChange={setReasonId}
-          error={errors.reason}
-          options={settings.lists.defectReasons.filter((option) => !option.archived).map((option) => ({ value: option.id, label: format.option(option.id) }))}
-        />
+        <DefectReasons required total={Math.max(Math.floor(Number(qty)) || 0, 1)} value={reasons} onChange={setReasons} error={errors.reason} disabled={busy} />
         {p.foundAtOptions.length > 1 && (
           <SelectField<DefectFoundAt> label={t.foundAt} value={foundAt} onChange={setFoundAt} options={p.foundAtOptions.map((value) => ({ value, label: text.owner.defects.foundAt[value] }))} />
         )}

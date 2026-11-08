@@ -34,7 +34,7 @@ export const SignatureForm = (props: SignatureFormProps) => {
         <Table
           label={text.staff.items.item}
           stackOnMobile
-          columns={[{ key: 'item', label: text.staff.items.item }, ...fields.map((field) => ({ key: field.key, label: field.label, align: 'end' as const }))]}
+          columns={[{ key: 'item', label: text.staff.items.item }, ...fields.map((field) => ({ key: field.key, label: field.label, align: 'end' as const, width: vars.sizes.field.qty }))]}
           rows={lines.map((line) => ({
             key: line.variantId,
             cells: {
@@ -53,18 +53,20 @@ export const SignatureForm = (props: SignatureFormProps) => {
               ...Object.fromEntries(
                 fields.map((field) => [
                   field.key,
-                  <TextField
-                    key={field.key}
-                    label={<span aria-hidden />}
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    max={field.max?.(line.variantId, current.quantities[line.variantId] ?? {})}
-                    width={vars.sizes.field.qty}
-                    value={String(current.quantities[line.variantId]?.[field.key] ?? 0)}
-                    onChange={(raw) => setQty(line.variantId, field.key, raw)}
-                    disabled={disabled}
-                  />,
+                  <div key={field.key} className={styles.qty}>
+                    <TextField
+                      label={<span aria-hidden />}
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      max={field.max?.(line.variantId, current.quantities[line.variantId] ?? {})}
+                      width={vars.sizes.field.qty}
+                      placeholder={field.placeholder}
+                      value={field.blankZero && !current.quantities[line.variantId]?.[field.key] ? '' : String(current.quantities[line.variantId]?.[field.key] ?? 0)}
+                      onChange={(raw) => setQty(line.variantId, field.key, raw)}
+                      disabled={disabled}
+                    />
+                  </div>,
                 ]),
               ),
             },

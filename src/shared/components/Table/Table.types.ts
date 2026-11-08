@@ -5,6 +5,7 @@ export interface TableColumn {
   label: ReactNode;
   align?: 'start' | 'end' | 'center';
   sortable?: boolean; // the header becomes a button that sorts by this column
+  width?: string; // a fixed width (e.g. a column of quantity boxes); other columns share the rest
 }
 
 export interface TableRow {

@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useId, type CSSProperties } from 'react';
 import { cx, withDefaults } from '@/shared/utils';
 import { Field } from '../Field';
 import controls from '../Field/controls.module.css';
@@ -31,16 +31,24 @@ export const TextField = (props: TextFieldProps) => {
       aria-describedby={p.error || p.hint ? `${id}-message` : undefined}
     />
   );
+  const control = p.aside ? (
+    <div className={controls.withAside} style={{ '--aside-width': `${p.aside.length}ch` } as CSSProperties}>
+      {input}
+      <span className={controls.aside}>{p.aside}</span>
+    </div>
+  ) : (
+    input
+  );
   return (
     <Field id={id} label={p.label} hint={p.hint} error={p.error} required={p.required} width={p.width}>
       {p.prefix || p.suffix ? (
         <div className={cx(controls.withAffix, p.prefix && controls.hasPrefix, p.suffix && controls.hasSuffix)}>
           {p.prefix && <span className={controls.affix}>{p.prefix}</span>}
-          {input}
+          {control}
           {p.suffix && <span className={cx(controls.affix, controls.affixEnd)}>{p.suffix}</span>}
         </div>
       ) : (
-        input
+        control
       )}
     </Field>
   );

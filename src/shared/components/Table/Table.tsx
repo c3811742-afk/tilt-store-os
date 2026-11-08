@@ -33,6 +33,7 @@ export const Table = (props: TableProps) => {
                 key={column.key}
                 scope="col"
                 className={alignClass(column.align)}
+                style={column.width ? { inlineSize: column.width } : undefined}
                 aria-sort={sort?.key === column.key ? (sort.direction === 'asc' ? 'ascending' : 'descending') : undefined}
               >
                 {header(column)}

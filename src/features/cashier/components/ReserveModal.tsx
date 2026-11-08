@@ -28,6 +28,7 @@ export const ReserveModal = ({ target, onClose, onDone }: { target: ReserveTarge
     { fromBranchId: required, name: required, phone: required, qty: (value) => (Number(value) >= 1 ? null : text.validation.positive) },
   );
   const [done, setDone] = useState('');
+  const chosen = options.find((current) => current.branchId === form.values.fromBranchId);
   if (!target || !branch) return null;
 
   const onSubmit = form.submit(async (values) => {
@@ -73,12 +74,13 @@ export const ReserveModal = ({ target, onClose, onDone }: { target: ReserveTarge
           label={t.from}
           value={form.values.fromBranchId}
           onChange={(value) => form.setValue('fromBranchId', value)}
-          options={options.map((current) => ({ value: current.branchId, label: `${current.name} (${format.number(current.qty)})` }))}
+          options={options.map((current) => ({ value: current.branchId, label: current.name }))}
+          aside={chosen ? fillText(text.common.availableCount, { count: format.number(chosen.qty) }) : undefined}
           error={form.errors.fromBranchId}
           width="100%"
         />
         <Stack direction="row" wrap gap={vars.spacing[3]} align="flex-start">
-          <TextField label={t.qty} type="number" inputMode="numeric" min={1} {...form.field('qty')} width={vars.sizes.field.narrow} />
+          <TextField label={t.qty} type="number" inputMode="numeric" min={1} max={chosen?.qty} {...form.field('qty')} aside={chosen ? fillText(text.common.ofMax, { count: format.number(chosen.qty) }) : undefined} width={vars.sizes.field.narrow} />
           {target.mode === 'reserve' && (
             <SelectField label={t.hours} value={form.values.hours} onChange={(value) => form.setValue('hours', value)} options={tillDefaults.reservationHours.map((hours) => ({ value: String(hours), label: fillText(t.hoursOption, { hours }) }))} width={vars.sizes.field.narrow} />
           )}

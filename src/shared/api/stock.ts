@@ -1,6 +1,6 @@
 import { onHandStatuses, stockStatuses } from '@/shared/constants/statuses';
 import type { ApprovalState, Id, StockCount, StockStatus, Transfer } from '@/shared/types';
-import { daysBetween, nowIso, stockLevels, today } from '@/shared/utils';
+import { daysBetween, matchesVariant, nowIso, stockLevels, today } from '@/shared/utils';
 import { ApiError } from './errors';
 import { resolveApprovals } from './costing';
 import { variantIndex } from './engine';
@@ -49,10 +49,10 @@ export const getStockLevels = (filter: StockFilter) =>
   respond(() => {
     const query = filter.query?.trim().toLowerCase() ?? '';
     const variants = db.products
-      .filter((product) => !product.archived && (!filter.brandId || product.brandId === filter.brandId) && (!query || product.name.toLowerCase().includes(query) || product.variants.some((variant) => variant.sku.toLowerCase().includes(query) || variant.barcode.includes(query))))
+      .filter((product) => !product.archived && (!filter.brandId || product.brandId === filter.brandId))
       .flatMap((product) =>
         product.variants
-          .filter((variant) => !variant.archived && (!filter.size || variant.size === filter.size) && (!filter.color || variant.color === filter.color))
+          .filter((variant) => !variant.archived && (!filter.size || variant.size === filter.size) && (!filter.color || variant.color === filter.color) && matchesVariant(query, { ...variant, name: product.name }))
           .map((variant) => ({ product, variant })),
       );
     const wanted = new Set(variants.map(({ variant }) => variant.id));

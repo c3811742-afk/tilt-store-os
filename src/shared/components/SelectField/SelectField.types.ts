@@ -17,4 +17,5 @@ export interface SelectFieldProps<T extends string = string> {
   required?: boolean;
   disabled?: boolean;
   width?: string;
+  aside?: string; // quiet grey text inside the box, before the arrow (e.g. "4 available" for the chosen option)
 }

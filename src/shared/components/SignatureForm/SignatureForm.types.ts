@@ -12,6 +12,8 @@ export interface SignatureField {
   // The most this field can be for a line, given the row's other numbers (e.g. defects can't be more than received).
   // Typing more stops at the maximum, so the numbers on screen always add up.
   max?: (variantId: string, row: Record<string, number>) => number;
+  blankZero?: boolean; // show an empty box (with the placeholder) instead of 0, for a number nobody has entered yet
+  placeholder?: string;
 }
 
 // Quantities per product and field, the typed name and the confirmation tick.

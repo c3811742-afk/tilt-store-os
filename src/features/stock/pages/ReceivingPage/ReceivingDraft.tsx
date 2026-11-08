@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { confirmReceiving, saveReceivingLines, type ReceivingView, type VariantHit } from '@/shared/api';
-import { Button, Card, Notice, SelectField, SignatureForm, Stack, Text, VariantSearch, emptySignature, signatureErrors, type SignatureLine, type SignatureValue } from '@/shared/components';
-import { useErrorMessage, useFormat, useLocale, useReference } from '@/shared/hooks';
+import { Button, Card, DefectReasons, Notice, SignatureForm, Stack, Text, VariantSearch, defectReasonsComplete, emptySignature, signatureErrors, splitDefectReasons, type SignatureLine, type SignatureValue } from '@/shared/components';
+import { useErrorMessage, useFormat, useLocale } from '@/shared/hooks';
+import type { DefectReasonQty } from '@/shared/types';
 import { vars } from '@/shared/theme';
 import { safeAsync } from '@/shared/utils';
 import { AddVariantModal } from './AddItemModals';
@@ -13,7 +14,6 @@ type Line = { variantId: string; productName: string; size: string; color: strin
 export const ReceivingDraft = ({ view, onConfirmed }: { view: ReceivingView; onConfirmed: () => void }) => {
   const { text } = useLocale();
   const format = useFormat();
-  const { settings } = useReference();
   const errorMessage = useErrorMessage();
   const t = text.storekeeper.receiving;
   const { receiving } = view;
@@ -25,9 +25,9 @@ export const ReceivingDraft = ({ view, onConfirmed }: { view: ReceivingView; onC
   }));
   const [courier, setCourier] = useState<SignatureValue>(() => emptySignature([], []));
   const [mine, setMine] = useState<SignatureValue>(() => emptySignature([], []));
-  const [reasonId, setReasonId] = useState('');
+  const [reasons, setReasons] = useState<Record<string, DefectReasonQty[]>>(() => Object.fromEntries(view.lines.map((line) => [line.variantId, line.defectReasons ?? []])));
   const [adding, setAdding] = useState(false);
-  const [errors, setErrors] = useState<{ lines?: string; courier?: { name?: string; confirmed?: string }; mine?: { name?: string; confirmed?: string } }>({});
+  const [errors, setErrors] = useState<{ lines?: string; reasons?: boolean; courier?: { name?: string; confirmed?: string }; mine?: { name?: string; confirmed?: string } }>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [saved, setSaved] = useState(false);
@@ -42,8 +42,16 @@ export const ReceivingDraft = ({ view, onConfirmed }: { view: ReceivingView; onC
     const missing = Math.max(qty(line.variantId, 'expected') - qty(line.variantId, 'received'), 0);
     return { variantId: line.variantId, label: `${line.productName} · ${line.size} · ${line.color}`, detail: [line.sku, missing ? `${t.missing} ${format.number(missing)}` : undefined].filter(Boolean).join(' · ') };
   });
-  const payload = () => lines.map((line) => ({ variantId: line.variantId, expected: qty(line.variantId, 'expected'), received: qty(line.variantId, 'received'), defective: qty(line.variantId, 'defective') }));
-  const hasDefects = lines.some((line) => qty(line.variantId, 'defective') > 0);
+  const reasonsOf = (variantId: string) => splitDefectReasons(reasons[variantId] ?? [], qty(variantId, 'defective'));
+  const payload = () =>
+    lines.map((line) => ({
+      variantId: line.variantId,
+      expected: qty(line.variantId, 'expected'),
+      received: qty(line.variantId, 'received'),
+      defective: qty(line.variantId, 'defective'),
+      defectReasons: reasonsOf(line.variantId).filter((row) => row.reasonId && row.qty > 0),
+    }));
+  const defectiveLines = signLines.filter((line) => qty(line.variantId, 'defective') > 0);
   const messages = { name: text.staff.signature.nameRequired, confirmed: text.staff.signature.confirmRequired };
 
   const save = async () => {
@@ -58,11 +66,12 @@ export const ReceivingDraft = ({ view, onConfirmed }: { view: ReceivingView; onC
   const confirm = async () => {
     const found = {
       lines: payload().some((line) => line.received > 0) ? undefined : t.addItems,
+      reasons: defectiveLines.some((line) => !defectReasonsComplete(reasons[line.variantId] ?? [], qty(line.variantId, 'defective'))),
       courier: signatureErrors(courier, messages),
       mine: signatureErrors(mine, messages),
     };
     setErrors(found);
-    if (found.lines || found.courier.name || found.courier.confirmed || found.mine.name || found.mine.confirmed) return;
+    if (found.lines || found.reasons || found.courier.name || found.courier.confirmed || found.mine.name || found.mine.confirmed) return;
     setBusy(true);
     setError(null);
     const result = await safeAsync(() =>
@@ -71,7 +80,6 @@ export const ReceivingDraft = ({ view, onConfirmed }: { view: ReceivingView; onC
         courierName: courier.name,
         courierLines: lines.map((line) => ({ variantId: line.variantId, qty: courier.quantities[line.variantId]?.delivered ?? qty(line.variantId, 'received') })),
         storekeeperName: mine.name,
-        defectReasonId: reasonId || undefined,
       }),
     );
     setBusy(false);
@@ -97,7 +105,7 @@ export const ReceivingDraft = ({ view, onConfirmed }: { view: ReceivingView; onC
             showSigner={false}
             lines={signLines}
             fields={[
-              { key: 'expected', label: t.expected },
+              { key: 'expected', label: t.expected, blankZero: true, placeholder: t.expectedPlaceholder },
               { key: 'received', label: t.received },
               { key: 'defective', label: t.defective, max: (_variantId: string, row: Record<string, number>) => row.received ?? 0 },
             ]}
@@ -116,15 +124,23 @@ export const ReceivingDraft = ({ view, onConfirmed }: { view: ReceivingView; onC
             {errors.lines}
           </Text>
         )}
-        {hasDefects && (
-          <SelectField
-            label={t.defectReason}
-            placeholder={text.staff.decision.chooseReason}
-            value={reasonId}
-            onChange={setReasonId}
-            options={settings.lists.defectReasons.filter((option) => !option.archived).map((option) => ({ value: option.id, label: format.option(option.id) }))}
-          />
-        )}
+        {defectiveLines.map((line) => {
+          const total = qty(line.variantId, 'defective');
+          return (
+            <DefectReasons
+              key={line.variantId}
+              label={defectiveLines.length > 1 ? `${t.defectReason}: ${line.label}` : t.defectReason}
+              total={total}
+              value={reasons[line.variantId]}
+              onChange={(value) => {
+                setReasons({ ...reasons, [line.variantId]: value });
+                setSaved(false);
+              }}
+              error={errors.reasons && !defectReasonsComplete(reasons[line.variantId] ?? [], total) ? text.staff.defects.reasonsIncomplete : undefined}
+              disabled={busy}
+            />
+          );
+        })}
         {saved && <Notice tone="success">{t.saved}</Notice>}
         <Stack direction="row" justify="flex-end">
           <Button variant="secondary" disabled={busy} onClick={() => void save()}>

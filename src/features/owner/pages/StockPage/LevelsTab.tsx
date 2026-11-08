@@ -1,8 +1,8 @@
 import { Link } from 'react-router';
 import { getStockLevels } from '@/shared/api';
-import { AsyncContent, FilterBar, Notice, SelectField, Stack, Table, Text, TextField } from '@/shared/components';
+import { AsyncContent, ColorSelect, FilterBar, Notice, SizeSelect, Stack, Table, Text, TextField } from '@/shared/components';
 import { routes, toPath } from '@/shared/constants';
-import { useAsync, useFormat, useLiveVersion, useLocale, useQueryState, useReference } from '@/shared/hooks';
+import { useAsync, useFormat, useLiveVersion, useLocale, useQueryState } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { BranchSelect, BrandSelect } from '../../components';
 
@@ -12,7 +12,6 @@ const rowLimit = 300; // the most rows drawn at once; narrow the filters to see 
 export const LevelsTab = () => {
   const { text } = useLocale();
   const format = useFormat();
-  const { settings } = useReference();
   const [brandId, setBrandId] = useQueryState('brand', '');
   const [query, setQuery] = useQueryState('q', '');
   const [size, setSize] = useQueryState('size', '');
@@ -27,8 +26,8 @@ export const LevelsTab = () => {
       <FilterBar>
         <TextField type="search" label={text.owner.fields.product} placeholder={text.owner.products.searchPlaceholder} value={query} onChange={setQuery} />
         <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />
-        <SelectField label={text.owner.fields.size} placeholder={text.common.all} value={size} onChange={setSize} options={settings.sizes.map((value) => ({ value, label: value }))} />
-        <SelectField label={text.owner.fields.color} placeholder={text.common.all} value={color} onChange={setColor} options={settings.colors.map((value) => ({ value, label: value }))} />
+        <SizeSelect allLabel={text.common.all} value={size} onChange={setSize} />
+        <ColorSelect allLabel={text.common.all} value={color} onChange={setColor} />
         <BranchSelect kinds={['store', 'online', 'warehouse']} allLabel={text.owner.fields.allBranches} value={branchId} onChange={setBranchId} />
       </FilterBar>
       <AsyncContent state={state} empty={<Notice>{text.common.noResults}</Notice>}>

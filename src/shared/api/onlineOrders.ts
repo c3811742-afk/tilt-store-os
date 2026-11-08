@@ -1,6 +1,6 @@
 import { mockConfig } from '@/shared/constants';
 import type { Branch, Id, LocationKind, OnlineOrder, OnlineOrderStatus, SaleReturn, StockPlace } from '@/shared/types';
-import { createRandom, nowIso, sellingPrice, stockLevels } from '@/shared/utils';
+import { createRandom, matchesVariant, nowIso, sellingPrice, stockLevels } from '@/shared/utils';
 import type { Database } from './database';
 import { ApiError } from './errors';
 import { hasRole } from './branchScope';
@@ -316,7 +316,7 @@ export const getOnlineStock = (filter: OnlineStockFilter) =>
       .filter((row) => {
         const variant = variants.get(row.variantId)?.variant;
         if (!row.productId) return false;
-        if (needle && !row.productName.toLowerCase().includes(needle) && !row.sku.toLowerCase().includes(needle) && !variant?.barcode.includes(needle)) return false;
+        if (!matchesVariant(needle, { name: row.productName, sku: row.sku, barcode: variant?.barcode ?? '', size: row.size, color: row.color })) return false;
         if (filter.brandId && row.brandId !== filter.brandId) return false;
         if (filter.categoryId && row.categoryId !== filter.categoryId) return false;
         if (filter.size && row.size !== filter.size) return false;

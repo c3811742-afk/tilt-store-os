@@ -10,7 +10,7 @@ import { AsyncContent } from '../AsyncContent';
 import { Badge } from '../Badge';
 import { FilterBar } from '../FilterBar';
 import { Notice } from '../Notice';
-import { BrandSelect } from '../ReferenceSelect';
+import { BrandSelect, ColorSelect, SizeSelect } from '../ReferenceSelect';
 import { SelectField } from '../SelectField';
 import { Stack } from '../Stack';
 import { Table } from '../Table';
@@ -30,16 +30,20 @@ export const BranchStockLevels = (props: BranchStockLevelsProps) => {
   const version = useLiveVersion();
   const [query, setQuery] = useState('');
   const [brandId, setBrandId] = useState('');
+  const [size, setSize] = useState('');
+  const [color, setColor] = useState('');
   const [status, setStatus] = useState<StockStatus | ''>(p.status);
-  const state = useAsync(() => getBranchStock(branchId, { query, brandId: brandId || undefined, status: status || undefined }), [branchId, query, brandId, status, version]);
+  const state = useAsync(() => getBranchStock(branchId, { query, brandId: brandId || undefined, size: size || undefined, color: color || undefined, status: status || undefined }), [branchId, query, brandId, size, color, status, version]);
   const t = text.staff.stock;
   const statusText = text.owner.stock.statuses;
 
   return (
     <Stack gap={vars.spacing[4]}>
       <FilterBar>
-        <TextField type="search" label={text.common.search} value={query} onChange={setQuery} />
+        <TextField type="search" label={text.common.search} placeholder={text.owner.products.searchPlaceholder} value={query} onChange={setQuery} />
         <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />
+        <SizeSelect allLabel={text.common.all} value={size} onChange={setSize} />
+        <ColorSelect allLabel={text.common.all} value={color} onChange={setColor} />
         <SelectField<StockStatus | ''>
           label={text.common.status}
           value={status}

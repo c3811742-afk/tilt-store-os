@@ -45,7 +45,7 @@ export const BrandReturnsPage = () => {
                 actions={<Badge variant={record.status === 'settled' ? 'success' : 'warning'}>{t.states[record.status]}</Badge>}
               >
                 <Text variant="caption" color={vars.colors.textMuted}>
-                  {fillText(t.summary, { pieces: format.number(record.lines.reduce((sum, line) => sum + line.qty, 0)), user: format.user(record.byId), date: format.dateTime(record.at) })}
+                  {fillText(t.summary, { pieces: format.pieces(record.lines.reduce((sum, line) => sum + line.qty, 0)), user: format.user(record.byId), date: format.dateTime(record.at) })}
                 </Text>
               </Card>
             ))}

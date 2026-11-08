@@ -1,7 +1,7 @@
 import { routes } from '@/shared/constants';
 import { onHandStatuses } from '@/shared/constants/statuses';
 import type { Id, Reservation, StockMovement, StockRequest, StockStatus } from '@/shared/types';
-import { nowIso, stockLevels } from '@/shared/utils';
+import { matchesVariant, nowIso, stockLevels } from '@/shared/utils';
 import { sellingPrice } from '@/shared/utils/pricing';
 import { addMovement, availableIn, placeIn } from './engine';
 import { ApiError } from './errors';
@@ -69,7 +69,7 @@ export const getBranchStock = (branchId: Id, filter: BranchStockFilter) =>
       .flatMap((product) =>
         product.variants
           .filter((variant) => !variant.archived && (!filter.size || variant.size === filter.size) && (!filter.color || variant.color === filter.color))
-          .filter((variant) => !query || product.name.toLowerCase().includes(query) || variant.sku.toLowerCase().includes(query) || variant.barcode.includes(query))
+          .filter((variant) => matchesVariant(query, { ...variant, name: product.name }))
           .map((variant) => ({ variant, list: here.get(variant.id) ?? [] })),
       )
       .filter(({ list }) => list.length > 0)

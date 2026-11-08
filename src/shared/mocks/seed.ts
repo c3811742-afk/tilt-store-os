@@ -3,7 +3,7 @@ import { allPermissions, type Permission } from '@/shared/constants/permissions'
 import type { Database } from '@/shared/api/database';
 import { addMovement, placeIn, recordSale } from '@/shared/api/engine';
 import { buildStatement } from '@/shared/api/settlement';
-import type { Batch, Branch, Brand, BrandTerms, Category, CountrySettings, Id, Product, Role, Variant } from '@/shared/types';
+import type { Batch, Branch, Brand, BrandReturn, BrandTerms, Category, CountrySettings, Defect, Id, Product, Role, Variant } from '@/shared/types';
 import { addDays, createRandom, makeEan13, monthKey, shopPrice, startOfMonth, toIsoDate, type Random } from '@/shared/utils';
 import { seedBrands, seedCategories, seedProducts } from './catalog';
 import { seedPeople } from './people';
@@ -274,23 +274,49 @@ export const buildSeed = (): Database => {
         brandCredit: 0,
       };
       data.batches.push(batch);
-      if (defects) {
-        const variant = product.variants[0];
-        data.defects.push({
+      // Defective pieces found at receiving are set aside (out of sellable stock). Some have gone back to the brand
+      // with a return note, and half of those the brand has already credited against the batch.
+      const variant = product.variants[0];
+      const kind = branch.kind === 'store' ? 'backRoom' : 'storage';
+      const place = placeIn(branch, kind);
+      const defectQty = Math.min(defects, located.get(`${variant.id}|${place.locationId}`) ?? 0);
+      batch.defects = defectQty;
+      if (defectQty) {
+        const byId = storekeeper(branch.id);
+        const defect: Defect = {
           id: newId(),
           at: receivedAt,
-          byId: storekeeper(branch.id),
+          byId,
           productId: product.id,
           variantId: variant.id,
           batchId,
           branchId: branch.id,
-          qty: defects,
+          qty: defectQty,
           reasonId: random.pick(settings.lists.defectReasons).id,
           foundAt: 'receiving',
           liability: brandById.get(product.brandId)?.termsHistory[0].terms.defectPolicy === 'storeAbsorbs' ? 'store' : 'brand',
-          status: productIndex % 4 === 3 ? 'returnedToBrand' : 'open',
+          status: 'open',
           unitCost: product.cost,
-        });
+          locationId: place.locationId,
+        };
+        data.defects.push(defect);
+        addMovement(data, { variantId: variant.id, qty: defectQty, from: place, to: placeIn(branch, kind, 'defective'), kind: 'statusChange', ref: { type: 'defect', id: defect.id }, reason: defect.reasonId, at: receivedAt, byId }, newId);
+        track(variant.id, place.locationId, -defectQty);
+        stock.set(stockKey(variant.id, branch.id), (stock.get(stockKey(variant.id, branch.id)) ?? 0) - defectQty);
+        if (productIndex % 4 === 3) {
+          const sentAt = atTime(addDays(toIsoDate(receivedAt), 3), 12);
+          const record: BrandReturn = { id: newId(), number: number('RB', 4), brandId: product.brandId, branchId: branch.id, at: sentAt, byId, lines: [{ variantId: variant.id, qty: defectQty, condition: 'defective', defectId: defect.id }], status: 'sent' };
+          addMovement(data, { variantId: variant.id, qty: defectQty, from: placeIn(branch, kind, 'defective'), to: placeIn(branch, kind, 'returned'), kind: 'returnToBrand', ref: { type: 'brandReturn', id: record.id }, at: sentAt, byId }, newId);
+          defect.status = 'returnedToBrand';
+          if (productIndex % 8 === 7 && branch.currency === settings.baseCurrency) {
+            const amount = defectQty * product.cost;
+            record.status = 'settled';
+            record.settlement = { kind: 'credit', amount, currency: branch.currency, at: atTime(addDays(toIsoDate(receivedAt), 7), 13), byId };
+            batch.brandCredit = amount;
+            defect.status = 'credited';
+          }
+          data.brandReturns.push(record);
+        }
       }
     });
   });

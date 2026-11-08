@@ -31,7 +31,7 @@ export const NewBrandReturnPage = () => {
 
   const submit = async (rows: ReturnCandidate[]) => {
     const lines = rows
-      .map((row) => ({ variantId: row.variantId, locationId: row.locationId, status: row.status, defectId: row.defectId, qty: Math.min(Math.max(Math.floor(Number(qty[keyOf(row)] ?? 0)), 0), row.qty) }))
+      .map((row) => ({ variantId: row.variantId, locationId: row.locationId, status: row.status, qty: Math.min(Math.max(Math.floor(Number(qty[keyOf(row)] ?? 0)), 0), row.qty) }))
       .filter((line) => line.qty > 0);
     setMissing(!lines.length);
     if (!lines.length) return;
