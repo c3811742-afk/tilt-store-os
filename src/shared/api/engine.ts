@@ -17,6 +17,18 @@ export const variantIndex = (data: Database) => {
   return index;
 };
 
+// Pieces of a variant in a branch with one status, place by place (fullest first); only places that have some.
+export const piecesIn = (data: Database, variantId: Id, branchId: Id, status: StockStatus = 'available') =>
+  stockLevels(data.movements.filter((movement) => movement.variantId === variantId))
+    .filter((level) => level.branchId === branchId && level.status === status && level.qty > 0)
+    .sort((a, b) => b.qty - a.qty);
+
+// The same, at one place (e.g. the back room).
+export const piecesAt = (data: Database, variantId: Id, branchId: Id, locationId: Id, status: StockStatus = 'available') =>
+  piecesIn(data, variantId, branchId, status)
+    .filter((level) => level.locationId === locationId)
+    .reduce((sum, level) => sum + level.qty, 0);
+
 export const locationOf = (branch: Branch, kind: LocationKind) => (branch.locations.find((location) => location.kind === kind) ?? branch.locations[0]).id;
 
 export const placeIn = (branch: Branch, kind: LocationKind, status: StockStatus = 'available'): StockPlace => ({

@@ -2,6 +2,7 @@ import type { Id, StockCount } from '@/shared/types';
 import { nowIso, stockLevels } from '@/shared/utils';
 import { ApiError } from './errors';
 import { assertBranch, hasRole, notifyUsers, staffWithRole } from './branchScope';
+import { piecesAt } from './engine';
 import { decideCount, describeVariant } from './stock';
 import { actor, db, findById, isOwner, logActivity, mutate, newId, nextNumber, notify, respond } from './server';
 
@@ -72,11 +73,6 @@ const assertCounter = (branchId: Id) => {
 };
 
 // Available pieces right now at one place, for the expected quantity of an item added during the count.
-const availableAt = (variantId: Id, branchId: Id, locationId: Id) =>
-  stockLevels(db.movements.filter((movement) => movement.variantId === variantId))
-    .filter((level) => level.branchId === branchId && level.locationId === locationId && level.status === 'available')
-    .reduce((sum, level) => sum + level.qty, 0);
-
 export const listBranchCounts = (branchId: Id) =>
   respond(() => {
     assertBranch(branchId);
@@ -136,7 +132,7 @@ const applyLines = (count: StockCount, lines: readonly CountLineInput[]) => {
     const counted = Math.max(0, Math.floor(input.counted));
     const existing = count.lines.find((line) => lineKey(line.variantId, line.locationId) === lineKey(input.variantId, input.locationId));
     if (existing) Object.assign(existing, { counted, reasonId: input.reasonId || undefined });
-    else count.lines.push({ variantId: input.variantId, locationId: input.locationId, expected: availableAt(input.variantId, count.branchId, input.locationId), counted, reasonId: input.reasonId || undefined });
+    else count.lines.push({ variantId: input.variantId, locationId: input.locationId, expected: piecesAt(db, input.variantId, count.branchId, input.locationId), counted, reasonId: input.reasonId || undefined });
   });
 };
 

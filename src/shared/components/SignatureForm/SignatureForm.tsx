@@ -2,6 +2,7 @@ import { useLocale } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { withDefaults } from '@/shared/utils';
 import { Checkbox } from '../Checkbox';
+import { QtyInput } from '../QtyInput';
 import { Stack } from '../Stack';
 import { Table } from '../Table';
 import { Text } from '../Text';
@@ -53,20 +54,15 @@ export const SignatureForm = (props: SignatureFormProps) => {
               ...Object.fromEntries(
                 fields.map((field) => [
                   field.key,
-                  <div key={field.key} className={styles.qty}>
-                    <TextField
-                      label={<span aria-hidden />}
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      max={field.max?.(line.variantId, current.quantities[line.variantId] ?? {})}
-                      width={vars.sizes.field.qty}
-                      placeholder={field.placeholder}
-                      value={field.blankZero && !current.quantities[line.variantId]?.[field.key] ? '' : String(current.quantities[line.variantId]?.[field.key] ?? 0)}
-                      onChange={(raw) => setQty(line.variantId, field.key, raw)}
-                      disabled={disabled}
-                    />
-                  </div>,
+                  <QtyInput
+                    key={field.key}
+                    label={field.label}
+                    max={field.max?.(line.variantId, current.quantities[line.variantId] ?? {})}
+                    placeholder={field.placeholder}
+                    value={field.blankZero && !current.quantities[line.variantId]?.[field.key] ? '' : String(current.quantities[line.variantId]?.[field.key] ?? 0)}
+                    onChange={(raw) => setQty(line.variantId, field.key, raw)}
+                    disabled={disabled}
+                  />,
                 ]),
               ),
             },

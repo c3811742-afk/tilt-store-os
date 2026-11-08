@@ -73,14 +73,14 @@ export const StartCountModal = (props: StartCountModalProps) => {
           }}
           options={(['full', 'brand', 'location'] as const).map((value) => ({ value, label: t.scopes[value] }))}
         />
-        {kind === 'brand' && <BrandSelect label={t.brand} allLabel={t.chooseScope} value={brandId} onChange={setBrandId} error={missing ? t.chooseScope : undefined} />}
+        {kind === 'brand' && <BrandSelect label={t.brand} allLabel={t.chooseBrand} value={brandId} onChange={setBrandId} error={missing ? text.validation.required : undefined} />}
         {kind === 'location' && (
           <SelectField
             label={t.location}
-            placeholder={t.chooseScope}
+            placeholder={t.chooseLocation}
             value={locationId}
             onChange={setLocationId}
-            error={missing ? t.chooseScope : undefined}
+            error={missing ? text.validation.required : undefined}
             options={locations.map((location) => ({ value: location.id, label: format.text(location.name) }))}
           />
         )}

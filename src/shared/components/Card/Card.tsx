@@ -8,7 +8,7 @@ import styles from './Card.module.css';
 
 // A bordered, flat box for grouped content. With `title` and `actions` it is a page section.
 export const Card = (props: CardProps) => {
-  const { children, title, actions, as: Element, to, padding, gap, background, borderColor, accentColor, radius } = withDefaults(cardDefaults, props);
+  const { children, title, actions, as: Element, to, padding, gap, background, borderColor, accentColor, radius, printHidden } = withDefaults(cardDefaults, props);
   const style = {
     '--card-padding': padding,
     '--card-gap': gap,
@@ -17,7 +17,7 @@ export const Card = (props: CardProps) => {
     '--card-accent': accentColor,
     '--card-radius': radius,
   } as CSSProperties;
-  const className = cx(styles.card, accentColor && styles.accent);
+  const className = cx(styles.card, accentColor && styles.accent, printHidden && styles.printHidden);
   const header = (title || actions) && (
     <div className={styles.header}>
       {title && (

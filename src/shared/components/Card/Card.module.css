@@ -58,3 +58,9 @@
 .link:focus-visible {
   outline: var(--borders-width-thick) var(--borders-style) var(--colors-focus);
 }
+
+@media print {
+  .printHidden {
+    display: none;
+  }
+}

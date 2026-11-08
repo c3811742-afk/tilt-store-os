@@ -1486,7 +1486,8 @@ export const ar: TextShape<typeof en> = {
       approve: 'موافقة وتصحيح',
       submittedBy: 'أرسله {user} في {date}',
       decided: '{decision} بواسطة {user} في {date}',
-      chooseScope: 'اختر براندًا أو موقعًا.',
+      chooseBrand: 'اختر براندًا',
+      chooseLocation: 'اختر موقعًا',
     },
     defects: {
       title: 'العيوب والشطب',

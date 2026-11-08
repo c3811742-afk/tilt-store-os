@@ -37,3 +37,10 @@
 .fullWidth {
   inline-size: 100%;
 }
+
+/* Buttons do nothing on paper: they are left out of every printed page. */
+@media print {
+  .button {
+    display: none;
+  }
+}

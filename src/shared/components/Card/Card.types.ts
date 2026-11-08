@@ -12,4 +12,5 @@ export interface CardProps {
   borderColor?: string;
   accentColor?: string; // a colored edge at the start of the card (e.g. a highlighted number)
   radius?: string;
+  printHidden?: boolean; // left out when the page is printed (e.g. a form used on screen, on a page printed as a note)
 }

@@ -21,3 +21,4 @@ export { useConnection } from './useConnection';
 export { useIdleTimeout } from './useIdleTimeout';
 export { usePeriod } from './usePeriod';
 export type { Period } from './usePeriod';
+export * from './useQtyError';

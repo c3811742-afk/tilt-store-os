@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { createBrandReturn, listReturnCandidates, type ReturnCandidate } from '@/shared/api';
-import { AsyncContent, BrandSelect, Button, Card, Notice, PageHeader, Stack, Table, Text, TextAreaField, TextField } from '@/shared/components';
+import { AsyncContent, BrandSelect, Button, Card, Notice, PageHeader, Stack, Table, Text, QtyInput, TextAreaField } from '@/shared/components';
 import { routes, toPath } from '@/shared/constants';
 import { useAsync, useBranchScope, useErrorMessage, useFormat, useLocale, useReference } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
@@ -72,7 +72,7 @@ export const NewBrandReturnPage = () => {
                     { key: 'where', label: text.storekeeper.stock.where },
                     { key: 'status', label: t.condition },
                     { key: 'there', label: text.staff.stock.available, align: 'end' },
-                    { key: 'qty', label: t.returnQty, align: 'end' },
+                    { key: 'qty', label: t.returnQty, align: 'end', width: vars.sizes.field.qty },
                   ]}
                   rows={rows.map((row) => ({
                     key: keyOf(row),
@@ -81,7 +81,7 @@ export const NewBrandReturnPage = () => {
                       where: where(row.locationId),
                       status: statusText[row.status],
                       there: format.number(row.qty),
-                      qty: <TextField label={<span aria-hidden />} type="number" inputMode="numeric" min={0} max={row.qty} value={qty[keyOf(row)] ?? ''} onChange={(value) => setQty({ ...qty, [keyOf(row)]: value })} width={vars.sizes.field.qty} />,
+                      qty: <QtyInput label={t.returnQty} max={row.qty} value={qty[keyOf(row)] ?? ''} onChange={(value) => setQty({ ...qty, [keyOf(row)]: value })} />,
                     },
                   }))}
                 />

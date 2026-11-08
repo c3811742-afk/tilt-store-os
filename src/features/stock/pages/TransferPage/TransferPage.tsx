@@ -85,7 +85,7 @@ const AssignDriverCard = ({ view }: { view: StaffTransferView }) => {
   const t = text.storekeeper.transfers;
 
   return (
-    <Card title={t.assignDriver}>
+    <Card title={t.assignDriver} printHidden>
       {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
       <Stack direction="row" wrap gap={vars.spacing[3]} align="flex-end">
         <SelectField
@@ -134,7 +134,7 @@ const HandOverCard = ({ view, onDone }: { view: StaffTransferView; onDone: () =>
   };
 
   return (
-    <Card title={t.handOver}>
+    <Card title={t.handOver} printHidden>
       <Text variant="bodySm" color={vars.colors.textMuted}>
         {t.handOverHint}
       </Text>

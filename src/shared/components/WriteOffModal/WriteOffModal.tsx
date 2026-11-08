@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { requestWriteOff, type VariantHit } from '@/shared/api';
-import { useBranchScope, useErrorMessage, useFormat, useLocale, useReference } from '@/shared/hooks';
+import { getWriteOffLimit, requestWriteOff, type VariantHit } from '@/shared/api';
+import { useAsync, useBranchScope, useErrorMessage, useFormat, useLocale, useQtyError, useReference } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
-import { safeAsync, withDefaults } from '@/shared/utils';
+import { fillText, safeAsync, withDefaults } from '@/shared/utils';
 import { Button } from '../Button';
 import { Modal } from '../Modal';
 import { Notice } from '../Notice';
@@ -29,10 +29,13 @@ export const WriteOffModal = (props: WriteOffModalProps) => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const t = text.staff.defects;
+  const qtyError = useQtyError();
+  const limit = useAsync(() => (item ? getWriteOffLimit(branchId, item.variantId, p.kind) : Promise.resolve(null)), [branchId, item?.variantId, p.kind]);
+  const most = limit.status === 'success' ? limit.data : null;
 
   const submit = async () => {
     const count = Math.floor(Number(qty));
-    const found = { item: item ? undefined : t.chooseItem, qty: count >= 1 ? undefined : text.validation.positive, reason: reasonId ? undefined : text.validation.required };
+    const found = { item: item ? undefined : t.chooseItem, qty: most === null ? (count >= 1 ? undefined : text.validation.positive) : qtyError(count, most), reason: reasonId ? undefined : text.validation.required };
     setErrors(found);
     if (found.item || found.qty || found.reason || !item) return;
     setBusy(true);
@@ -82,7 +85,18 @@ export const WriteOffModal = (props: WriteOffModalProps) => {
             )}
           </Stack>
         )}
-        <TextField label={text.common.quantity} type="number" inputMode="numeric" min={1} value={qty} onChange={setQty} error={errors.qty} width={vars.sizes.field.narrow} />
+        <TextField
+          label={text.common.quantity}
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={most ?? undefined}
+          value={qty}
+          onChange={setQty}
+          error={errors.qty}
+          aside={most === null ? undefined : fillText(text.common.ofMax, { count: format.number(most) })}
+          width={vars.sizes.field.narrow}
+        />
         <SelectField
           label={t.reason}
           required

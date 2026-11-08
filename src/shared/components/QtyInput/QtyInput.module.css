@@ -1,0 +1,17 @@
+/* A quantity box in a table: under its (end-aligned) column heading, with the number at the end too. */
+.qty {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.qty input {
+  text-align: end;
+  appearance: textfield;
+}
+
+/* No up and down arrows: they cover the number in a small box, and people type the quantity. */
+.qty input::-webkit-inner-spin-button,
+.qty input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}

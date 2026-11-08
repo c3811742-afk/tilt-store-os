@@ -1486,7 +1486,8 @@ export const en = {
       approve: 'Approve and adjust',
       submittedBy: 'Submitted by {user} on {date}',
       decided: '{decision} by {user} on {date}',
-      chooseScope: 'Choose a brand or a location.',
+      chooseBrand: 'Choose a brand',
+      chooseLocation: 'Choose a location',
     },
     defects: {
       title: 'Defects and write-offs',

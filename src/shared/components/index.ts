@@ -70,3 +70,4 @@ export * from './QrCode';
 export * from './PrintArea';
 export * from './PeriodFilter';
 export * from './DefectReasons';
+export * from './QtyInput';

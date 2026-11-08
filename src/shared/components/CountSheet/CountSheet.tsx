@@ -11,7 +11,7 @@ import { SelectField } from '../SelectField';
 import { Stack } from '../Stack';
 import { Table } from '../Table';
 import { Text } from '../Text';
-import { TextField } from '../TextField';
+import { QtyInput } from '../QtyInput';
 import { VariantSearch } from '../VariantSearch';
 import type { CountSheetLine, CountSheetProps } from './CountSheet.types';
 
@@ -64,7 +64,7 @@ export const CountSheet = ({ view, onSubmitted }: CountSheetProps) => {
           <Text variant="bodySm" color={vars.colors.textMuted}>
             {t.scanHint}
           </Text>
-          <Stack direction="row" wrap gap={vars.spacing[3]} align="flex-end">
+          <Stack direction="row" wrap gap={vars.spacing[3]} align="flex-start">
             {!count.scope?.locationId && (
               <SelectField label={t.location} value={locationId} onChange={setLocationId} options={locations.map((location) => ({ value: location.id, label: format.text(location.name) }))} width={vars.sizes.field.narrow} />
             )}
@@ -81,7 +81,7 @@ export const CountSheet = ({ view, onSubmitted }: CountSheetProps) => {
           { key: 'item', label: text.staff.items.item },
           { key: 'location', label: t.location },
           { key: 'expected', label: t.expected, align: 'end' },
-          { key: 'counted', label: t.counted, align: 'end' },
+          { key: 'counted', label: t.counted, align: 'end', width: vars.sizes.field.qty },
           { key: 'difference', label: t.difference, align: 'end' },
           { key: 'reason', label: t.reasonFor },
         ]}
@@ -103,16 +103,7 @@ export const CountSheet = ({ view, onSubmitted }: CountSheetProps) => {
               location: locationName(line.locationId),
               expected: line.expected === null ? (count.blind ? t.hidden : '') : format.number(line.expected),
               counted: (
-                <TextField
-                  label={<span aria-hidden />}
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  width={vars.sizes.field.qty}
-                  value={String(line.counted)}
-                  onChange={(value) => update(line, { counted: Math.max(0, Math.floor(Number(value) || 0)) })}
-                  disabled={busy}
-                />
+                <QtyInput label={t.counted} value={String(line.counted)} onChange={(value) => update(line, { counted: Math.max(0, Math.floor(Number(value) || 0)) })} disabled={busy} />
               ),
               difference: difference === null || difference === 0 ? '' : <Badge variant="warning">{format.number(difference)}</Badge>,
               reason:

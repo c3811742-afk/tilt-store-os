@@ -106,7 +106,7 @@ export const BrandReturnPage = () => {
                   .join(' · ')}
               </Notice>
             ) : (
-              <Card title={t.settleTitle}>
+              <Card title={t.settleTitle} printHidden>
                 <Text variant="bodySm" color={vars.colors.textMuted}>
                   {t.settleHint}
                 </Text>

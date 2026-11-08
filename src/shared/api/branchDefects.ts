@@ -3,7 +3,7 @@ import type { BuiltInRole, Defect, DefectFoundAt, DefectLiability, DefectReasonQ
 import { currentTerms, nowIso, stockLevels } from '@/shared/utils';
 import { ApiError } from './errors';
 import { assertBranch, hasRole, staffWithRole } from './branchScope';
-import { currentUnitCost, placeIn } from './engine';
+import { currentUnitCost, piecesAt, piecesIn, placeIn } from './engine';
 import { describeVariant, variantLabel } from './stock';
 import { actor, db, findById, isOwner, logActivity, mutate, newId, notify, respond } from './server';
 import { checkStockAlerts } from './stockAlerts';
@@ -19,11 +19,6 @@ const assertStaff = (branchId: Id, roles: BuiltInRole[] = ['manager', 'storekeep
   if (!isOwner(me) && !roles.some((role) => hasRole(me, role))) throw new ApiError('notAllowed');
   return me;
 };
-
-const availableAt = (variantId: Id, branchId: Id, locationId: Id) =>
-  stockLevels(db.movements.filter((movement) => movement.variantId === variantId))
-    .filter((level) => level.branchId === branchId && level.locationId === locationId && level.status === 'available')
-    .reduce((sum, level) => sum + level.qty, 0);
 
 // The location in the branch with the most available pieces of a variant, when there are at least `qty`.
 const fullestPlace = (variantId: Id, branchId: Id, qty: number) => {
@@ -66,7 +61,7 @@ export const reportDefect = (input: ReportDefectInput) =>
     if (reasons.some((row) => !row.reasonId || row.qty < 1)) throw new ApiError('notAllowed');
     if (reasons.reduce((sum, row) => sum + row.qty, 0) !== qty) throw new ApiError('quantityMismatch');
     const from = input.locationKind ? placeIn(branch, input.locationKind) : (fullestPlace(input.variantId, branch.id, qty) ?? placeIn(branch, 'floor'));
-    if (availableAt(input.variantId, branch.id, from.locationId) < qty) throw new ApiError('notEnoughStock');
+    if (piecesAt(db, input.variantId, branch.id, from.locationId) < qty) throw new ApiError('notEnoughStock');
     const batch =
       (input.batchId && db.batches.find((current) => current.id === input.batchId)) ||
       db.batches.filter((current) => current.productId === info.productId).sort((a, b) => Number(b.branchId === branch.id) - Number(a.branchId === branch.id) || b.receivedAt.localeCompare(a.receivedAt))[0];
@@ -182,6 +177,18 @@ export interface WriteOffInput {
 }
 
 // Asks to write off lost (or damaged beyond repair) pieces. The owner approves before the stock goes down.
+// How many pieces of an item a branch can still ask to write off: what it has (available for lost pieces, defective
+// for defective ones) less what is already waiting for the owner.
+const writeOffRoom = (variantId: Id, branchId: Id, kind: WriteOff['kind']) =>
+  piecesIn(db, variantId, branchId, kind === 'defective' ? 'defective' : 'available').reduce((sum, level) => sum + level.qty, 0) -
+  db.writeOffs.filter((current) => current.variantId === variantId && current.branchId === branchId && current.kind === kind && current.status === 'pending').reduce((sum, current) => sum + current.qty, 0);
+
+export const getWriteOffLimit = (branchId: Id, variantId: Id, kind: WriteOff['kind'] = 'lost') =>
+  respond(() => {
+    assertBranch(branchId);
+    return Math.max(writeOffRoom(variantId, branchId, kind), 0);
+  });
+
 export const requestWriteOff = (input: WriteOffInput) =>
   mutate(() => {
     const me = assertStaff(input.branchId);
@@ -189,6 +196,7 @@ export const requestWriteOff = (input: WriteOffInput) =>
     const info = describeVariant(input.variantId);
     const qty = Math.floor(input.qty);
     if (!info.productId || qty < 1 || !input.reasonId) throw new ApiError('notAllowed');
+    if (qty > writeOffRoom(input.variantId, branch.id, input.kind ?? 'lost')) throw new ApiError('notEnoughStock');
     const writeOff: WriteOff = { id: newId(), at: nowIso(), byId: me.id, variantId: input.variantId, branchId: branch.id, qty, kind: input.kind ?? 'lost', reasonId: input.reasonId, unitCost: currentUnitCost(db, info.productId), status: 'pending' };
     db.writeOffs.push(writeOff);
     const label = `${info.productName} · ${info.size} · ${info.color} × ${qty}`;

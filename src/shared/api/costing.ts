@@ -1,7 +1,7 @@
 import type { Batch, DefectHandling, Id } from '@/shared/types';
 import { batchUnitCosts, convert, currentTerms, inRange, nowIso, shopPrice, type DateRange } from '@/shared/utils';
 import { ApiError } from './errors';
-import { placeIn } from './engine';
+import { piecesIn } from './engine';
 import { actor, db, findById, logActivity, mutate, newId, notify, respond } from './server';
 
 // Marks the approval requests about a record as decided (they are kept in the approvals log).
@@ -178,19 +178,17 @@ export const decideWriteOff = (writeOffId: Id, approve: boolean, reason?: string
     writeOff.decidedById = actor().id;
     writeOff.decidedAt = nowIso();
     if (approve) {
-      const branch = findById(db.branches, writeOff.branchId);
-      const fromStatus = writeOff.kind === 'defective' ? 'defective' : 'available';
-      db.movements.push({
-        id: newId(),
-        at: nowIso(),
-        byId: actor().id,
-        variantId: writeOff.variantId,
-        qty: writeOff.qty,
-        from: placeIn(branch, branch.kind === 'store' ? 'floor' : 'storage', fromStatus),
-        to: placeIn(branch, branch.kind === 'store' ? 'floor' : 'storage', 'writtenOff'),
-        kind: 'writeOff',
-        ref: { type: 'writeOff', id: writeOff.id },
-        reason,
+      // The pieces come from wherever the branch has them (fullest place first); if they're no longer all there
+      // (sold or moved since), nothing is written off and the owner is told.
+      const places = piecesIn(db, writeOff.variantId, writeOff.branchId, writeOff.kind === 'defective' ? 'defective' : 'available');
+      if (places.reduce((sum, level) => sum + level.qty, 0) < writeOff.qty) throw new ApiError('notEnoughStock');
+      let left = writeOff.qty;
+      places.forEach((level) => {
+        const qty = Math.min(level.qty, left);
+        if (!qty) return;
+        left -= qty;
+        const from = { branchId: level.branchId, locationId: level.locationId, status: level.status };
+        db.movements.push({ id: newId(), at: nowIso(), byId: actor().id, variantId: writeOff.variantId, qty, from, to: { ...from, status: 'writtenOff' }, kind: 'writeOff', ref: { type: 'writeOff', id: writeOff.id }, reason });
       });
     }
     resolveApprovals('writeOff', writeOffId, approve, reason);

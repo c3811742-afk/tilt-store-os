@@ -16,7 +16,7 @@ import type { BranchItemHistoryProps } from './BranchItemHistory.types';
 
 // One item in the signed-in person's branch: where its pieces are now (location and status), how many other
 // branches have available, and every movement in and out of the branch.
-export const BranchItemHistory = ({ variantId, back, actions }: BranchItemHistoryProps) => {
+export const BranchItemHistory = ({ variantId, back, actions, notice }: BranchItemHistoryProps) => {
   const { text } = useLocale();
   const format = useFormat();
   const { branchId } = useBranchScope();
@@ -34,6 +34,7 @@ export const BranchItemHistory = ({ variantId, back, actions }: BranchItemHistor
         return (
           <Stack gap={vars.spacing[5]}>
             <PageHeader back={back} title={`${data.productName} · ${data.size} · ${data.color}`} subtitle={`${format.brand(data.brandId)} · ${data.sku}`} actions={actions?.(data)} />
+            {notice}
             <Card title={t.whereNow}>
               {data.here.length ? (
                 <Grid>

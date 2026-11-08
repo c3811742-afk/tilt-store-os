@@ -40,3 +40,11 @@
 .back:hover {
   color: var(--colors-text);
 }
+
+/* On paper: the title only, without the back link and the buttons. */
+@media print {
+  .back,
+  .actions {
+    display: none;
+  }
+}

@@ -63,7 +63,7 @@ export const ReceiveTransferForm = ({ view, onDone }: ReceiveTransferFormProps) 
   };
 
   return (
-    <Card title={t.receiveTitle}>
+    <Card title={t.receiveTitle} printHidden>
       <Stack
         as="form"
         gap={vars.spacing[4]}

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { getLabelItems, moveItem, setItemStatus, setMinQty, settableStatuses, type BranchItemHistoryData } from '@/shared/api';
 import { Button, Icon, IconButton, Menu, Modal, Notice, SelectField, Stack, Text, TextAreaField, TextField, WriteOffModal } from '@/shared/components';
-import { useBranchScope, useErrorMessage, useFormat, useLocale } from '@/shared/hooks';
+import { useBranchScope, useErrorMessage, useFormat, useLocale, useQtyError } from '@/shared/hooks';
 import type { StockStatus } from '@/shared/types';
 import { vars } from '@/shared/theme';
 import { fillText, printLabels, safeAsync } from '@/shared/utils';
@@ -11,12 +11,13 @@ type Dialog = 'status' | 'move' | 'min' | 'writeOff' | null;
 // The storekeeper's actions on one item, laid out as on an admin product page: the everyday one (move pieces between
 // the back room and the shop floor) as the main button, print labels next to it, and the rest (change status, set the
 // minimum, and write off last, in red) under the three-dots More actions button at the end. Each one is a recorded movement.
-export const ItemActions = ({ data }: { data: BranchItemHistoryData }) => {
+export type ItemMessage = { tone: 'success' | 'warning'; text: string };
+
+export const ItemActions = ({ data, onMessage }: { data: BranchItemHistoryData; onMessage: (message: ItemMessage) => void }) => {
   const { text, locale, theme } = useLocale();
   const format = useFormat();
   const { branchId } = useBranchScope();
   const [dialog, setDialog] = useState<Dialog>(null);
-  const [message, setMessage] = useState('');
   const t = text.storekeeper.stock;
   const item = `${data.productName} · ${data.size} · ${data.color}`;
   const hit = { variantId: data.variantId, barcode: '', productId: data.productId, productName: data.productName, brandId: data.brandId, size: data.size, color: data.color, sku: data.sku };
@@ -30,7 +31,7 @@ export const ItemActions = ({ data }: { data: BranchItemHistoryData }) => {
         { title: item, dir: theme.dir, lang: locale },
       ),
     );
-    if (!printed.ok) setMessage(text.staff.print.blocked);
+    if (!printed.ok) onMessage({ tone: 'warning', text: text.staff.print.blocked });
   };
 
   return (
@@ -52,20 +53,22 @@ export const ItemActions = ({ data }: { data: BranchItemHistoryData }) => {
           { key: 'writeOff', label: t.writeOff, icon: 'trash', danger: true, onSelect: () => setDialog('writeOff') },
         ]}
       />
-      {message && <Notice tone="warning">{message}</Notice>}
       {dialog === 'status' && <StatusModal data={data} item={item} onClose={() => setDialog(null)} />}
       {dialog === 'move' && <MoveModal data={data} item={item} onClose={() => setDialog(null)} />}
       {dialog === 'min' && <MinModal data={data} item={item} onClose={() => setDialog(null)} />}
-      {dialog === 'writeOff' && <WriteOffModal open initialItem={hit} onClose={() => setDialog(null)} onDone={() => setDialog(null)} />}
+      {dialog === 'writeOff' && (
+        <WriteOffModal
+          open
+          initialItem={hit}
+          onClose={() => setDialog(null)}
+          onDone={() => {
+            setDialog(null);
+            onMessage({ tone: 'success', text: text.staff.defects.requested });
+          }}
+        />
+      )}
     </>
   );
-};
-
-// The message for a quantity of pieces: a whole number from 1 up to what is there, or why not.
-const useQtyError = () => {
-  const { text } = useLocale();
-  const format = useFormat();
-  return (count: number, most: number) => (count < 1 ? text.validation.positive : count > most ? fillText(text.validation.atMost, { count: format.number(most) }) : undefined);
 };
 
 interface ActionModalProps {

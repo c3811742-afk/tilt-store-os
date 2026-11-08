@@ -103,7 +103,8 @@
   text-align: start;
 }
 
-@media (--md-up) {
+/* Wider screens and paper: a normal table, one row per line. */
+@media (--md-up), print {
   .stacked thead {
     display: table-header-group;
   }

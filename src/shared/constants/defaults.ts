@@ -167,6 +167,8 @@ export const defaultSettings: Settings = {
       option('cr-not-scanned', 'Sold without scanning', 'بيع بدون مسح'),
       option('cr-lost', 'Lost', 'مفقود'),
       option('cr-found', 'Found', 'تم العثور عليه'),
+      option('cr-other-branch', 'Returned from another branch', 'مرتجع من فرع آخر'),
+      option('cr-transfer', 'Transfer not recorded', 'نقل غير مسجل'),
     ],
     expenseCategories: [
       option('ex-rent', 'Rent', 'إيجار'),

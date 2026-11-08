@@ -90,16 +90,18 @@ export const ReceivingDraft = ({ view, onConfirmed }: { view: ReceivingView; onC
   return (
     <Stack gap={vars.spacing[4]}>
       {Boolean(error) && <Notice tone="danger">{errorMessage(error)}</Notice>}
-      <Card title={t.items}>
+      <Card
+        title={t.items}
+        actions={
+          <Button variant="secondary" onClick={() => setAdding(true)}>
+            {t.addVariant}
+          </Button>
+        }
+      >
         <Text variant="bodySm" color={vars.colors.textMuted}>
           {t.itemsHint}
         </Text>
-        <Stack direction="row" wrap gap={vars.spacing[3]} align="flex-end" justify="space-between">
-          <VariantSearch onPick={add} disabled={busy} autoFocus />
-          <Button variant="muted" onClick={() => setAdding(true)}>
-            {t.addVariant}
-          </Button>
-        </Stack>
+        <VariantSearch onPick={add} disabled={busy} autoFocus />
         {lines.length ? (
           <SignatureForm
             showSigner={false}
