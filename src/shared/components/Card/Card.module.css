@@ -27,6 +27,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-2);
+  align-items: center; /* tags keep their own height next to buttons */
   margin-inline-start: auto; /* at the end of the line, with or without a title */
 }
 

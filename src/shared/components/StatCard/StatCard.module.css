@@ -2,7 +2,7 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start; /* the number right under its label, at the same height in every card of a row */
   gap: var(--spacing-2);
   min-block-size: var(--stat-card-min-height);
 }
