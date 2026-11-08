@@ -4,8 +4,9 @@ export const niceTicks = (max: number, count: number): number[] => {
   if (!(max > 0) || count < 1) return [0, 1];
   const rough = max / count;
   const power = 10 ** Math.floor(Math.log10(rough));
-  const nice = [1, 2, 2.5, 5, 10].map((factor) => factor * power).find((candidate) => candidate >= rough) ?? 10 * power;
-  const step = Number.isInteger(max) ? Math.max(nice, 1) : nice; // counts of pieces never get a half step
+  // Whole numbers (pieces, orders) never get a fractional step such as 2.5.
+  const steps = [1, 2, 2.5, 5, 10].map((factor) => factor * power).filter((candidate) => !Number.isInteger(max) || Number.isInteger(candidate));
+  const step = Math.max(steps.find((candidate) => candidate >= rough) ?? 10 * power, Number.isInteger(max) ? 1 : 0);
   const ticks = [0];
   while (ticks[ticks.length - 1] < max) ticks.push(Number((ticks.length * step).toPrecision(12)));
   return ticks;

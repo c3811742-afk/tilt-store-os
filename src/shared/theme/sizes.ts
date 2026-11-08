@@ -33,7 +33,7 @@ export const sizes = {
   statCard: { minHeight: '6.5rem', minWidth: 'min(13rem, 100%)' }, // 104 / 208: four figures fit in one row on a laptop
   table: { firstColumn: 'min(14rem, 40%)', thumbnail: '2.5rem' }, // 224 / 40
   field: { maxWidth: '28rem', narrow: '10rem', textareaHeight: '6rem', qty: '6rem', wide: 'min(28rem, 100%)' }, // 448 / 160 / 96 / 96 (a quantity in a list); wide: a search field in a filter bar, never wider than the screen
-  bar: { height: '0.5rem', chartHeight: '10rem', columnWidth: '1.5rem' }, // 8 / 160 / 24: bar lists, the column chart and its widest column
+  bar: { height: '0.5rem', chartHeight: '10rem', columnWidth: '1.5rem', columnSlot: '4rem' }, // 8 / 160 / 24 / 64: bar lists, the column chart, its widest column and the most room a column gets
   badgeDot: '0.5rem', // 8, the "new" dot on the notifications bell
   timeline: { dot: '0.75rem' }, // 12, one step of a transfer or order timeline
   thumbnail: { sm: '2.5rem', md: '4rem', lg: '8rem' }, // 40 / 64 / 128: product photos and brand logos

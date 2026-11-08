@@ -28,10 +28,11 @@ export const SalesPage = () => {
               <StatCard label={t.sold} value={format.number(data.sold)} highlight />
               <StatCard label={t.returned} value={format.number(data.returned)} />
             </Grid>
-            <Card title={t.byDay}>
-              <ColumnChart label={t.byDay} points={data.byDay.map((point) => ({ key: point.day, label: format.shortDate(`${point.day}T12:00:00`), value: point.sold, display: format.number(point.sold) }))} labelEvery={Math.max(1, Math.ceil(data.byDay.length / 10))} />
-            </Card>
+            {/* The chart next to the branches, the products below at full width. */}
             <Grid minColumnWidth={vars.sizes.card.minWidth}>
+              <Card title={t.byDay}>
+                <ColumnChart label={t.byDay} points={data.byDay.map((point) => ({ key: point.day, label: format.shortDate(`${point.day}T12:00:00`), value: point.sold, display: format.number(point.sold) }))} labelEvery={Math.max(1, Math.ceil(data.byDay.length / 10))} />
+              </Card>
               <Card title={t.byBranch}>
                 <Table
                   label={t.byBranch}
@@ -44,19 +45,19 @@ export const SalesPage = () => {
                   footer={{ branch: text.common.total, sold: format.number(data.sold), returned: format.number(data.returned) }}
                 />
               </Card>
-              <Card title={t.byProduct}>
-                <Table
-                  label={t.byProduct}
-                  emptyText={text.brandPortal.overview.noSales}
-                  columns={[
-                    { key: 'product', label: t.product },
-                    { key: 'sold', label: t.sold, align: 'end' },
-                    { key: 'returned', label: t.returned, align: 'end' },
-                  ]}
-                  rows={data.byProduct.map((row) => ({ key: row.productId, cells: { product: row.name, sold: format.number(row.sold), returned: format.number(row.returned) } }))}
-                />
-              </Card>
             </Grid>
+            <Card title={t.byProduct}>
+              <Table
+                label={t.byProduct}
+                emptyText={text.brandPortal.overview.noSales}
+                columns={[
+                  { key: 'product', label: t.product },
+                  { key: 'sold', label: t.sold, align: 'end' },
+                  { key: 'returned', label: t.returned, align: 'end' },
+                ]}
+                rows={data.byProduct.map((row) => ({ key: row.productId, cells: { product: row.name, sold: format.number(row.sold), returned: format.number(row.returned) } }))}
+              />
+            </Card>
           </Stack>
         )}
       </AsyncContent>

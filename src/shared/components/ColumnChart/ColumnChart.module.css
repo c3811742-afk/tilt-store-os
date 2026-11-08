@@ -1,7 +1,12 @@
-/* Two columns: the y-axis labels, then the plot; the day labels sit under the plot. */
+/* Two columns: the y-axis labels, then the plot; the day labels sit under the plot. The plot is never wider than
+   its columns need (a week is a compact chart) and shrinks to fit a narrow screen. */
 .chart {
+  /* The space between columns shrinks on long periods, so 90 days still show as columns, not hairlines. */
+  --column-chart-gap: min(var(--spacing-1), 0.25%);
+
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, calc(var(--column-chart-count) * var(--column-chart-slot)));
+  justify-content: start;
   gap: var(--spacing-2);
   margin: 0;
   padding-block-start: var(--spacing-2); /* room for the top tick label, which is centred on its gridline */
@@ -36,7 +41,7 @@
   position: relative;
   display: flex;
   align-items: flex-end;
-  gap: var(--spacing-1);
+  gap: var(--column-chart-gap);
   block-size: var(--column-chart-height);
   border-block-end: var(--borders-width-thin) var(--borders-style) var(--colors-border-strong);
 }
@@ -125,15 +130,16 @@
 .labels {
   display: flex;
   grid-column: 2;
-  gap: var(--spacing-1);
+  gap: var(--column-chart-gap);
   color: var(--colors-text-muted);
   font-size: var(--text-styles-caption-font-size);
 }
 
+/* A label may be wider than its column (every Nth day on a long period): it stays centred under it and shows in full. */
 .label {
+  display: flex;
   flex: 1;
+  justify-content: center;
   min-inline-size: 0;
-  overflow: hidden;
-  text-align: center;
   white-space: nowrap;
 }
