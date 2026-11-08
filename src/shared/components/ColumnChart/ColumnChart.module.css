@@ -1,41 +1,130 @@
+/* Two columns: the y-axis labels, then the plot; the day labels sit under the plot. */
 .chart {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   gap: var(--spacing-2);
+  margin: 0;
+  padding-block-start: var(--spacing-2); /* room for the top tick label, which is centred on its gridline */
 }
 
-.columns {
+.axis {
+  position: relative;
+  block-size: var(--column-chart-height);
+  color: var(--colors-text-muted);
+  font-size: var(--text-styles-caption-font-size);
+  font-variant-numeric: var(--numeric-tabular);
+  line-height: var(--text-styles-caption-line-height);
+  text-align: end;
+}
+
+.axisSizer {
+  display: flex;
+  flex-direction: column;
+  block-size: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+
+.tick {
+  position: absolute;
+  inset-inline-end: 0;
+  translate: 0 50%;
+  white-space: nowrap;
+}
+
+.plot {
+  position: relative;
   display: flex;
   align-items: flex-end;
   gap: var(--spacing-1);
   block-size: var(--column-chart-height);
-  border-block-end: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  border-block-end: var(--borders-width-thin) var(--borders-style) var(--colors-border-strong);
 }
 
+/* Faint hairlines at each step, behind the columns. */
+.gridline {
+  position: absolute;
+  inset-inline: 0;
+  border-block-start: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  pointer-events: none;
+}
+
+/* The whole slot is the hover target; the column itself stays thin and centred in it. */
 .column {
   position: relative;
   display: flex;
   flex: 1;
   align-items: flex-end;
+  justify-content: center;
   block-size: 100%;
   min-inline-size: 0;
 }
 
 .bar {
+  position: relative;
   inline-size: 100%;
+  max-inline-size: var(--column-chart-bar-width);
   border-start-start-radius: var(--radii-sm);
   border-start-end-radius: var(--radii-sm);
   background: var(--column-chart-color);
 }
 
+.column:hover .bar,
+.column:focus-visible .bar {
+  opacity: var(--opacity-muted);
+}
+
+.column:focus-visible {
+  border-radius: var(--radii-sm);
+  outline: var(--borders-width-thick) var(--borders-style) var(--colors-focus);
+  outline-offset: calc(-1 * var(--borders-width-thick));
+}
+
+/* The previous period at the same point: a short line over its column, a little wider than the column. */
 .previous {
   position: absolute;
   inset-inline: 0;
+  max-inline-size: calc(var(--column-chart-bar-width) + var(--spacing-3));
+  margin-inline: auto;
   border-block-start: var(--borders-width-thick) var(--borders-style) var(--column-chart-previous);
+}
+
+/* The value of the column under the pointer (or keyboard focus), just above it. */
+.tip {
+  position: absolute;
+  z-index: var(--z-index-dropdown);
+  inset-inline-start: 50%;
+  display: none;
+  flex-direction: column;
+  margin-block-end: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-2);
+  border: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  border-radius: var(--radii-sm);
+  background: var(--colors-surface);
+  color: var(--colors-text);
+  font-size: var(--text-styles-caption-font-size);
+  font-variant-numeric: var(--numeric-tabular);
+  white-space: nowrap;
+  translate: -50% 0;
+  pointer-events: none;
+}
+
+.tip:dir(rtl) {
+  translate: 50% 0;
+}
+
+.tipLabel {
+  color: var(--colors-text-muted);
+}
+
+.column:hover .tip,
+.column:focus-visible .tip {
+  display: flex;
 }
 
 .labels {
   display: flex;
+  grid-column: 2;
   gap: var(--spacing-1);
   color: var(--colors-text-muted);
   font-size: var(--text-styles-caption-font-size);

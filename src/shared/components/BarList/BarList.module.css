@@ -40,13 +40,16 @@
   font-weight: var(--font-weight-regular);
 }
 
+/* Both are spans (they sit inside a link), so they need to be blocks to take a size. */
 .track {
+  display: block;
   block-size: var(--sizes-bar-height);
   border-radius: var(--radii-pill);
   background: var(--colors-surface-muted);
 }
 
 .bar {
+  display: block;
   block-size: 100%;
   border-radius: var(--radii-pill);
   background: var(--bar-list-color);

@@ -106,7 +106,7 @@ export const PromotionsPage = () => {
           </Text>
           {Boolean(form.requestError) && <Notice tone="danger">{errorMessage(form.requestError)}</Notice>}
           <TextField label={t.name} {...form.field('name')} width="100%" />
-          <TextField label={t.percent} type="number" inputMode="decimal" min={1} max={100} prefix={text.common.percentSuffix} {...form.field('percent')} width={vars.sizes.field.narrow} />
+          <TextField label={t.percent} type="number" inputMode="decimal" min={1} max={100} suffix={text.common.percentSuffix} {...form.field('percent')} width={vars.sizes.field.narrow} />
           <Stack direction="row" wrap gap={vars.spacing[3]}>
             <TextField label={t.startDate} type="date" min={today()} {...form.field('startDate')} width={vars.sizes.field.narrow} />
             <TextField label={t.endDate} type="date" min={form.values.startDate} {...form.field('endDate')} width={vars.sizes.field.narrow} />

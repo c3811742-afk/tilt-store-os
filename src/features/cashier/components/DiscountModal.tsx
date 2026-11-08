@@ -62,7 +62,7 @@ export const DiscountModal = ({ open, title, current, limitPercent, onSave, onCl
             { value: 'amount', label: t.amount },
           ]}
         />
-        <TextField label={t.value} type="number" inputMode="decimal" min={0} step="any" value={value} onChange={setValue} prefix={type === 'percent' ? text.common.percentSuffix : undefined} error={tried ? valueError : undefined} autoFocus width="100%" />
+        <TextField label={t.value} type="number" inputMode="decimal" min={0} step="any" value={value} onChange={setValue} suffix={type === 'percent' ? text.common.percentSuffix : undefined} error={tried ? valueError : undefined} autoFocus width="100%" />
         <SelectField
           label={t.reason}
           placeholder={text.common.required}

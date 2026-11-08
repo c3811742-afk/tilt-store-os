@@ -33,10 +33,11 @@ export const TextField = (props: TextFieldProps) => {
   );
   return (
     <Field id={id} label={p.label} hint={p.hint} error={p.error} required={p.required} width={p.width}>
-      {p.prefix ? (
-        <div className={controls.withAffix}>
-          <span className={controls.affix}>{p.prefix}</span>
+      {p.prefix || p.suffix ? (
+        <div className={cx(controls.withAffix, p.prefix && controls.hasPrefix, p.suffix && controls.hasSuffix)}>
+          {p.prefix && <span className={controls.affix}>{p.prefix}</span>}
           {input}
+          {p.suffix && <span className={cx(controls.affix, controls.affixEnd)}>{p.suffix}</span>}
         </div>
       ) : (
         input

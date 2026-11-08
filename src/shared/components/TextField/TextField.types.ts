@@ -15,6 +15,7 @@ export interface TextFieldProps {
   max?: string | number;
   step?: string | number;
   prefix?: string; // shown before the value (e.g. the currency: EGP)
+  suffix?: string; // shown after the value (e.g. the percent sign: 15 %)
   width?: string;
   autoComplete?: string;
   autoFocus?: boolean;

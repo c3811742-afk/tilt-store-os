@@ -22,3 +22,4 @@ export { printLabels } from './labels';
 export type { LabelInput } from './labels';
 export * from './zatca';
 export * from './phone';
+export { niceTicks, formatAxisNumber } from './chartScale';

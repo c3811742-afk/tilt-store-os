@@ -91,7 +91,7 @@ export const PromotionPage = () => {
                   <Grid>
                     <TextField label={text.common.name} value={value.name} onChange={(name) => set({ name })} required />
                     <SelectField label={t.discountType} value={value.discountType} onChange={(discountType) => set({ discountType })} options={(['percent', 'amount'] as const).map((type) => ({ value: type, label: t.discountTypes[type] }))} />
-                    <TextField label={t.value} type="number" min={0} prefix={value.discountType === 'percent' ? '%' : value.currency} value={String(value.value)} onChange={(input) => set({ value: Number(input) })} />
+                    <TextField label={t.value} type="number" min={0} prefix={value.discountType === 'percent' ? undefined : value.currency} suffix={value.discountType === 'percent' ? text.common.percentSuffix : undefined} value={String(value.value)} onChange={(input) => set({ value: Number(input) })} />
                     {value.discountType === 'amount' && <CurrencySelect usedOnly value={value.currency ?? settings.baseCurrency} onChange={(currency) => set({ currency })} />}
                     <TextField label={text.owner.fields.startDate} type="date" value={value.startDate} onChange={(startDate) => set({ startDate })} />
                     <TextField label={text.owner.fields.endDate} type="date" min={value.startDate} value={value.endDate} onChange={(endDate) => set({ endDate })} error={value.endDate < value.startDate ? text.validation.endBeforeStart : undefined} />

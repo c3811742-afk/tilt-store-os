@@ -49,9 +49,24 @@
   font-size: var(--text-styles-caption-font-size);
 }
 
-.withAffix .control {
+/* After the value (a percent sign): the same box, on the other side. */
+.affixEnd {
+  border-inline-start: none;
+  border-inline-end: var(--borders-width-thin) var(--borders-style) var(--colors-border);
   border-start-start-radius: 0;
   border-end-start-radius: 0;
+  border-start-end-radius: var(--radii-md);
+  border-end-end-radius: var(--radii-md);
+}
+
+.hasPrefix .control {
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+}
+
+.hasSuffix .control {
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
 }
 
 .control:hover:not(:disabled) {

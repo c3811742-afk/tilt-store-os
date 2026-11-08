@@ -13,4 +13,7 @@ export interface ColumnChartProps {
   previousColor?: string;
   label?: string; // accessible name of the chart
   labelEvery?: number; // show every Nth label, so long ranges stay readable
+  ticks?: number; // about how many steps on the y-axis (rounded to clean numbers)
+  barWidth?: string; // the widest a column gets; narrower when many columns share the width
+  formatTick?: (value: number, top: number) => string; // a y-axis label; numbers in the active language by default
 }
