@@ -13,11 +13,9 @@ export type ReportId = (typeof reportIds)[number];
 
 export const reportGroupings = {
   products: ['product', 'variant'],
-  contribution: ['brand', 'category', 'product'],
   sales: ['sale', 'date', 'branch', 'brand', 'category', 'product', 'cashier', 'paymentMethod', 'channel'],
   sizes: ['size', 'color', 'sizeColor'],
   sellThrough: ['product', 'brand'],
-  returns: ['reason', 'product', 'brand', 'branch', 'cashier'],
 } as const satisfies Partial<Record<ReportId, readonly string[]>>;
 
 export type ReportGrouping = (typeof reportGroupings)[keyof typeof reportGroupings][number];
@@ -44,6 +42,9 @@ export interface ReportResult {
   currency: CurrencyCode;
   previous?: Record<string, Record<string, ReportCell>>; // row key -> cells, when comparing
   previousTotals?: Record<string, ReportCell>;
+  summary?: ReportColumn[]; // headline figures above the table, their values in `summaryValues`
+  summaryValues?: Record<string, ReportCell>;
+  previousSummary?: Record<string, ReportCell>;
 }
 
 export interface ReportFilter {
@@ -59,6 +60,7 @@ export interface ReportFilter {
   channel?: SalesChannel;
   size?: string;
   color?: string;
+  returnReasonId?: Id; // returns: one reason
   groupBy?: ReportGrouping;
   // 'reporting': converted to the reporting currency at each sale's rate. 'branch': each branch in its own currency.
   currencyMode?: 'reporting' | 'branch';
@@ -212,30 +214,32 @@ const products: Builder = (filter, range) => {
   };
 };
 
-// Each product's, brand's or category's share of sales and of gross profit (145).
+// Each product's share of the store's sales and gross profit (145). The filters narrow the rows but the shares stay of
+// the whole store (in the period and branch), so filtering by a brand or a category gives its share in the total row.
 const contribution: Builder = (filter, range) => {
   const n = names();
-  const groupBy = filter.groupBy ?? 'brand';
-  const facts = factsFor(filter, range, reportCurrency(filter));
-  const all = totalsOf(facts);
-  const keyOf = (fact: Fact) => (groupBy === 'category' ? fact.categoryId : groupBy === 'product' ? fact.productId : fact.brandId);
-  const label = (key: string) => (groupBy === 'category' ? (n.category.get(key) ?? key) : groupBy === 'product' ? (n.product.get(key) ?? key) : (n.brand.get(key) ?? key));
+  const currency = reportCurrency(filter);
+  const facts = factsFor(filter, range, currency);
+  const all = totalsOf(factsFor({ range, branchId: filter.branchId, currencyMode: filter.currencyMode }, range, currency));
+  const share = (part: number, whole: number) => (whole ? (part / whole) * 100 : 0);
+  const product = new Map(db.products.map((current) => [current.id, current]));
+  const mine = totalsOf(facts);
   return {
-    currency: reportCurrency(filter),
-    columns: [col('name', 'text'), col('netSales', 'money', true), col('salesShare', 'percent'), col('grossProfit', 'money', true), col('profitShare', 'percent')],
-    rows: totalsBy(facts, keyOf)
-      .sort((a, b) => b.totals.net - a.totals.net)
-      .map(({ key, totals }) => ({
-        key,
-        cells: {
-          name: groupBy === 'category' ? `${label(key)}` : label(key),
-          netSales: totals.net,
-          salesShare: all.net ? (totals.net / all.net) * 100 : 0,
-          grossProfit: totals.profit,
-          profitShare: all.profit ? (totals.profit / all.profit) * 100 : 0,
-        },
-      })),
-    totals: { name: 'total', netSales: all.net, salesShare: 100, grossProfit: all.profit, profitShare: 100 },
+    currency,
+    columns: [col('name', 'text'), col('brand', 'text'), col('category', 'text'), col('netSales', 'money', true), col('salesShare', 'percent', true), col('grossProfit', 'money', true), col('profitShare', 'percent', true)],
+    rows: totalsBy(facts, (fact) => fact.productId).map(({ key, totals }) => ({
+      key,
+      cells: {
+        name: n.product.get(key) ?? key,
+        brand: n.brand.get(product.get(key)?.brandId ?? '') ?? '',
+        category: n.category.get(product.get(key)?.categoryId ?? '') ?? '',
+        netSales: totals.net,
+        salesShare: share(totals.net, all.net),
+        grossProfit: totals.profit,
+        profitShare: share(totals.profit, all.profit),
+      },
+    })),
+    totals: { name: 'total', netSales: mine.net, salesShare: share(mine.net, all.net), grossProfit: mine.profit, profitShare: share(mine.profit, all.profit) },
   };
 };
 
@@ -500,46 +504,58 @@ const discounts: Builder = (filter, range) => {
   };
 };
 
-// Returns and exchanges by reason, product, brand, branch or cashier, with the return and exchange rates (155).
+// Every return and exchange (one row each, with its reason and who took it), and the return and exchange rates of what
+// the filters select: pieces returned / pieces sold, and exchanges / returns.
 const returns: Builder = (filter, range) => {
   const n = names();
-  const groupBy = filter.groupBy ?? 'reason';
-  const reason = new Map(db.settings.lists.returnReasons.map((option) => [option.id, option.label.en]));
   const facts = factsFor(filter, range, reportCurrency(filter));
   const sold = facts.filter((fact) => !fact.isReturn);
-  const returned = facts.filter((fact) => fact.isReturn);
-  const keyOf = (fact: Fact) => ({ reason: fact.returnReasonId ?? '', product: fact.productId, brand: fact.brandId, branch: fact.branchId, cashier: fact.cashierId })[groupBy as 'reason'];
-  const label = (key: string) => ({ reason, product: n.product, brand: n.brand, branch: n.branch, cashier: n.user })[groupBy as 'reason'].get(key) ?? key;
-  const soldUnits = (key: string) => (groupBy === 'reason' ? sold : sold.filter((fact) => keyOf(fact) === key)).reduce((sum, fact) => sum + fact.figures.units, 0);
+  const returned = facts.filter((fact) => fact.isReturn && (!filter.returnReasonId || fact.returnReasonId === filter.returnReasonId));
+  const groups = new Map<Id, Fact[]>();
+  returned.forEach((fact) => {
+    const key = fact.returnId ?? fact.saleId;
+    groups.set(key, [...(groups.get(key) ?? []), fact]);
+  });
+  const all = totalsOf(returned);
+  const exchanges = [...groups.values()].filter((group) => group[0].isExchange).length;
+  const soldUnits = totalsOf(sold).soldUnits;
   return {
     currency: reportCurrency(filter),
-    columns: [col('name', 'text'), col('returnsCount', 'number', true), col('exchanges', 'number'), col('returnedUnits', 'number'), col('returns', 'money', true), col('returnRate', 'percent'), col('exchangeRate', 'percent')],
-    rows: totalsBy(returned, keyOf)
-      .sort((a, b) => b.totals.returnsAmount - a.totals.returnsAmount)
-      .map(({ key, totals }) => {
-        const group = returned.filter((fact) => keyOf(fact) === key);
-        const exchanges = group.filter((fact) => fact.isExchange).length;
+    columns: [col('dateTime', 'dateTime'), col('receipt', 'text'), col('sale', 'text'), col('branch', 'text'), col('cashier', 'text'), col('items', 'text'), col('returnReason', 'text'), col('returnKind', 'text'), col('returnedUnits', 'number'), col('returns', 'money')],
+    rows: [...groups.entries()]
+      .map(([key, group]) => {
+        const first = group[0];
         return {
           key,
           cells: {
-            name: label(key),
-            returnsCount: group.length,
-            exchanges,
-            returnedUnits: totals.returnedUnits,
-            returns: totals.returnsAmount,
-            returnRate: soldUnits(key) ? (totals.returnedUnits / soldUnits(key)) * 100 : 0,
-            exchangeRate: group.length ? (exchanges / group.length) * 100 : 0,
+            dateTime: first.at,
+            receipt: db.returns.find((saleReturn) => saleReturn.id === first.returnId)?.number ?? '',
+            sale: first.saleNumber,
+            branch: n.branch.get(first.branchId) ?? '',
+            cashier: n.user.get(first.cashierId) ?? '',
+            items: group
+              .map((fact) => {
+                const entry = n.index.get(fact.variantId);
+                return `${entry?.product.name ?? ''} ${entry?.variant.size ?? ''} ${entry?.variant.color ?? ''} × ${totalsOf([fact]).returnedUnits}`;
+              })
+              .join(', '),
+            returnReason: first.returnReasonId ?? '',
+            returnKind: first.isExchange ? 'exchange' : 'refund',
+            returnedUnits: totalsOf(group).returnedUnits,
+            returns: totalsOf(group).returnsAmount,
           },
         };
-      }),
-    totals: {
-      name: 'total',
-      returnsCount: returned.length,
-      exchanges: returned.filter((fact) => fact.isExchange).length,
-      returnedUnits: totalsOf(returned).returnedUnits,
-      returns: totalsOf(returned).returnsAmount,
-      returnRate: totalsOf(sold).soldUnits ? (totalsOf(returned).returnedUnits / totalsOf(sold).soldUnits) * 100 : 0,
-      exchangeRate: returned.length ? (returned.filter((fact) => fact.isExchange).length / returned.length) * 100 : 0,
+      })
+      .sort((a, b) => String(b.cells.dateTime).localeCompare(String(a.cells.dateTime))),
+    totals: { dateTime: 'total', returnedUnits: all.returnedUnits, returns: all.returnsAmount },
+    summary: [col('returnsCount', 'number', true), col('exchanges', 'number', true), col('returnedUnits', 'number', true), col('returns', 'money', true), col('returnRate', 'percent', true), col('exchangeRate', 'percent', true)],
+    summaryValues: {
+      returnsCount: groups.size,
+      exchanges,
+      returnedUnits: all.returnedUnits,
+      returns: all.returnsAmount,
+      returnRate: soldUnits ? (all.returnedUnits / soldUnits) * 100 : 0,
+      exchangeRate: groups.size ? (exchanges / groups.size) * 100 : 0,
     },
   };
 };
@@ -635,7 +651,7 @@ export const runReport = (id: ReportId, filter: ReportFilter) =>
     const result = builders[id](filter, filter.range);
     if (!filter.compare || !comparableReports.includes(id)) return result;
     const before = builders[id](filter, previousRange(filter.range));
-    return { ...result, previous: Object.fromEntries(before.rows.map((row) => [row.key, row.cells])), previousTotals: before.totals };
+    return { ...result, previous: Object.fromEntries(before.rows.map((row) => [row.key, row.cells])), previousTotals: before.totals, previousSummary: before.summaryValues };
   });
 
 // Per-country sales and VAT as separate tables, for export (one sheet or page per country).

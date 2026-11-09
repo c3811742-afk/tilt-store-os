@@ -5,7 +5,7 @@ import type { SalesChannel } from '@/shared/types';
 // report builds it, the section it is listed under, which filters apply, and where clicking a row leads.
 
 export type AnalysisSection = 'sales' | 'profit' | 'stock' | 'checks';
-export type AnalysisFilterKey = 'period' | 'branch' | 'brand' | 'category' | 'staff' | 'payment' | 'channel' | 'size' | 'color' | 'weeks';
+export type AnalysisFilterKey = 'period' | 'branch' | 'brand' | 'category' | 'product' | 'staff' | 'payment' | 'channel' | 'size' | 'color' | 'reason' | 'weeks';
 
 export interface AnalysisView {
   id: string;
@@ -21,7 +21,7 @@ export interface AnalysisView {
 
 const bySales = 'netSales';
 
-const salesFilters: readonly AnalysisFilterKey[] = ['period', 'branch', 'brand', 'category', 'staff', 'payment', 'channel', 'size', 'color'];
+const salesFilters: readonly AnalysisFilterKey[] = ['period', 'branch', 'brand', 'category', 'product', 'staff', 'payment', 'channel', 'size', 'color'];
 const toSales = (filter: (rowKey: string) => Partial<ReportFilter> | undefined) => ({ view: 'sale', filter });
 const productAnd = (key: 'size' | 'color') => (rowKey: string) => {
   const [productId, value] = rowKey.split('|');
@@ -44,15 +44,9 @@ export const analysisViews: readonly AnalysisView[] = [
   { id: 'channel', report: 'sales', groupBy: 'channel', section: 'sales', filters: salesFilters, sortBy: bySales, drill: toSales((channel) => ({ channel: channel as SalesChannel })) },
   // Profit
   { id: 'pnl', report: 'pnl', section: 'profit', filters: ['period', 'branch', 'brand'], drill: { view: 'brand', filter: (branchId) => (branchId === 'company' ? undefined : { branchId }) } },
-  { id: 'contribution', report: 'contribution', groupBy: 'brand', section: 'profit', filters: salesFilters, sortBy: bySales, drill: { view: 'product', filter: (brandId) => ({ brandId }) } },
-  { id: 'contributionCategory', report: 'contribution', groupBy: 'category', section: 'profit', filters: salesFilters, sortBy: bySales, drill: { view: 'product', filter: (categoryId) => ({ categoryId }) } },
-  { id: 'contributionProduct', report: 'contribution', groupBy: 'product', section: 'profit', filters: salesFilters, sortBy: bySales, drill: { view: 'item', filter: (productId) => ({ productId }) } },
+  { id: 'contribution', report: 'contribution', section: 'profit', filters: salesFilters, sortBy: bySales, drill: { view: 'item', filter: (productId) => ({ productId }) } },
   { id: 'discounts', report: 'discounts', section: 'profit', filters: salesFilters },
-  { id: 'returns', report: 'returns', groupBy: 'reason', section: 'profit', filters: salesFilters },
-  { id: 'returnsProduct', report: 'returns', groupBy: 'product', section: 'profit', filters: salesFilters },
-  { id: 'returnsBrand', report: 'returns', groupBy: 'brand', section: 'profit', filters: salesFilters },
-  { id: 'returnsBranch', report: 'returns', groupBy: 'branch', section: 'profit', filters: salesFilters },
-  { id: 'returnsStaff', report: 'returns', groupBy: 'cashier', section: 'profit', filters: salesFilters },
+  { id: 'returns', report: 'returns', section: 'profit', filters: [...salesFilters, 'reason'] },
   // Stock
   { id: 'sellThrough', report: 'sellThrough', groupBy: 'product', section: 'stock', filters: ['period', 'branch', 'brand'], sortBy: 'sellThrough' },
   { id: 'slowMovers', report: 'slowMovers', section: 'stock', filters: ['branch', 'brand', 'weeks'] },

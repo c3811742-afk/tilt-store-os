@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
-import { comparableReports, runReport, vatExport, type ReportCell, type ReportColumn, type ReportFilter, type ReportResult } from '@/shared/api';
-import { AsyncContent, Button, Card, Checkbox, CategorySelect, ColorSelect, FilterBar, Icon, InfoTip, Notice, PageHeader, SegmentedControl, SelectField, SizeSelect, Stack, Table, Tabs, Text, TextField, type TableSort } from '@/shared/components';
-import { useAsync, useFormat, useLiveVersion, useLocale, useQueryState, useReference } from '@/shared/hooks';
+import { comparableReports, listProducts, runReport, vatExport, type ReportCell, type ReportColumn, type ReportFilter, type ReportResult } from '@/shared/api';
+import { AsyncContent, Button, Card, Checkbox, CategorySelect, ColorSelect, FilterBar, Grid, Icon, InfoTip, Notice, PageHeader, SegmentedControl, SelectField, SizeSelect, Stack, StatCard, Table, Tabs, Text, TextField, type TableSort } from '@/shared/components';
+import { useAsync, useChange, useFormat, useLiveVersion, useLocale, useQueryState, useReference } from '@/shared/hooks';
 import type { SalesChannel } from '@/shared/types';
 import { vars } from '@/shared/theme';
 import { changePercent, fillText, type ExportCell, type ExportTable } from '@/shared/utils';
@@ -32,6 +32,8 @@ export const ReportsPage = () => {
   const [branchId, setBranchId] = useQueryState('branch', '');
   const [brandId, setBrandId] = useQueryState('brand', '');
   const [categoryId, setCategoryId] = useQueryState('category', '');
+  const [productId, setProductId] = useQueryState('product', '');
+  const [reasonId, setReasonId] = useQueryState('reason', '');
   const [cashierId, setCashierId] = useQueryState('staff', '');
   const [paymentMethodId, setPaymentMethodId] = useQueryState('payment', '');
   const [channel, setChannel] = useQueryState('channel', '');
@@ -44,6 +46,9 @@ export const ReportsPage = () => {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sort, setSort] = useState<TableSort | null>(null);
   const version = useLiveVersion();
+  const change = useChange();
+  const productsState = useAsync(() => listProducts({}), [version]);
+  const products = productsState.status === 'success' ? productsState.data.map((row) => row.product) : [];
   const t = text.owner.reports;
 
   const root = viewById(viewId);
@@ -54,6 +59,8 @@ export const ReportsPage = () => {
     branchId: branchId || undefined,
     brandId: brandId || undefined,
     categoryId: categoryId || undefined,
+    productId: productId || undefined,
+    returnReasonId: reasonId || undefined,
     cashierId: cashierId || undefined,
     paymentMethodId: paymentMethodId || undefined,
     channel: (channel || undefined) as SalesChannel | undefined,
@@ -78,6 +85,8 @@ export const ReportsPage = () => {
     if (column.key === 'status') return (t.statusWords as Record<string, string>)[value] ?? value;
     if (column.key === 'model') return (text.owner.brands.terms.models as Record<string, string>)[value] ?? value;
     if (column.key === 'channel' || (column.key === 'name' && view.groupBy === 'channel')) return (t.channels as Record<string, string>)[value] ?? value;
+    if (column.key === 'returnReason') return format.text(settings.lists.returnReasons.find((option) => option.id === value)?.label) || value;
+    if (column.key === 'returnKind') return (t.returnKinds as Record<string, string>)[value] ?? value;
     if (column.key === 'payment') return value.split(',').filter(Boolean).map(format.payment).join(text.common.listSeparator);
     if (column.key === 'name' && view.report === 'vat') return format.country(value);
     return value;
@@ -103,6 +112,9 @@ export const ReportsPage = () => {
   const exportValue = (column: ReportColumn, value: ReportCell, currency: string): ExportCell =>
     typeof value === 'number' && (column.kind === 'money' || column.kind === 'number' || column.kind === 'percent') ? Math.round(value * 100) / 100 : show(column, value, currency);
   const tablesFor = (result: ReportResult): ExportTable[] => [
+    ...(result.summary
+      ? [{ title, headers: result.summary.map((column) => columnLabel(column.key)), rows: [result.summary.map((column) => exportValue(column, result.summaryValues?.[column.key] ?? null, result.currency))] }]
+      : []),
     {
       title,
       headers: result.columns.map((column) => columnLabel(column.key)),
@@ -161,6 +173,8 @@ export const ReportsPage = () => {
     shows('branch') && branchId && { key: 'branch', label: text.owner.fields.branch, value: format.branch(branchId), clear: () => setBranchId('') },
     shows('brand') && brandId && { key: 'brand', label: text.owner.fields.brand, value: format.brand(brandId), clear: () => setBrandId('') },
     shows('category') && categoryId && { key: 'category', label: text.owner.fields.category, value: format.category(categoryId), clear: () => setCategoryId('') },
+    shows('product') && productId && { key: 'product', label: text.owner.fields.product, value: products.find((product) => product.id === productId)?.name ?? '', clear: () => setProductId('') },
+    shows('reason') && reasonId && { key: 'reason', label: t.columns.returnReason, value: format.text(settings.lists.returnReasons.find((option) => option.id === reasonId)?.label), clear: () => setReasonId('') },
     shows('staff') && cashierId && { key: 'staff', label: t.groupings.cashier, value: format.user(cashierId), clear: () => setCashierId('') },
     shows('payment') && paymentMethodId && { key: 'payment', label: t.groupings.paymentMethod, value: format.payment(paymentMethodId), clear: () => setPaymentMethodId('') },
     shows('channel') && channel && { key: 'channel', label: t.groupings.channel, value: t.channels[channel as 'store' | 'online'], clear: () => setChannel('') },
@@ -257,6 +271,18 @@ export const ReportsPage = () => {
                 {shows('branch') && <BranchSelect kinds={['store', 'online', 'warehouse']} includeArchived allLabel={text.owner.fields.allBranches} value={branchId} onChange={setBranchId} />}
                 {shows('brand') && <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />}
                 {shows('category') && <CategorySelect allLabel={text.owner.fields.allCategories} value={categoryId} onChange={setCategoryId} />}
+                {shows('product') && (
+                  <SelectField
+                    label={text.owner.fields.product}
+                    placeholder={t.allProducts}
+                    value={productId}
+                    onChange={setProductId}
+                    options={products.filter((product) => (!brandId || product.brandId === brandId) && (!categoryId || product.categoryId === categoryId)).map((product) => ({ value: product.id, label: product.name, group: format.brand(product.brandId) }))}
+                  />
+                )}
+                {shows('reason') && (
+                  <SelectField label={t.columns.returnReason} placeholder={t.allReasons} value={reasonId} onChange={setReasonId} options={settings.lists.returnReasons.map((option) => ({ value: option.id, label: format.text(option.label) }))} />
+                )}
                 {shows('staff') && (
                   <SelectField label={t.groupings.cashier} placeholder={text.owner.fields.allStaff} value={cashierId} onChange={setCashierId} options={users.filter((user) => user.branchIds.length > 0).map((user) => ({ value: user.id, label: user.name }))} />
                 )}
@@ -311,6 +337,22 @@ export const ReportsPage = () => {
                 <Notice>{text.common.noResults}</Notice>
               ) : (
                 <Stack gap={vars.spacing[2]}>
+                  {result.summary && (
+                    <Grid minColumnWidth={vars.sizes.field.narrow}>
+                      {result.summary.map((column) => {
+                        const value = result.summaryValues?.[column.key];
+                        const before = result.previousSummary?.[column.key];
+                        return (
+                          <StatCard
+                            key={column.key}
+                            label={columnLabel(column.key)}
+                            value={show(column, value ?? null, result.currency)}
+                            {...(filter.compare && typeof value === 'number' ? change(value, typeof before === 'number' ? before : 0, { lowerIsBetter: column.key !== 'exchangeRate' }) : {})}
+                          />
+                        );
+                      })}
+                    </Grid>
+                  )}
                   <Table
                     label={title}
                     nowrap
