@@ -42,3 +42,10 @@
   background: var(--colors-surface-muted);
   font-size: var(--text-styles-caption-font-size);
 }
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tabs-panel-gap);
+  min-inline-size: 0;
+}

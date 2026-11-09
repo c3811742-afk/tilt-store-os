@@ -1,4 +1,4 @@
-import { useId, useState, type KeyboardEvent } from 'react';
+import { useId, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { cx, formatNumber, withDefaults } from '@/shared/utils';
 import { useLocale } from '@/shared/hooks';
 import { tabsDefaults } from './Tabs.defaults';
@@ -8,7 +8,7 @@ import styles from './Tabs.module.css';
 // Tabs that switch what is shown in one place. Arrow keys move between tabs, following the reading direction.
 export const Tabs = <T extends string>(props: TabsProps<T>) => {
   const resolved = withDefaults(tabsDefaults, props);
-  const { label, onChange, children } = resolved;
+  const { label, onChange, children, panelGap } = resolved;
   const tabs = resolved.tabs as Tab<T>[];
   const { locale } = useLocale();
   const [ownValue, setOwnValue] = useState<T | undefined>(undefined);
@@ -53,7 +53,7 @@ export const Tabs = <T extends string>(props: TabsProps<T>) => {
         })}
       </div>
       {children && (
-        <div id={`${baseId}-panel`} role="tabpanel">
+        <div id={`${baseId}-panel`} role="tabpanel" className={styles.panel} style={{ '--tabs-panel-gap': panelGap } as CSSProperties}>
           {children}
         </div>
       )}

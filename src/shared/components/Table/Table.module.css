@@ -43,6 +43,11 @@
   white-space: nowrap;
 }
 
+/* A field in a number column (a quantity, a fee) sits at the end too, under its heading. */
+.table td.end > * {
+  margin-inline-start: auto;
+}
+
 .table tbody tr:last-child > * {
   border-block-end: none;
 }

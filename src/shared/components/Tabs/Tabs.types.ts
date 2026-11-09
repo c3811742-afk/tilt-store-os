@@ -12,4 +12,5 @@ export interface TabsProps<T extends string = string> {
   onChange?: (value: T) => void;
   label?: string; // accessible name of the tab list
   children?: ReactNode; // the open tab's content
+  panelGap?: string; // the space between the blocks in the open tab (a message and a card, say)
 }
