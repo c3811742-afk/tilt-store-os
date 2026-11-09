@@ -1,27 +1,25 @@
-import { decideCount, listCounts } from '@/shared/api';
-import { AsyncContent, Badge, Button, Card, Notice, Stack, Table, Text } from '@/shared/components';
+import { decideCount, listCounts, type StockFilter } from '@/shared/api';
+import { AsyncContent, Badge, Button, Card, InfoTip, Notice, Stack, Table, Text } from '@/shared/components';
 import { approvalStateTone } from '@/shared/constants';
 import { useAction, useAsync, useErrorMessage, useFormat, useLiveVersion, useLocale, useReference } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { fillText } from '@/shared/utils';
+import { isFiltered } from './isFiltered';
 
 // Stock counts and their differences. Counts whose difference is above the limit in Policies need an owner.
-export const CountsTab = () => {
+export const CountsTab = ({ filter }: { filter: StockFilter }) => {
   const { text } = useLocale();
   const format = useFormat();
   const { settings } = useReference();
   const errorMessage = useErrorMessage();
   const version = useLiveVersion();
-  const state = useAsync(listCounts, [version]);
+  const state = useAsync(() => listCounts(filter), [JSON.stringify(filter), version]);
   const action = useAction();
   const t = text.owner.stock;
   return (
     <Stack gap={vars.spacing[4]}>
-      <Text variant="bodySm" color={vars.colors.textMuted}>
-        {fillText(t.countLimit, { limit: format.number(settings.stockCountApprovalAbove) })}
-      </Text>
       {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
-      <AsyncContent state={state} empty={<Notice>{t.noCounts}</Notice>}>
+      <AsyncContent state={state} empty={<Notice>{isFiltered(filter) ? text.common.noResults : t.noCounts}</Notice>}>
         {(rows) => (
           <Stack gap={vars.spacing[3]}>
             {rows.map(({ count, differences, totalDifference, needsOwner }) => (
@@ -31,7 +29,12 @@ export const CountsTab = () => {
                 actions={
                   count.status === 'pending' ? (
                     <>
-                      {needsOwner && <Badge variant="warning">{t.needsOwner}</Badge>}
+                      {needsOwner && (
+                        <Badge variant="warning">
+                          {t.needsOwner}
+                          <InfoTip text={fillText(t.countLimit, { limit: format.number(settings.stockCountApprovalAbove) })} />
+                        </Badge>
+                      )}
                       <Button size="sm" disabled={Boolean(action.busy)} onClick={() => action.run(count.id, () => decideCount(count.id, true))}>
                         {t.approveAdjust}
                       </Button>

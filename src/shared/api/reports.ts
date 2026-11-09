@@ -2,7 +2,7 @@ import type { CurrencyCode, Id, IsoDate, SalesChannel } from '@/shared/types';
 import { addDays, currentTerms, inRange, marginPercent, previousRange, stockLevels, today, toIsoDate, type DateRange } from '@/shared/utils';
 import { onHandStatuses } from '@/shared/constants/statuses';
 import { variantIndex } from './engine';
-import { availableInPeriod, periodCosts, salesFacts, sellThrough, totalsBy, totalsOf, type Fact } from './facts';
+import { availableInPeriod, netProfitOf, periodCostsIn, salesFacts, sellThrough, totalsBy, totalsOf, type Fact } from './facts';
 import { lowStockRows } from './dashboard';
 import { toTransferView } from './stock';
 import { db, respond } from './server';
@@ -142,11 +142,7 @@ const pnl: Builder = (filter, range) => {
   const row = (branchIds: Id[] | undefined, currency?: CurrencyCode) => {
     const facts = salesFacts(db, { range, branchIds, brandIds: filter.brandId ? [filter.brandId] : undefined, currency: currency ?? 'reporting' });
     const totals = totalsOf(facts);
-    const costs = periodCosts(db, range, branchIds);
-    // Costs outside sales are in the reporting currency; in a branch's own currency they are converted at the
-    // period's average rate (its sales in its currency / the same sales converted).
-    const converted = currency ? totalsOf(salesFacts(db, { range, branchIds })).net : 0;
-    const factor = currency && converted ? totals.net / converted : 1;
+    const costs = periodCostsIn(db, range, branchIds, currency);
     const losses = costs.absorbedDefects + costs.writeOffs + costs.cashShortages + costs.countShortages + costs.transferMissing;
     return {
       grossSales: totals.grossSales,
@@ -157,10 +153,10 @@ const pnl: Builder = (filter, range) => {
       grossProfit: totals.profit,
       margin: marginPercent(totals.profit, totals.net),
       cardFees: totals.fees,
-      monthlyFees: costs.monthlyFees * factor,
-      losses: losses * factor,
-      expenses: costs.expenses * factor,
-      netProfit: totals.profit - totals.fees + (costs.monthlyFees - losses - costs.expenses) * factor,
+      monthlyFees: costs.monthlyFees,
+      losses,
+      expenses: costs.expenses,
+      netProfit: netProfitOf(totals, costs),
     };
   };
   const rows: ReportRow[] = branches.map((branch) => ({ key: branch.id, cells: { name: branch.name, ...row([branch.id], ownCurrency ? branch.currency : undefined) }, currency: ownCurrency ? branch.currency : undefined }));

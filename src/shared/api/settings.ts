@@ -41,18 +41,20 @@ export const newOption = (): ConfigOption => ({ id: crypto.randomUUID(), label: 
 
 const seriesKey = (expense: Expense) => expense.seriesId ?? `${expense.categoryId}|${expense.branchId ?? ''}|${expense.note}`;
 
-// Monthly expenses repeat by themselves: the next months are added up to this month.
-const addRecurringMonths = () => {
+// Monthly expenses repeat by themselves: the months still missing, up to this month.
+const dueRepeats = (): Expense[] => {
   const latest = new Map<string, Expense>();
   db.expenses.filter((expense) => expense.repeatMonthly).forEach((expense) => {
     const current = latest.get(seriesKey(expense));
     if (!current || current.date < expense.date) latest.set(seriesKey(expense), expense);
   });
   const thisMonth = monthKey(today());
-  latest.forEach((last) => {
+  return [...latest.values()].flatMap((last) => {
+    const due: Expense[] = [];
     for (let date = addMonths(startOfMonth(last.date), 1); monthKey(date) <= thisMonth; date = addMonths(date, 1)) {
-      db.expenses.push({ ...last, id: newId(), date, seriesId: seriesKey(last), receipt: undefined, at: nowIso() });
+      due.push({ ...last, id: newId(), date, seriesId: seriesKey(last), receipt: undefined, at: nowIso() });
     }
+    return due;
   });
 };
 
@@ -62,9 +64,12 @@ export interface ExpenseFilter {
   categoryId?: Id;
 }
 
-export const listExpenses = (filter: ExpenseFilter) =>
-  mutate(() => {
-    addRecurringMonths();
+// A read: it only counts as a change (saved, pages told) when a new month of a monthly expense is added. Otherwise
+// every page refresh would be a "change" that refreshes the page again and keeps the save from ever running.
+export const listExpenses = async (filter: ExpenseFilter) => {
+  const due = await respond(() => dueRepeats().length > 0);
+  if (due) await mutate(() => db.expenses.push(...dueRepeats()));
+  return respond(() => {
     const { baseCurrency, reportingCurrency } = db.settings;
     const rows = db.expenses
       .filter(
@@ -77,6 +82,7 @@ export const listExpenses = (filter: ExpenseFilter) =>
       .map((expense) => ({ expense, converted: convert(expense.amount, expense.currency, reportingCurrency, expense.date, db.rates, baseCurrency) }));
     return { rows, total: rows.reduce((sum, row) => sum + row.converted, 0), currency: reportingCurrency };
   });
+};
 
 export type ExpenseInput = Omit<Expense, 'id' | 'byId' | 'at' | 'seriesId'>;
 

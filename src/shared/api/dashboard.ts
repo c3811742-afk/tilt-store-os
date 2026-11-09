@@ -1,6 +1,6 @@
 import type { CurrencyCode, Id } from '@/shared/types';
 import { addDays, datesIn, presetRange, previousRange, sortBy, stockLevels, today, type DateRange } from '@/shared/utils';
-import { netProfitOf, periodCosts, salesFacts, stockSummary, totalsBy, totalsOf, type PeriodCosts, type Totals } from './facts';
+import { netProfitOf, periodCostsIn, salesFacts, stockSummary, totalsBy, totalsOf, type PeriodCosts, type Totals } from './facts';
 import { db, respond } from './server';
 
 export interface DashboardFilter {
@@ -51,29 +51,31 @@ export const getDashboard = (filter: DashboardFilter) =>
   respond((): Dashboard => {
     const branchIds = filter.branchId ? [filter.branchId] : undefined;
     const brandIds = filter.brandId ? [filter.brandId] : undefined;
+    // One branch is shown in its own currency (Souq 7 in SAR); all branches together in the reporting currency.
+    const ownCurrency = db.branches.find((branch) => branch.id === filter.branchId)?.currency;
+    const currency = ownCurrency ?? db.settings.reportingCurrency;
     const previousPeriod = previousRange(filter.range);
-    const facts = salesFacts(db, { range: filter.range, branchIds, brandIds });
-    const previousFacts = salesFacts(db, { range: previousPeriod, branchIds, brandIds });
+    const facts = salesFacts(db, { range: filter.range, branchIds, brandIds, currency: ownCurrency });
+    const previousFacts = salesFacts(db, { range: previousPeriod, branchIds, brandIds, currency: ownCurrency });
     const totals = totalsOf(facts);
     const previous = totalsOf(previousFacts);
-    const costs = periodCosts(db, filter.range, branchIds);
-    const previousCosts = periodCosts(db, previousPeriod, branchIds);
+    const costs = periodCostsIn(db, filter.range, branchIds, ownCurrency);
+    const previousCosts = periodCostsIn(db, previousPeriod, branchIds, ownCurrency);
 
     const quick = (['today', 'week', 'month'] as const).map((key) => {
       const range = presetRange(key);
       return {
         key,
-        net: totalsOf(salesFacts(db, { range, branchIds, brandIds })).net,
-        previous: totalsOf(salesFacts(db, { range: previousRange(range), branchIds, brandIds })).net,
+        net: totalsOf(salesFacts(db, { range, branchIds, brandIds, currency: ownCurrency })).net,
+        previous: totalsOf(salesFacts(db, { range: previousRange(range), branchIds, brandIds, currency: ownCurrency })).net,
       };
     });
 
     const branches = db.branches
       .filter((branch) => branch.kind !== 'warehouse' && !branch.archived && (!filter.branchId || branch.id === filter.branchId))
       .map((branch): BranchRow => {
-        const branchFacts = facts.filter((fact) => fact.branchId === branch.id);
         const local = totalsOf(salesFacts(db, { range: filter.range, branchIds: [branch.id], brandIds, currency: branch.currency }));
-        const reporting = totalsOf(branchFacts);
+        const reporting = totalsOf(salesFacts(db, { range: filter.range, branchIds: [branch.id], brandIds }));
         return { branchId: branch.id, currency: branch.currency, netLocal: local.net, net: reporting.net, profit: reporting.profit, orders: reporting.orders };
       });
 
@@ -105,7 +107,7 @@ export const getDashboard = (filter: DashboardFilter) =>
     }));
 
     return {
-      currency: db.settings.reportingCurrency,
+      currency,
       totals,
       previous,
       costs,

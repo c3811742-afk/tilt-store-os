@@ -1,22 +1,23 @@
-import { decideStockRequest, listStockRequests } from '@/shared/api';
+import { decideStockRequest, listStockRequests, type StockFilter } from '@/shared/api';
 import { AsyncContent, Badge, Button, Card, Notice, Stack, Table, Text } from '@/shared/components';
 import { requestStatusTone } from '@/shared/constants';
 import { useAction, useAsync, useErrorMessage, useFormat, useLiveVersion, useLocale } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
+import { isFiltered } from './isFiltered';
 
 // New stock requests from branch managers: send to the warehouse, order from the brand, or reject.
-export const RequestsTab = () => {
+export const RequestsTab = ({ filter }: { filter: StockFilter }) => {
   const { text } = useLocale();
   const format = useFormat();
   const errorMessage = useErrorMessage();
   const version = useLiveVersion();
-  const state = useAsync(listStockRequests, [version]);
+  const state = useAsync(() => listStockRequests(filter), [JSON.stringify(filter), version]);
   const action = useAction();
   const t = text.owner.stock;
   return (
     <Stack gap={vars.spacing[4]}>
       {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
-      <AsyncContent state={state} empty={<Notice>{t.noRequests}</Notice>}>
+      <AsyncContent state={state} empty={<Notice>{isFiltered(filter) ? text.common.noResults : t.noRequests}</Notice>}>
         {(rows) => (
           <Stack gap={vars.spacing[3]}>
             {rows.map(({ request, lines }) => (

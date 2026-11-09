@@ -1,17 +1,22 @@
+import { useNavigate } from 'react-router';
 import { getMorningSummary } from '@/shared/api';
-import { AsyncContent, BarList, Card, Grid, PageHeader, Stack, StatCard } from '@/shared/components';
+import { AsyncContent, BarList, Button, Card, Grid, Notice, PageHeader, Stack, StatCard } from '@/shared/components';
 import { routes, withQuery } from '@/shared/constants';
 import { useAsync, useFormat, useLiveVersion, useLocale, useSession } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { addDays, fillText, today } from '@/shared/utils';
 import { useChange } from '../../hooks';
 
-// How yesterday went and what needs the owner today, laid out like the dashboard: four figures of the same size,
-// then what needs the owner beside yesterday by branch. On a phone everything stacks in one column.
+type Tone = 'danger' | 'warning' | 'info';
+
+// The owner's morning, laid out as admin home screens usually are: first what needs action, most serious first
+// (money missing, receipts the tax authority didn't get, then approvals, low stock, alerts), each with a link to it and
+// only when there is something; then how yesterday went; then yesterday by branch.
 export const MorningPage = () => {
   const { text } = useLocale();
   const format = useFormat();
   const change = useChange();
+  const navigate = useNavigate();
   const { session } = useSession();
   const version = useLiveVersion();
   const state = useAsync(() => getMorningSummary(session?.user.id ?? ''), [session?.user.id, version]);
@@ -23,8 +28,35 @@ export const MorningPage = () => {
       <AsyncContent state={state}>
         {(data) => {
           const money = (amount: number) => format.money(amount, data.currency);
+          const count = (value: number) => ({ count: format.number(value) });
+          const attention: { key: string; tone: Tone; message: string; to: string }[] = [
+            ...data.cashDifferences.map((row, index) => ({ key: `cash-${index}`, tone: 'danger' as const, message: fillText(row.difference < 0 ? t.cashShort : t.cashOver, { branch: format.branch(row.branchId), amount: format.money(Math.abs(row.difference), row.currency) }), to: withQuery(routes.owner.reports, { view: 'shifts', branch: row.branchId }) })),
+            ...(data.failedReceipts > 0 ? [{ key: 'receipts', tone: 'danger' as const, message: fillText(t.failedReceipts, count(data.failedReceipts)), to: withQuery(routes.owner.tax, { tab: 'receipts' }) }] : []),
+            ...(data.pendingApprovals > 0 ? [{ key: 'approvals', tone: 'warning' as const, message: fillText(t.approvals, count(data.pendingApprovals)), to: routes.owner.approvals }] : []),
+            ...(data.lowStockItems > 0 ? [{ key: 'lowStock', tone: 'warning' as const, message: fillText(t.lowStock, count(data.lowStockItems)), to: withQuery(routes.owner.stock, { tab: 'low' }) }] : []),
+            ...(data.newAlerts > 0 ? [{ key: 'alerts', tone: 'info' as const, message: fillText(t.alerts, count(data.newAlerts)), to: routes.notifications }] : []),
+          ];
           return (
             <Stack gap={vars.spacing[5]}>
+              <Stack gap={vars.spacing[2]}>
+                {attention.length === 0 ? (
+                  <Notice tone="success">{t.allClear}</Notice>
+                ) : (
+                  attention.map((item) => (
+                    <Notice
+                      key={item.key}
+                      tone={item.tone}
+                      action={
+                        <Button size="sm" variant="secondary" onClick={() => navigate(item.to)}>
+                          {text.common.view}
+                        </Button>
+                      }
+                    >
+                      {item.message}
+                    </Notice>
+                  ))
+                )}
+              </Stack>
               <Grid columns={4}>
                 <StatCard
                   highlight
@@ -37,30 +69,9 @@ export const MorningPage = () => {
                 <StatCard label={t.todaySoFar} value={money(data.today.net)} detail={fillText(t.ordersCount, { count: format.number(data.today.orders) })} />
                 <StatCard label={t.monthToDate} value={money(data.monthToDate.net)} {...change(data.monthToDate.net, data.monthToDate.previous, { label: t.lastMonth })} />
               </Grid>
-              <Grid columns={2} alignItems="start">
-                <Card title={t.needsYou}>
-                  <BarList
-                    color={vars.colors.warning}
-                    items={[
-                      { key: 'approvals', label: t.approvals, value: data.pendingApprovals, display: format.number(data.pendingApprovals), to: routes.owner.approvals },
-                      { key: 'alerts', label: t.alerts, value: data.newAlerts, display: format.number(data.newAlerts), to: routes.notifications },
-                      { key: 'lowStock', label: t.lowStock, value: data.lowStockItems, display: format.number(data.lowStockItems), to: withQuery(routes.owner.stock, { tab: 'low' }) },
-                      { key: 'receipts', label: t.failedReceipts, value: data.failedReceipts, display: format.number(data.failedReceipts), to: withQuery(routes.owner.tax, { tab: 'receipts' }) },
-                    ]}
-                  />
-                </Card>
-                <Card title={t.byBranch}>
-                  <BarList items={data.branches.map((row) => ({ key: row.branchId, label: format.branch(row.branchId), value: row.net, display: money(row.net) }))} />
-                </Card>
-                {data.cashDifferences.length > 0 && (
-                  <Card title={t.cashDifferences}>
-                    <BarList
-                      color={vars.colors.danger}
-                      items={data.cashDifferences.map((row, index) => ({ key: `${row.branchId}-${index}`, label: format.branch(row.branchId), value: Math.abs(row.difference), display: format.money(row.difference, row.currency), to: withQuery(routes.owner.reports, { view: 'shifts' }) }))}
-                    />
-                  </Card>
-                )}
-              </Grid>
+              <Card title={t.byBranch}>
+                <BarList items={data.branches.map((row) => ({ key: row.branchId, label: format.branch(row.branchId), value: row.net, display: money(row.net) }))} />
+              </Card>
             </Stack>
           );
         }}

@@ -1,11 +1,10 @@
 import { useState, type ReactNode } from 'react';
-import { comparableReports, listProducts, runReport, vatExport, type ReportCell, type ReportColumn, type ReportFilter, type ReportResult } from '@/shared/api';
-import { AsyncContent, Button, Card, Checkbox, CategorySelect, ColorSelect, FilterBar, Grid, Icon, InfoTip, Notice, PageHeader, SegmentedControl, SelectField, SizeSelect, Stack, StatCard, Table, Tabs, Text, TextField, type TableSort } from '@/shared/components';
-import { useAsync, useChange, useFormat, useLiveVersion, useLocale, useQueryState, useReference } from '@/shared/hooks';
-import type { SalesChannel } from '@/shared/types';
+import { comparableReports, runReport, vatExport, type ReportCell, type ReportColumn, type ReportFilter, type ReportResult } from '@/shared/api';
+import { AsyncContent, Button, Checkbox, Grid, Icon, InfoTip, Notice, PageHeader, SegmentedControl, SelectField, Stack, StatCard, Table, Tabs, Text } from '@/shared/components';
+import { useAsync, useChange, useFormat, useLiveVersion, useLocale, useQueryState, useReference, useTableSort } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { changePercent, fillText, type ExportCell, type ExportTable } from '@/shared/utils';
-import { BranchSelect, BrandSelect, ExportButtons, PeriodFilter } from '../../components';
+import { ExportButtons, PeriodFilter, useAnalysisFilters } from '../../components';
 import { analysisViews, defaultAnalysisView, type AnalysisSection, type AnalysisView } from '../../constants/analysis';
 import { useExport, usePeriod } from '../../hooks';
 
@@ -26,50 +25,23 @@ export const ReportsPage = () => {
   const { text } = useLocale();
   const format = useFormat();
   const exporter = useExport();
-  const { users, settings } = useReference();
+  const { settings } = useReference();
   const period = usePeriod('month');
   const [viewId, setViewId] = useQueryState('view', defaultAnalysisView);
-  const [branchId, setBranchId] = useQueryState('branch', '');
-  const [brandId, setBrandId] = useQueryState('brand', '');
-  const [categoryId, setCategoryId] = useQueryState('category', '');
-  const [productId, setProductId] = useQueryState('product', '');
-  const [reasonId, setReasonId] = useQueryState('reason', '');
-  const [cashierId, setCashierId] = useQueryState('staff', '');
-  const [paymentMethodId, setPaymentMethodId] = useQueryState('payment', '');
-  const [channel, setChannel] = useQueryState('channel', '');
-  const [size, setSize] = useQueryState('size', '');
-  const [color, setColor] = useQueryState('color', '');
   const [currencyMode, setCurrencyMode] = useQueryState<'reporting' | 'branch'>('currency', 'reporting');
   const [compare, setCompare] = useQueryState('compare', '');
-  const [weeks, setWeeks] = useQueryState('weeks', '');
   const [trail, setTrail] = useState<DrillStep[]>([]);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [sort, setSort] = useState<TableSort | null>(null);
   const version = useLiveVersion();
   const change = useChange();
-  const productsState = useAsync(() => listProducts({}), [version]);
-  const products = productsState.status === 'success' ? productsState.data.map((row) => row.product) : [];
   const t = text.owner.reports;
 
   const root = viewById(viewId);
   const view = trail.length ? viewById(trail[trail.length - 1].view) : root;
   const shows = (key: (typeof view.filters)[number]) => view.filters.includes(key);
-  const base: ReportFilter = {
-    range: period.range,
-    branchId: branchId || undefined,
-    brandId: brandId || undefined,
-    categoryId: categoryId || undefined,
-    productId: productId || undefined,
-    returnReasonId: reasonId || undefined,
-    cashierId: cashierId || undefined,
-    paymentMethodId: paymentMethodId || undefined,
-    channel: (channel || undefined) as SalesChannel | undefined,
-    size: size || undefined,
-    color: color || undefined,
-    currencyMode,
-    compare: compare === '1',
-    weeks: weeks ? Number(weeks) : undefined,
-  };
+  const filters = useAnalysisFilters(view.filters);
+  // Until a heading is clicked, a ranking opens on its usual column, highest first (best sellers on top).
+  const table = useTableSort(view.sortBy ? { key: view.sortBy, direction: 'desc' } : undefined);
+  const base: ReportFilter = { range: period.range, ...filters.values, currencyMode, compare: compare === '1' };
   const filter: ReportFilter = { ...trail.reduce<ReportFilter>((current, step) => ({ ...current, ...step.filter }), base), groupBy: view.groupBy };
   const filterKey = JSON.stringify(filter);
   const state = useAsync(() => runReport(view.report, filter), [view.report, filterKey, version]);
@@ -161,43 +133,14 @@ export const ReportsPage = () => {
   };
   const pickView = (id: string) => {
     setTrail([]);
-    setSort(null);
+    table.reset();
     setViewId(id);
   };
 
   // A tab opens on its usual view (Sales on Brand), otherwise on its first report.
   const pickSection = (section: AnalysisSection) => pickView(section === viewById(defaultAnalysisView).section ? defaultAnalysisView : (analysisViews.find((current) => current.section === section)?.id ?? defaultAnalysisView));
 
-  // The filters in use, as chips: "Branch: Park Mall" (clicking one removes it).
-  const chips = [
-    shows('branch') && branchId && { key: 'branch', label: text.owner.fields.branch, value: format.branch(branchId), clear: () => setBranchId('') },
-    shows('brand') && brandId && { key: 'brand', label: text.owner.fields.brand, value: format.brand(brandId), clear: () => setBrandId('') },
-    shows('category') && categoryId && { key: 'category', label: text.owner.fields.category, value: format.category(categoryId), clear: () => setCategoryId('') },
-    shows('product') && productId && { key: 'product', label: text.owner.fields.product, value: products.find((product) => product.id === productId)?.name ?? '', clear: () => setProductId('') },
-    shows('reason') && reasonId && { key: 'reason', label: t.columns.returnReason, value: format.text(settings.lists.returnReasons.find((option) => option.id === reasonId)?.label), clear: () => setReasonId('') },
-    shows('staff') && cashierId && { key: 'staff', label: t.groupings.cashier, value: format.user(cashierId), clear: () => setCashierId('') },
-    shows('payment') && paymentMethodId && { key: 'payment', label: t.groupings.paymentMethod, value: format.payment(paymentMethodId), clear: () => setPaymentMethodId('') },
-    shows('channel') && channel && { key: 'channel', label: t.groupings.channel, value: t.channels[channel as 'store' | 'online'], clear: () => setChannel('') },
-    shows('size') && size && { key: 'size', label: text.owner.fields.size, value: size, clear: () => setSize('') },
-    shows('color') && color && { key: 'color', label: text.owner.fields.color, value: color, clear: () => setColor('') },
-    shows('weeks') && weeks && { key: 'weeks', label: t.weeks, value: weeks, clear: () => setWeeks('') },
-  ].filter((chip): chip is { key: string; label: string; value: string; clear: () => void } => Boolean(chip));
-  const clearAll = () => chips.forEach((chip) => chip.clear());
-  const filterCount = view.filters.filter((key) => key !== 'period').length;
-
-  // Sorting by a column heading, on what the rows already hold. Until a heading is clicked, a ranking opens on its
-  // usual column, highest first (best sellers on top); clicking the same heading turns it round (worst first).
-  const activeSort: TableSort | undefined = sort ?? (view.sortBy ? { key: view.sortBy, direction: 'desc' } : undefined);
-  const sorted = (rows: ReportResult['rows']) => {
-    if (!activeSort) return rows;
-    const factor = activeSort.direction === 'asc' ? 1 : -1;
-    return [...rows].sort((a, b) => {
-      const x = a.cells[activeSort.key];
-      const y = b.cells[activeSort.key];
-      if (typeof x === 'number' && typeof y === 'number') return (x - y) * factor;
-      return String(x ?? '').localeCompare(String(y ?? '')) * factor;
-    });
-  };
+  const sorted = (rows: ReportResult['rows']) => table.sorted(rows, (row, key) => row.cells[key]);
 
   return (
     <Stack gap={vars.spacing[5]}>
@@ -238,12 +181,7 @@ export const ReportsPage = () => {
               options={analysisViews.filter((current) => current.section === root.section).map((current) => ({ value: current.id, label: t.views[current.id as keyof typeof t.views] ?? current.id }))}
             />
             {shows('period') && <PeriodFilter period={period} />}
-            {filterCount > 0 && (
-              <Button variant="secondary" onClick={() => setFiltersOpen(!filtersOpen)}>
-                <Icon name="filter" />
-                {chips.length ? `${text.common.filters} (${format.number(chips.length)})` : text.common.filters}
-              </Button>
-            )}
+            {filters.button}
             {(view.report === 'pnl' || Boolean(filter.branchId)) && view.report !== 'vat' && view.report !== 'shifts' && (
               <SegmentedControl<'reporting' | 'branch'>
                 label={t.currency}
@@ -258,60 +196,8 @@ export const ReportsPage = () => {
             {canCompare && <Checkbox label={t.compare} checked={compare === '1'} onChange={(checked) => setCompare(checked ? '1' : '')} />}
           </Stack>
 
-          {filtersOpen && filterCount > 0 && (
-            <Card
-              title={text.common.filters}
-              actions={
-                <Button size="sm" variant="muted" onClick={() => setFiltersOpen(false)}>
-                  {text.common.close}
-                </Button>
-              }
-            >
-              <FilterBar>
-                {shows('branch') && <BranchSelect kinds={['store', 'online', 'warehouse']} includeArchived allLabel={text.owner.fields.allBranches} value={branchId} onChange={setBranchId} />}
-                {shows('brand') && <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />}
-                {shows('category') && <CategorySelect allLabel={text.owner.fields.allCategories} value={categoryId} onChange={setCategoryId} />}
-                {shows('product') && (
-                  <SelectField
-                    label={text.owner.fields.product}
-                    placeholder={t.allProducts}
-                    value={productId}
-                    onChange={setProductId}
-                    options={products.filter((product) => (!brandId || product.brandId === brandId) && (!categoryId || product.categoryId === categoryId)).map((product) => ({ value: product.id, label: product.name, group: format.brand(product.brandId) }))}
-                  />
-                )}
-                {shows('reason') && (
-                  <SelectField label={t.columns.returnReason} placeholder={t.allReasons} value={reasonId} onChange={setReasonId} options={settings.lists.returnReasons.map((option) => ({ value: option.id, label: format.text(option.label) }))} />
-                )}
-                {shows('staff') && (
-                  <SelectField label={t.groupings.cashier} placeholder={text.owner.fields.allStaff} value={cashierId} onChange={setCashierId} options={users.filter((user) => user.branchIds.length > 0).map((user) => ({ value: user.id, label: user.name }))} />
-                )}
-                {shows('payment') && (
-                  <SelectField label={t.groupings.paymentMethod} placeholder={text.common.all} value={paymentMethodId} onChange={setPaymentMethodId} options={settings.paymentMethods.map((method) => ({ value: method.id, label: format.text(method.name) }))} />
-                )}
-                {shows('channel') && (
-                  <SelectField label={t.groupings.channel} placeholder={text.common.all} value={channel} onChange={setChannel} options={(['store', 'online'] as const).map((value) => ({ value, label: t.channels[value] }))} />
-                )}
-                {shows('size') && <SizeSelect allLabel={text.common.all} value={size} onChange={setSize} />}
-                {shows('color') && <ColorSelect allLabel={text.common.all} value={color} onChange={setColor} />}
-                {shows('weeks') && <TextField label={t.weeks} type="number" min={1} value={weeks} placeholder={String(6)} onChange={setWeeks} />}
-              </FilterBar>
-            </Card>
-          )}
-
-          {chips.length > 0 && (
-            <Stack direction="row" wrap gap={vars.spacing[2]} align="center">
-              {chips.map((chip) => (
-                <Button key={chip.key} size="sm" variant="secondary" onClick={chip.clear}>
-                  {`${chip.label}: ${chip.value}`}
-                  <Icon name="close" />
-                </Button>
-              ))}
-              <Button size="sm" variant="muted" onClick={clearAll}>
-                {text.common.clearFilters}
-              </Button>
-            </Stack>
-          )}
+          {filters.panel}
+          {filters.chips}
 
           {trail.length > 0 && (
             <nav aria-label={t.viewBy}>
@@ -356,8 +242,8 @@ export const ReportsPage = () => {
                   <Table
                     label={title}
                     nowrap
-                    sort={activeSort}
-                    onSortChange={setSort}
+                    sort={table.sort}
+                    onSortChange={table.setSort}
                     columns={result.columns.map((column) => {
                       const info = (t.columnInfo as Record<string, string>)[column.key];
                       return {

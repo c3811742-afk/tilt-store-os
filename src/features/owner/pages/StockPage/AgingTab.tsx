@@ -1,47 +1,49 @@
 import { Link } from 'react-router';
-import { getStockAging } from '@/shared/api';
-import { AsyncContent, FilterBar, Grid, Stack, StatCard, Table } from '@/shared/components';
+import { getStockAging, type StockFilter } from '@/shared/api';
+import { AsyncContent, Grid, Stack, StatCard, Table, Text } from '@/shared/components';
 import { routes, toPath } from '@/shared/constants';
-import { useAsync, useFormat, useLiveVersion, useLocale, useQueryState } from '@/shared/hooks';
+import { useAsync, useFormat, useLiveVersion, useLocale, useTableSort } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { fillText } from '@/shared/utils';
-import { BranchSelect, BrandSelect } from '../../components';
 
-const rowLimit = 200;
+const rowLimit = 200; // the most rows drawn at once; narrow the filters to see others
 
-// How long items have stayed unsold, oldest first, grouped by the age limits in Policies.
-export const AgingTab = () => {
+// How long items have stayed unsold, grouped by the age limits in Policies. Opens with the oldest first.
+export const AgingTab = ({ filter }: { filter: StockFilter }) => {
   const { text } = useLocale();
   const format = useFormat();
-  const [brandId, setBrandId] = useQueryState('brand', '');
-  const [branchId, setBranchId] = useQueryState('branch', '');
   const version = useLiveVersion();
-  const state = useAsync(() => getStockAging({ brandId: brandId || undefined, branchId: branchId || undefined }), [brandId, branchId, version]);
+  const state = useAsync(() => getStockAging(filter), [JSON.stringify(filter), version]);
+  const table = useTableSort({ key: 'days', direction: 'desc' });
   const t = text.owner.stock;
   return (
-    <Stack gap={vars.spacing[4]}>
-      <FilterBar>
-        <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />
-        <BranchSelect kinds={['store', 'warehouse']} allLabel={text.owner.fields.allBranches} value={branchId} onChange={setBranchId} />
-      </FilterBar>
-      <AsyncContent state={state}>
-        {(data) => (
+    <AsyncContent state={state}>
+      {(data) => {
+        const rows = table.sorted(data.rows, (row, key) =>
+          key === 'item' ? `${row.productName} ${row.size} ${row.color}` : key === 'branch' ? format.branch(row.branchId) : key === 'qty' ? row.qty : key === 'lastSale' ? (row.daysSinceSale ?? Number.MAX_SAFE_INTEGER) : row.days,
+        );
+        return (
           <Stack gap={vars.spacing[4]}>
             <Grid>
               {data.summary.map((bucket) => (
                 <StatCard key={bucket.index} label={bucket.to === null ? fillText(t.olderThan, { days: format.number(bucket.from - 1) }) : fillText(t.daysRange, { from: format.number(bucket.from), to: format.number(bucket.to) })} value={fillText(text.owner.dashboard.units, { count: format.number(bucket.pieces) })} highlight={bucket.to === null} />
               ))}
             </Grid>
+            <Text variant="caption" color={vars.colors.textMuted}>
+              {rows.length > rowLimit ? `${format.number(rowLimit)} / ${format.number(rows.length)} · ${t.narrowFilters}` : format.number(rows.length)}
+            </Text>
             <Table
               label={t.tabs.aging}
+              sort={table.sort}
+              onSortChange={table.setSort}
               columns={[
-                { key: 'item', label: text.owner.fields.product },
-                { key: 'branch', label: text.owner.fields.branch },
-                { key: 'qty', label: t.pieces, align: 'end' },
-                { key: 'days', label: t.daysInStock, align: 'end' },
-                { key: 'lastSale', label: t.lastSale, align: 'end' },
+                { key: 'item', label: text.owner.fields.product, sortable: true },
+                { key: 'branch', label: text.owner.fields.branch, sortable: true },
+                { key: 'qty', label: t.pieces, align: 'end', sortable: true },
+                { key: 'days', label: t.daysInStock, align: 'end', sortable: true },
+                { key: 'lastSale', label: t.lastSale, align: 'end', sortable: true },
               ]}
-              rows={data.rows.slice(0, rowLimit).map((row) => ({
+              rows={rows.slice(0, rowLimit).map((row) => ({
                 key: `${row.variantId}|${row.branchId}`,
                 cells: {
                   item: <Link to={toPath(routes.owner.itemHistory, { variantId: row.variantId })}>{`${row.productName} · ${row.size} · ${row.color}`}</Link>,
@@ -53,8 +55,8 @@ export const AgingTab = () => {
               }))}
             />
           </Stack>
-        )}
-      </AsyncContent>
-    </Stack>
+        );
+      }}
+    </AsyncContent>
   );
 };

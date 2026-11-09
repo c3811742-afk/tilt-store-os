@@ -39,6 +39,8 @@ export const DashboardPage = () => {
           const money = (amount: number) => format.money(amount, data.currency);
           const { totals, previous } = data;
           const days = daysBetween(period.range.from, period.range.to) + 1;
+          // Each branch's sales in its own currency; with branches in other currencies, also converted, so they add up.
+          const mixed = data.branches.some((row) => row.currency !== data.currency);
           return (
             <Stack gap={vars.spacing[5]}>
               {data.pendingApprovals > 0 && (
@@ -76,12 +78,13 @@ export const DashboardPage = () => {
                     columns={[
                       { key: 'branch', label: text.owner.fields.branch },
                       { key: 'net', label: t.netSales, align: 'end' },
+                      ...(mixed ? [{ key: 'converted', label: fillText(t.inCurrency, { currency: data.currency }), align: 'end' as const }] : []),
                       { key: 'orders', label: t.orders, align: 'end' },
                     ]}
-                    rows={data.branches.map((row) => ({ key: row.branchId, cells: { branch: format.branch(row.branchId), net: money(row.net), orders: format.number(row.orders) } }))}
+                    rows={data.branches.map((row) => ({ key: row.branchId, cells: { branch: format.branch(row.branchId), net: format.money(row.netLocal, row.currency), converted: money(row.net), orders: format.number(row.orders) } }))}
                     footer={
                       data.branches.length > 1
-                        ? { branch: t.combined, net: money(data.branches.reduce((sum, row) => sum + row.net, 0)), orders: format.number(data.branches.reduce((sum, row) => sum + row.orders, 0)) }
+                        ? { branch: t.combined, [mixed ? 'converted' : 'net']: money(data.branches.reduce((sum, row) => sum + row.net, 0)), orders: format.number(data.branches.reduce((sum, row) => sum + row.orders, 0)) }
                         : undefined
                     }
                   />
@@ -95,7 +98,7 @@ export const DashboardPage = () => {
               </Grid>
 
               <Text variant="caption" color={vars.colors.textMuted}>
-                {fillText(t.footnote, { currency: data.currency })} <Link to={routes.owner.reports}>{t.allReports}</Link>
+                {fillText(branchId ? t.footnoteOwn : t.footnote, { currency: data.currency })} <Link to={routes.owner.reports}>{t.allReports}</Link>
               </Text>
             </Stack>
           );

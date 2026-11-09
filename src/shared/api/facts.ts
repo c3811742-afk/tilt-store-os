@@ -209,9 +209,16 @@ export interface StockSummary {
 }
 
 // Pieces on hand and their value, at cost and at selling price, in the reporting currency (today's rates).
-export const stockSummary = (data: Database, filter: { branchIds?: Id[]; brandIds?: Id[]; productIds?: Id[] } = {}, levels: StockLevel[] = stockLevels(data.movements)) => {
+// `match` narrows to some items (a category, a size...); `currency` gives the values in another currency than the
+// reporting one (e.g. one branch in its own currency), at today's rate.
+export const stockSummary = (
+  data: Database,
+  filter: { branchIds?: Id[]; brandIds?: Id[]; productIds?: Id[]; match?: (variantId: Id) => boolean; currency?: CurrencyCode } = {},
+  levels: StockLevel[] = stockLevels(data.movements),
+) => {
   const index = variantIndex(data);
-  const { baseCurrency, reportingCurrency } = data.settings;
+  const { baseCurrency } = data.settings;
+  const reportingCurrency = filter.currency ?? data.settings.reportingCurrency;
   const now = new Date().toISOString();
   const branchById = new Map(data.branches.map((branch) => [branch.id, branch]));
   const costCache = new Map<Id, number>();
@@ -228,6 +235,7 @@ export const stockSummary = (data: Database, filter: { branchIds?: Id[]; brandId
     if (!entry || !branch) return;
     if (filter.brandIds?.length && !filter.brandIds.includes(entry.product.brandId)) return;
     if (filter.productIds?.length && !filter.productIds.includes(entry.product.id)) return;
+    if (filter.match && !filter.match(level.variantId)) return;
     if (!costCache.has(entry.product.id)) costCache.set(entry.product.id, currentUnitCost(data, entry.product.id, now));
     const unitCost = convert(costCache.get(entry.product.id) ?? 0, baseCurrency, reportingCurrency, now, data.rates, baseCurrency);
     const price = sellingPrice(data.schedules, entry.product, entry.variant, branch.currency, now) ?? 0;
@@ -371,6 +379,18 @@ export const periodCosts = (data: Database, range: DateRange, branchIds?: Id[]):
       0,
     );
   return { expenses, monthlyFees, absorbedDefects, writeOffs, cashShortages, countShortages, transferMissing };
+};
+
+// The period's costs in one branch's own currency (they are kept in the reporting currency), converted at the period's
+// average rate: the branch's sales in its currency divided by the same sales converted (the rate on the last day when
+// it sold nothing). Without a currency they stay in the reporting currency.
+export const periodCostsIn = (data: Database, range: DateRange, branchIds: Id[] | undefined, currency?: CurrencyCode): PeriodCosts => {
+  const costs = periodCosts(data, range, branchIds);
+  if (!currency || currency === data.settings.reportingCurrency) return costs;
+  const local = totalsOf(salesFacts(data, { range, branchIds, currency })).net;
+  const reporting = totalsOf(salesFacts(data, { range, branchIds })).net;
+  const factor = reporting ? local / reporting : convert(1, data.settings.reportingCurrency, currency, range.to, data.rates, data.settings.baseCurrency);
+  return Object.fromEntries(Object.entries(costs).map(([key, value]) => [key, value * factor])) as unknown as PeriodCosts;
 };
 
 // Net profit after everything outside the sale itself.

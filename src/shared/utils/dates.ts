@@ -43,7 +43,8 @@ export interface DateRange {
   to: IsoDate; // inclusive
 }
 
-export type PeriodPreset = 'today' | 'week' | 'month' | 'last7' | 'last30' | 'last90' | 'custom';
+export const periodPresets = ['today', 'week', 'month', 'last7', 'last30', 'last90', 'custom'] as const;
+export type PeriodPreset = (typeof periodPresets)[number];
 
 export const presetRange = (preset: Exclude<PeriodPreset, 'custom'>, day: IsoDate = today()): DateRange => {
   switch (preset) {

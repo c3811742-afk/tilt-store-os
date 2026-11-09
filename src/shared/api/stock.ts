@@ -1,5 +1,5 @@
 import { onHandStatuses, stockStatuses } from '@/shared/constants/statuses';
-import type { ApprovalState, Id, StockCount, StockStatus, Transfer } from '@/shared/types';
+import type { ApprovalState, CurrencyCode, Id, StockCount, StockStatus, Transfer } from '@/shared/types';
 import { daysBetween, matchesVariant, nowIso, stockLevels, today } from '@/shared/utils';
 import { ApiError } from './errors';
 import { resolveApprovals } from './costing';
@@ -25,13 +25,37 @@ export const variantLabel = (variantId: Id) => {
 
 // ---- Levels and value -----------------------------------------------------------------------------------------
 
+// One set of filters for every stock view; all of them combine.
 export interface StockFilter {
+  branchId?: Id;
   brandId?: Id;
-  query?: string; // product name, SKU or barcode
+  categoryId?: Id;
+  productId?: Id;
   size?: string;
   color?: string;
-  branchId?: Id;
+  query?: string; // product name, SKU or barcode
 }
+
+// Whether an item (a variant) passes the item filters: brand, category, product, size, colour and the search.
+const stockMatcher = (filter: StockFilter) => {
+  const index = variantIndex(db);
+  const query = filter.query?.trim().toLowerCase() ?? '';
+  return (variantId: Id) => {
+    const entry = index.get(variantId);
+    if (!entry) return false;
+    const { product, variant } = entry;
+    return (
+      (!filter.brandId || product.brandId === filter.brandId) &&
+      (!filter.categoryId || product.categoryId === filter.categoryId) &&
+      (!filter.productId || product.id === filter.productId) &&
+      (!filter.size || variant.size === filter.size) &&
+      (!filter.color || variant.color === filter.color) &&
+      matchesVariant(query, { ...variant, name: product.name })
+    );
+  };
+};
+const inBranch = (filter: StockFilter, branchId: Id) => !filter.branchId || branchId === filter.branchId;
+const hasItemFilter = (filter: StockFilter) => Boolean(filter.brandId || filter.categoryId || filter.productId || filter.size || filter.color || filter.query);
 
 export interface StockRow {
   variantId: Id;
@@ -47,14 +71,10 @@ export interface StockRow {
 
 export const getStockLevels = (filter: StockFilter) =>
   respond(() => {
-    const query = filter.query?.trim().toLowerCase() ?? '';
+    const match = stockMatcher(filter);
     const variants = db.products
-      .filter((product) => !product.archived && (!filter.brandId || product.brandId === filter.brandId))
-      .flatMap((product) =>
-        product.variants
-          .filter((variant) => !variant.archived && (!filter.size || variant.size === filter.size) && (!filter.color || variant.color === filter.color) && matchesVariant(query, { ...variant, name: product.name }))
-          .map((variant) => ({ product, variant })),
-      );
+      .filter((product) => !product.archived)
+      .flatMap((product) => product.variants.filter((variant) => !variant.archived && match(variant.id)).map((variant) => ({ product, variant })));
     const wanted = new Set(variants.map(({ variant }) => variant.id));
     const qty = new Map<string, number>();
     stockLevels(db.movements).forEach((level) => {
@@ -72,24 +92,34 @@ export const getStockLevels = (filter: StockFilter) =>
     return { branchIds: branches.map((branch) => branch.id), rows };
   });
 
-// Pieces and value per branch, per brand and in total, at cost and at selling price.
-export const getStockValue = (filter: { brandId?: Id }) =>
+// Pieces and value per branch, per brand and in total, at cost and at selling price. One branch is valued in its own
+// currency; all branches together in the reporting currency, each branch also in its own (`own`).
+export const getStockValue = (filter: StockFilter = {}) =>
   respond(() => {
-    const value = stockSummary(db, { brandIds: filter.brandId ? [filter.brandId] : undefined });
+    const match = stockMatcher(filter);
+    const branchIds = filter.branchId ? [filter.branchId] : undefined;
+    const currency: CurrencyCode = db.branches.find((branch) => branch.id === filter.branchId)?.currency ?? db.settings.reportingCurrency;
+    const value = stockSummary(db, { branchIds, match, currency });
     const toList = (map: Map<Id, StockSummary>) => [...map.entries()].map(([id, summary]) => ({ id, ...summary })).sort((a, b) => b.costValue - a.costValue);
-    return { currency: db.settings.reportingCurrency, total: value.summary, byBranch: toList(value.byBranch), byBrand: toList(value.byBrand) };
+    const byBranch = toList(value.byBranch).map((row) => {
+      const branchCurrency = db.branches.find((branch) => branch.id === row.id)?.currency ?? currency;
+      const own = branchCurrency === currency ? row : stockSummary(db, { branchIds: [row.id], match, currency: branchCurrency }).summary;
+      return { ...row, own: { currency: branchCurrency, costValue: own.costValue, retailValue: own.retailValue } };
+    });
+    return { currency, total: value.summary, byBranch, byBrand: toList(value.byBrand) };
   });
 
 // Pieces in each status (available, reserved, in transit, waiting for inspection, defective...) per branch.
-export const getStockByStatus = (filter: { brandId?: Id }) =>
+export const getStockByStatus = (filter: StockFilter = {}) =>
   respond(() => {
-    const index = variantIndex(db);
+    const match = stockMatcher(filter);
     const counts: Record<StockStatus, Record<Id, number>> = Object.fromEntries(stockStatuses.map((status) => [status, {}])) as Record<StockStatus, Record<Id, number>>;
     stockLevels(db.movements).forEach((level) => {
-      if (filter.brandId && index.get(level.variantId)?.product.brandId !== filter.brandId) return;
+      if (!inBranch(filter, level.branchId) || !match(level.variantId)) return;
       counts[level.status][level.branchId] = (counts[level.status][level.branchId] ?? 0) + level.qty;
     });
-    return stockStatuses.map((status) => ({ status, byBranch: counts[status], total: Object.values(counts[status]).reduce((sum, value) => sum + value, 0) }));
+    const branchIds = db.branches.filter((branch) => !branch.archived && inBranch(filter, branch.id)).map((branch) => branch.id);
+    return { branchIds, rows: stockStatuses.map((status) => ({ status, byBranch: counts[status], total: Object.values(counts[status]).reduce((sum, value) => sum + value, 0) })) };
   });
 
 // Everything that ever happened to one variant: receiving, sales, returns, transfers, adjustments, status changes.
@@ -102,8 +132,9 @@ export const getItemHistory = (variantId: Id) =>
   });
 
 // How long pieces have been in stock without selling: days since the variant first arrived in the branch.
-export const getStockAging = (filter: { branchId?: Id; brandId?: Id }) =>
+export const getStockAging = (filter: StockFilter = {}) =>
   respond(() => {
+    const match = stockMatcher(filter);
     const firstIn = new Map<string, string>();
     db.movements.forEach((movement) => {
       if (movement.kind !== 'receive' && movement.kind !== 'transferIn') return;
@@ -119,7 +150,7 @@ export const getStockAging = (filter: { branchId?: Id; brandId?: Id }) =>
     });
     const onHand = new Map<string, number>();
     stockLevels(db.movements).forEach((level) => {
-      if (level.status !== 'available' || (filter.branchId && level.branchId !== filter.branchId)) return;
+      if (level.status !== 'available' || !inBranch(filter, level.branchId) || !match(level.variantId)) return;
       const key = `${level.variantId}|${level.branchId}`;
       onHand.set(key, (onHand.get(key) ?? 0) + level.qty);
     });
@@ -133,7 +164,6 @@ export const getStockAging = (filter: { branchId?: Id; brandId?: Id }) =>
         const sold = lastSold.get(key);
         return { variantId, branchId, qty, ...info, days: daysBetween(since, day), daysSinceSale: sold ? daysBetween(sold, day) : null };
       })
-      .filter((row) => !filter.brandId || row.brandId === filter.brandId)
       .sort((a, b) => b.days - a.days);
     const buckets = db.settings.agingBuckets;
     const bucketOf = (days: number) => buckets.filter((limit) => days > limit).length; // 0: up to the first limit
@@ -146,23 +176,33 @@ export const getStockAging = (filter: { branchId?: Id; brandId?: Id }) =>
     return { rows, summary };
   });
 
-export const getLowStock = () =>
-  respond(() => lowStockRows().map((row) => ({ ...row, ...describeVariant(row.variantId) })).sort((a, b) => a.qty - b.qty));
+export const getLowStock = (filter: StockFilter = {}) =>
+  respond(() => {
+    const match = stockMatcher(filter);
+    return lowStockRows()
+      .filter((row) => inBranch(filter, row.branchId) && match(row.variantId))
+      .map((row) => ({ ...row, ...describeVariant(row.variantId) }))
+      .sort((a, b) => a.qty - b.qty);
+  });
 
 // ---- Stock counts -------------------------------------------------------------------------------------------
 
-export const listCounts = () =>
-  respond(() =>
-    db.counts
+// With item filters, only counts that touched those items (and only their lines).
+export const listCounts = (filter: StockFilter = {}) =>
+  respond(() => {
+    const match = stockMatcher(filter);
+    const items = hasItemFilter(filter);
+    return db.counts
       .filter((count): count is StockCount & { status: ApprovalState } => count.status !== 'open') // open: still being counted in the branch
+      .filter((count) => inBranch(filter, count.branchId) && (!items || count.lines.some((line) => match(line.variantId))))
       .map((count) => ({
         count,
-        differences: count.lines.filter((line) => line.counted !== line.expected).map((line) => ({ ...line, ...describeVariant(line.variantId), difference: line.counted - line.expected })),
+        differences: count.lines.filter((line) => line.counted !== line.expected && (!items || match(line.variantId))).map((line) => ({ ...line, ...describeVariant(line.variantId), difference: line.counted - line.expected })),
         totalDifference: count.lines.reduce((sum, line) => sum + Math.abs(line.counted - line.expected), 0),
         needsOwner: count.lines.reduce((sum, line) => sum + Math.abs(line.counted - line.expected), 0) > db.settings.stockCountApprovalAbove,
       }))
-      .sort((a, b) => b.count.at.localeCompare(a.count.at)),
-  );
+      .sort((a, b) => b.count.at.localeCompare(a.count.at));
+  });
 
 // Approving a count corrects the stock with an adjustment movement for each difference, with its reason.
 export const decideCount = (countId: Id, approve: boolean, reason?: string) =>
@@ -189,12 +229,15 @@ export const decideCount = (countId: Id, approve: boolean, reason?: string) =>
 
 // ---- Stock requests ---------------------------------------------------------------------------------------
 
-export const listStockRequests = () =>
-  respond(() =>
-    db.stockRequests
+export const listStockRequests = (filter: StockFilter = {}) =>
+  respond(() => {
+    const match = stockMatcher(filter);
+    const items = hasItemFilter(filter);
+    return db.stockRequests
+      .filter((request) => inBranch(filter, request.branchId) && (!items || request.lines.some((line) => match(line.variantId))))
       .map((request) => ({ request, lines: request.lines.map((line) => ({ ...line, ...describeVariant(line.variantId) })) }))
-      .sort((a, b) => b.request.at.localeCompare(a.request.at)),
-  );
+      .sort((a, b) => b.request.at.localeCompare(a.request.at));
+  });
 
 // Approve and send to the warehouse (a transfer is created for the warehouse to prepare), approve and order
 // from the brand, or reject. The branch manager is told either way.

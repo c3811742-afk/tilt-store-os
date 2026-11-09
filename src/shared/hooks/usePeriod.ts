@@ -1,9 +1,11 @@
 import { useQueryState } from './useQueryState';
-import { presetRange, today, type DateRange, type PeriodPreset } from '@/shared/utils';
+import { periodPresets, presetRange, today, type DateRange, type PeriodPreset } from '@/shared/utils';
 
 // The period a page shows, kept in the address (?period=week&from=...&to=...), so a link opens the same view.
 export const usePeriod = (fallback: Exclude<PeriodPreset, 'custom'> = 'month') => {
-  const [preset, setPreset] = useQueryState<PeriodPreset>('period', fallback);
+  const [stored, setPreset] = useQueryState<PeriodPreset>('period', fallback);
+  // An unknown value in the address (an old or mistyped link) shows the page's usual period.
+  const preset: PeriodPreset = periodPresets.includes(stored) ? stored : fallback;
   const [from, setFrom] = useQueryState('from', '');
   const [to, setTo] = useQueryState('to', '');
   const range: DateRange =

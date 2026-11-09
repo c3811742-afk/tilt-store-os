@@ -66,12 +66,11 @@ export const ExpensesPage = () => {
               .filter((row) => row.total > 0);
             return (
               <Stack gap={vars.spacing[4]}>
-                <Grid alignItems="start">
-                  <StatCard label={t.total} value={format.money(data.total, data.currency)} highlight />
-                  <Card title={t.byCategory}>
-                    <BarList items={byCategory.map((row) => ({ key: row.category.id, label: format.text(row.category.label), value: row.total, display: format.money(row.total, data.currency) }))} />
-                  </Card>
-                </Grid>
+                {/* The headline total, then its breakdown below it at full width (cards of different heights don't sit side by side). */}
+                <StatCard label={t.total} value={format.money(data.total, data.currency)} highlight />
+                <Card title={t.byCategory}>
+                  <BarList items={byCategory.map((row) => ({ key: row.category.id, label: format.text(row.category.label), value: row.total, display: format.money(row.total, data.currency) }))} />
+                </Card>
                 <Card
                   title={t.list}
                   actions={
