@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { Card, Table } from '@/shared/components';
+import { Card, Table, OfflineStockNotice } from '@/shared/components';
 import { routes, toPath } from '@/shared/constants';
 import { useFormat, useLocale, useReference } from '@/shared/hooks';
 import type { ProductData } from './types';
@@ -13,6 +13,7 @@ export const ProductStockTab = ({ data }: { data: ProductData }) => {
   const qty = (variantId: string, branchId: string) => data.levels.filter((level) => level.variantId === variantId && level.branchId === branchId).reduce((sum, level) => sum + level.qty, 0);
   return (
     <Card title={text.owner.products.tabs.stock}>
+      <OfflineStockNotice />
       <Table
         label={text.owner.products.tabs.stock}
         emptyText={text.owner.products.noStock}

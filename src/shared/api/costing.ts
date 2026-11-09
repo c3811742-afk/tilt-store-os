@@ -54,25 +54,40 @@ export const getBatch = (batchId: Id) =>
     defects: db.defects.filter((defect) => defect.batchId === batchId),
   }));
 
-// The batch's total cost, its defects, and how they are handled. A change that moves the cost per piece
-// waits for an owner's approval before sales use it.
+// After a batch changed (its cost, its defects): when defects are added to the good pieces' cost and the cost per
+// piece moves, the new cost waits for an owner's approval before sales use it.
+const askCostApproval = (batch: Batch, before: ReturnType<typeof batchUnitCosts>) => {
+  const after = batchUnitCosts({ ...batch, redistribution: 'approved' });
+  if (batch.defectHandling === 'writeOff') {
+    batch.redistribution = 'none';
+    return;
+  }
+  if (Math.abs(after.adjusted - before.effective) <= 0.005) return;
+  batch.redistribution = 'pending';
+  if (!db.approvals.some((approval) => approval.ref?.id === batch.id && approval.status === 'pending')) {
+    db.approvals.push({ id: newId(), kind: 'costRedistribution', level: 'owner', branchId: batch.branchId, requestedById: actor().id, at: nowIso(), ref: { type: 'batch', id: batch.id }, summary: batch.number, status: 'pending' });
+  }
+  notify('batchCostChanged', { batch: batch.number, from: before.effective.toFixed(2), to: after.adjusted.toFixed(2) }, `/owner/costing/${batch.id}`);
+};
+
+// Defects found after receiving (in a branch, at inspection, in a transfer) count against the batch they came in,
+// like those found at receiving: its defect count goes up and its cost follows (with the owner's approval).
+export const addBatchDefects = (batchId: Id | undefined, qty: number) => {
+  const batch = batchId ? db.batches.find((current) => current.id === batchId) : undefined;
+  if (!batch || qty < 1) return;
+  const before = batchUnitCosts(batch);
+  batch.defects = Math.min(batch.defects + qty, batch.qty);
+  askCostApproval(batch, before);
+};
+
+// The batch's total cost, its defects, and how they are handled.
 export const updateBatch = (batchId: Id, input: { totalCost: number; defects: number; defectHandling: DefectHandling }) =>
   mutate(() => {
     const batch = findById(db.batches, batchId);
     const before = batchUnitCosts(batch);
     const from = { totalCost: batch.totalCost, defects: batch.defects, defectHandling: batch.defectHandling };
     Object.assign(batch, input);
-    const after = batchUnitCosts({ ...batch, redistribution: 'approved' });
-    const moves = input.defectHandling === 'redistribute' && Math.abs(after.adjusted - before.effective) > 0.005;
-    if (moves) {
-      batch.redistribution = 'pending';
-      if (!db.approvals.some((approval) => approval.ref?.id === batchId && approval.status === 'pending')) {
-        db.approvals.push({ id: newId(), kind: 'costRedistribution', level: 'owner', branchId: batch.branchId, requestedById: actor().id, at: nowIso(), ref: { type: 'batch', id: batchId }, summary: batch.number, status: 'pending' });
-      }
-      notify('batchCostChanged', { batch: batch.number, from: before.effective.toFixed(2), to: after.adjusted.toFixed(2) }, `/owner/costing/${batch.id}`);
-    } else if (input.defectHandling === 'writeOff') {
-      batch.redistribution = 'none';
-    }
+    askCostApproval(batch, before);
     logActivity({
       action: 'costChange',
       target: { type: 'batch', id: batch.id, label: batch.number },

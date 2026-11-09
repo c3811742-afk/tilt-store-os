@@ -4,4 +4,5 @@ import type { NotificationBellProps } from './NotificationBell.types';
 export const notificationBellDefaults: Required<NotificationBellProps> = {
   viewAllPath: routes.notifications,
   latestCount: 6,
+  maxCount: 99,
 };

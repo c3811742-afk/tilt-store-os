@@ -1,21 +1,6 @@
 import { useState } from 'react';
 import { getBranchLowStock, getBranchStatusTotals, listBranchStockRequests, type VariantHit } from '@/shared/api';
-import {
-  AsyncContent,
-  Badge,
-  BranchStockLevels,
-  Button,
-  Card,
-  Grid,
-  Notice,
-  PageHeader,
-  Stack,
-  StatCard,
-  Table,
-  Tabs,
-  Text,
-  type ItemLine,
-} from '@/shared/components';
+import { AsyncContent, Badge, BranchStockLevels, Button, Card, Grid, Notice, PageHeader, Stack, StatCard, Table, Tabs, Text, type ItemLine, OfflineStockNotice } from '@/shared/components';
 import { requestStatusTone, routes, stockStatuses, toPath, withQuery } from '@/shared/constants';
 import { useAsync, useBranchScope, useFormat, useLiveVersion, useLocale, useQueryState } from '@/shared/hooks';
 import type { StockStatus } from '@/shared/types';
@@ -55,6 +40,7 @@ export const StockPage = () => {
   return (
     <Stack gap={vars.spacing[5]}>
       <PageHeader title={t.title} actions={<Button onClick={() => openRequest()}>{t.requestStock}</Button>} />
+      <OfflineStockNotice />
       {sent && <Notice tone="success">{sent}</Notice>}
       <Tabs<StockTab>
         label={t.title}

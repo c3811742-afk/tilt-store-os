@@ -225,6 +225,7 @@ export const stockSummary = (
   const summary: StockSummary = { units: 0, costValue: 0, retailValue: 0 };
   const byBranch = new Map<Id, StockSummary>();
   const byBrand = new Map<Id, StockSummary>();
+  const byProduct = new Map<Id, StockSummary>();
   const unitsByVariant = new Map<Id, number>();
 
   levels.forEach((level) => {
@@ -248,9 +249,10 @@ export const stockSummary = (
     add(summary);
     add(byBranch.get(level.branchId) ?? byBranch.set(level.branchId, { units: 0, costValue: 0, retailValue: 0 }).get(level.branchId)!);
     add(byBrand.get(entry.product.brandId) ?? byBrand.set(entry.product.brandId, { units: 0, costValue: 0, retailValue: 0 }).get(entry.product.brandId)!);
+    add(byProduct.get(entry.product.id) ?? byProduct.set(entry.product.id, { units: 0, costValue: 0, retailValue: 0 }).get(entry.product.id)!);
     unitsByVariant.set(level.variantId, (unitsByVariant.get(level.variantId) ?? 0) + level.qty);
   });
-  return { summary, byBranch, byBrand, unitsByVariant };
+  return { summary, byBranch, byBrand, byProduct, unitsByVariant };
 };
 
 // The pieces there were to sell in a period, per key (a product or a brand): the stock when the period started (with

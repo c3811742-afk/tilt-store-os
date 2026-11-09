@@ -1,5 +1,5 @@
 import type { StockFilter } from '@/shared/api';
-import { PageHeader, Stack, Tabs, TextField } from '@/shared/components';
+import { PageHeader, Stack, Tabs, TextField, OfflineStockNotice } from '@/shared/components';
 import { useLocale, useQueryState } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { useAnalysisFilters } from '../../components';
@@ -29,6 +29,7 @@ export const StockPage = () => {
   return (
     <Stack gap={vars.spacing[5]}>
       <PageHeader title={t.title} />
+      <OfflineStockNotice />
       <Tabs<StockTab>
         label={t.title}
         value={tab}

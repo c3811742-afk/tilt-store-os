@@ -8,6 +8,7 @@ import { Badge } from '../Badge';
 import { Card } from '../Card';
 import { Grid } from '../Grid';
 import { Notice } from '../Notice';
+import { OfflineStockNotice } from '../OfflineStockNotice';
 import { PageHeader } from '../PageHeader';
 import { Stack } from '../Stack';
 import { StatCard } from '../StatCard';
@@ -34,6 +35,7 @@ export const BranchItemHistory = ({ variantId, back, actions, notice }: BranchIt
         return (
           <Stack gap={vars.spacing[5]}>
             <PageHeader back={back} title={`${data.productName} · ${data.size} · ${data.color}`} subtitle={`${format.brand(data.brandId)} · ${data.sku}`} actions={actions?.(data)} />
+            <OfflineStockNotice />
             {notice}
             <Card title={t.whereNow}>
               {data.here.length ? (

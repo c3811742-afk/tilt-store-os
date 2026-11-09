@@ -14,9 +14,9 @@ import {
   type CustomerView,
   type TillPayment,
 } from '@/shared/api';
-import { AsyncContent, Button, Modal, Notice, SearchBox, Stack, Text } from '@/shared/components';
+import { AsyncContent, Button, Modal, Notice, SearchBox, Stack, Text, OfflineStockNotice } from '@/shared/components';
 import { routes, toPath, withQuery, tillDefaults } from '@/shared/constants';
-import { useAction, useAsync, useConnection, useErrorMessage, useFormat, useLiveVersion, useLocale, useBranchScope, useReference } from '@/shared/hooks';
+import { useAction, useAsync, useErrorMessage, useFormat, useLiveVersion, useLocale, useBranchScope, useReference } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { fillText, safeAsync, phoneDigits } from '@/shared/utils';
 import { ApprovalModal } from '../../components/ApprovalModal';
@@ -40,7 +40,6 @@ export const SellPage = () => {
   const navigate = useNavigate();
   const errorMessage = useErrorMessage();
   const version = useLiveVersion();
-  const { offline } = useConnection();
   const { branch } = useBranchScope();
   const { cart, setCart, clear, addItem } = useCart();
   const t = text.cashier;
@@ -144,7 +143,7 @@ export const SellPage = () => {
   return (
     <Stack gap={vars.spacing[5]}>
       <CounterHeader shiftOpenedAt={openShift?.openedAt} />
-      {offline && <Notice tone="warning">{text.shell.stockWarning}</Notice>}
+      <OfflineStockNotice />
       <AsyncContent state={shift}>
         {(current) =>
           !current.summary ? (

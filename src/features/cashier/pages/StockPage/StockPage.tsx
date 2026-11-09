@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { closeReservation, getItemStock, searchProducts } from '@/shared/api';
-import { AsyncContent, Badge, Button, Card, Notice, PageHeader, SearchBox, Stack, Table, Text } from '@/shared/components';
+import { AsyncContent, Badge, Button, Card, Notice, PageHeader, SearchBox, Stack, Table, Text, OfflineStockNotice } from '@/shared/components';
 import { routes, toPath } from '@/shared/constants';
-import { useAction, useAsync, useConnection, useErrorMessage, useFormat, useLiveVersion, useLocale, useBranchScope } from '@/shared/hooks';
+import { useAction, useAsync, useErrorMessage, useFormat, useLiveVersion, useLocale, useBranchScope } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { fillText } from '@/shared/utils';
 import { DefectModal, type DefectTarget } from '../../components/DefectModal';
@@ -20,7 +20,6 @@ export const StockPage = () => {
   const navigate = useNavigate();
   const errorMessage = useErrorMessage();
   const version = useLiveVersion();
-  const { offline } = useConnection();
   const { branch } = useBranchScope();
   const branchId = branch?.id ?? '';
   const t = text.cashier.stock;
@@ -36,7 +35,7 @@ export const StockPage = () => {
   return (
     <Stack gap={vars.spacing[5]}>
       <PageHeader title={t.title} />
-      {offline && <Notice tone="warning">{text.shell.stockWarning}</Notice>}
+      <OfflineStockNotice />
       <SearchBox
         label={t.search}
         placeholder={t.search}

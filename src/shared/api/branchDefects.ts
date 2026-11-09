@@ -4,6 +4,7 @@ import { currentTerms, nowIso, stockLevels } from '@/shared/utils';
 import { ApiError } from './errors';
 import { assertBranch, hasRole, staffWithRole } from './branchScope';
 import { currentUnitCost, piecesAt, piecesIn, placeIn } from './engine';
+import { addBatchDefects } from './costing';
 import { describeVariant, variantLabel } from './stock';
 import { actor, db, findById, isOwner, logActivity, mutate, newId, notify, respond } from './server';
 import { checkStockAlerts } from './stockAlerts';
@@ -84,6 +85,7 @@ export const reportDefect = (input: ReportDefectInput) =>
       photos: input.photos?.length ? input.photos : undefined,
       locationId: from.locationId,
     }));
+    addBatchDefects(batch?.id, qty);
     defects.forEach((defect) => {
       db.defects.push(defect);
       db.movements.push({ id: newId(), at, byId: me.id, variantId: input.variantId, qty: defect.qty, from, to: { ...from, status: 'defective' }, kind: 'statusChange', ref: { type: 'defect', id: defect.id }, reason: defect.reasonId });
@@ -276,6 +278,7 @@ export const inspectReturnedItem = (input: InspectInput) =>
       const batch = db.batches.filter((current) => current.productId === info.productId).sort((a, b) => Number(b.branchId === input.branchId) - Number(a.branchId === input.branchId) || b.receivedAt.localeCompare(a.receivedAt))[0];
       const defect: Defect = { id: newId(), at, byId: me.id, productId: info.productId, variantId: input.variantId, batchId: batch?.id, branchId: input.branchId, qty, reasonId: input.reasonId ?? '', foundAt: 'customerReturn', liability: input.liability ?? defaultLiability(input.variantId), status: 'open', unitCost: currentUnitCost(db, info.productId), note: input.note, locationId: input.locationId };
       db.defects.push(defect);
+      addBatchDefects(defect.batchId, qty);
       ref = { type: 'defect', id: defect.id };
     }
     db.movements.push({ id: newId(), at, byId: me.id, variantId: input.variantId, qty, from, to: { ...from, status: input.outcome }, kind: 'statusChange', ref, reason: input.note });

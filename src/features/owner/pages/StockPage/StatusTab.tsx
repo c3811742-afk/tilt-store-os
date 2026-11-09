@@ -1,40 +1,59 @@
+import { Link } from 'react-router';
 import { getStockByStatus, type StockFilter } from '@/shared/api';
-import { AsyncContent, Badge, Table } from '@/shared/components';
-import { stockStatusTone } from '@/shared/constants';
+import { AsyncContent, Notice, Stack, Table, Text } from '@/shared/components';
+import { routes, toPath } from '@/shared/constants';
 import { useAsync, useFormat, useLiveVersion, useLocale, useTableSort } from '@/shared/hooks';
+import { vars } from '@/shared/theme';
 
-// Pieces in each status, per branch: available, reserved, in transit, waiting for inspection, defective...
+const rowLimit = 300; // the most rows drawn at once; narrow the filters to see others
+
+// Pieces of each product in each status (available, reserved, in transit, waiting for inspection, defective...),
+// one column per status that has pieces. Opens with the products with the most pieces first.
 export const StatusTab = ({ filter }: { filter: StockFilter }) => {
   const { text } = useLocale();
   const format = useFormat();
   const version = useLiveVersion();
   const state = useAsync(() => getStockByStatus(filter), [JSON.stringify(filter), version]);
-  const table = useTableSort(); // the statuses in their usual order until a heading is clicked
+  const table = useTableSort({ key: 'total', direction: 'desc' });
   const t = text.owner.stock;
   return (
-    <AsyncContent state={state}>
-      {(data) => (
-        <Table
-          label={t.tabs.status}
-          sort={table.sort}
-          onSortChange={table.setSort}
-          columns={[
-            { key: 'status', label: text.common.status, sortable: true },
-            ...data.branchIds.map((id) => ({ key: id, label: format.branch(id), align: 'end' as const, sortable: true })),
-            { key: 'total', label: text.common.total, align: 'end', sortable: true },
-          ]}
-          rows={table
-            .sorted(data.rows, (row, key) => (key === 'status' ? t.statuses[row.status] : key === 'total' ? row.total : (row.byBranch[key] ?? 0)))
-            .map((row) => ({
-              key: row.status,
-              cells: {
-                status: <Badge variant={stockStatusTone[row.status]}>{t.statuses[row.status]}</Badge>,
-                ...Object.fromEntries(data.branchIds.map((id) => [id, format.number(row.byBranch[id] ?? 0)])),
-                total: format.number(row.total),
-              },
-            }))}
-        />
-      )}
+    <AsyncContent state={state} empty={<Notice>{text.common.noResults}</Notice>}>
+      {(data) => {
+        const rows = table.sorted(data.rows, (row, key) => (key === 'name' ? row.name : key === 'total' ? row.total : (row.byStatus[key as keyof typeof row.byStatus] ?? 0)));
+        return (
+          <Stack gap={vars.spacing[2]}>
+            <Text variant="caption" color={vars.colors.textMuted}>
+              {rows.length > rowLimit ? `${format.number(rowLimit)} / ${format.number(rows.length)} · ${t.narrowFilters}` : format.number(rows.length)}
+            </Text>
+            <Table
+              label={t.tabs.status}
+              sort={table.sort}
+              onSortChange={table.setSort}
+              columns={[
+                { key: 'name', label: text.owner.fields.product, sortable: true },
+                ...data.statuses.map((status) => ({ key: status, label: t.statuses[status], align: 'end' as const, sortable: true })),
+                { key: 'total', label: text.common.total, align: 'end', sortable: true },
+              ]}
+              rows={rows.slice(0, rowLimit).map((row) => ({
+                key: row.productId,
+                cells: {
+                  name: (
+                    <Stack gap={vars.spacing[0]}>
+                      <Link to={toPath(routes.owner.product, { productId: row.productId })}>{row.name}</Link>
+                      <Text as="span" variant="caption" color={vars.colors.textMuted}>
+                        {format.brand(row.brandId)}
+                      </Text>
+                    </Stack>
+                  ),
+                  ...Object.fromEntries(data.statuses.map((status) => [status, format.number(row.byStatus[status] ?? 0)])),
+                  total: format.number(row.total),
+                },
+              }))}
+              footer={Object.fromEntries([['name', text.common.total], ...data.statuses.map((status) => [status, format.number(data.totals[status] ?? 0)]), ['total', format.number(data.rows.reduce((sum, row) => sum + row.total, 0))]])}
+            />
+          </Stack>
+        );
+      }}
     </AsyncContent>
   );
 };

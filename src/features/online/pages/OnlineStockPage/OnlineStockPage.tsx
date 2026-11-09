@@ -1,5 +1,5 @@
 import { getOnlineStock, type OnlineAvailability, type OnlineSource } from '@/shared/api';
-import { AsyncContent, Badge, BrandSelect, Button, CategorySelect, ColorSelect, FilterBar, Notice, PageHeader, SelectField, SizeSelect, Stack, Table, Text, TextField } from '@/shared/components';
+import { AsyncContent, Badge, BrandSelect, Button, CategorySelect, ColorSelect, FilterBar, Notice, PageHeader, SelectField, SizeSelect, Stack, Table, Text, TextField, OfflineStockNotice } from '@/shared/components';
 import { useAsync, useFormat, useLiveVersion, useLocale, useQueryState } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { fillText } from '@/shared/utils';
@@ -42,6 +42,7 @@ export const OnlineStockPage = () => {
   return (
     <Stack gap={vars.spacing[5]}>
       <PageHeader title={t.title} />
+      <OfflineStockNotice />
       <FilterBar
         actions={
           filtered && (

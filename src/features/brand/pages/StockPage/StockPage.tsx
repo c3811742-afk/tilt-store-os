@@ -1,6 +1,6 @@
 import { getBrandStock } from '@/shared/api';
-import { AsyncContent, Badge, Checkbox, FilterBar, Notice, PageHeader, Stack, Table, Text, TextField } from '@/shared/components';
-import { useAsync, useConnection, useFormat, useLiveVersion, useLocale, useQueryState } from '@/shared/hooks';
+import { AsyncContent, Badge, Checkbox, FilterBar, PageHeader, Stack, Table, Text, TextField, OfflineStockNotice } from '@/shared/components';
+import { useAsync, useFormat, useLiveVersion, useLocale, useQueryState } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { fillText } from '@/shared/utils';
 import styles from './StockPage.module.css';
@@ -10,7 +10,6 @@ export const StockPage = () => {
   const { text } = useLocale();
   const format = useFormat();
   const version = useLiveVersion();
-  const { offline } = useConnection();
   const [lowOnly, setLowOnly] = useQueryState('low', '');
   const [query, setQuery] = useQueryState('q', '');
   const [productId] = useQueryState('product', '');
@@ -20,7 +19,7 @@ export const StockPage = () => {
   return (
     <Stack gap={vars.spacing[5]}>
       <PageHeader title={t.title} />
-      {offline && <Notice tone="warning">{text.shell.stockWarning}</Notice>}
+      <OfflineStockNotice />
       <FilterBar
         fieldWidth={vars.sizes.field.wide}
         actions={

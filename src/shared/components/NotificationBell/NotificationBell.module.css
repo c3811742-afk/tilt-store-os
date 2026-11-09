@@ -2,13 +2,22 @@
   position: relative;
 }
 
-.dot {
+.count {
   position: absolute;
-  inset-block-start: var(--spacing-2);
-  inset-inline-end: var(--spacing-2);
-  inline-size: var(--sizes-badge-dot);
-  block-size: var(--sizes-badge-dot);
-  border-radius: var(--radii-full);
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: var(--sizes-badge-count);
+  block-size: var(--sizes-badge-count);
+  padding-inline: var(--spacing-1);
+  border-radius: var(--radii-pill);
   background: var(--colors-danger);
+  color: var(--colors-on-danger);
+  font-size: var(--text-styles-caption-font-size);
+  font-weight: var(--font-weight-semi-bold);
+  line-height: var(--text-styles-caption-line-height);
+  font-variant-numeric: tabular-nums;
   pointer-events: none;
 }

@@ -3,6 +3,7 @@ import { currentTerms, nowIso, stockLevels } from '@/shared/utils';
 import { ApiError } from './errors';
 import { assertBranch, hasRole, notifyUsers, staffWithRole } from './branchScope';
 import { currentUnitCost, placeIn } from './engine';
+import { addBatchDefects } from './costing';
 import { describeVariant, toTransferView } from './stock';
 import { actor, db, findById, isOwner, logActivity, mutate, newId, nextNumber, notify, respond } from './server';
 import { checkStockAlerts } from './stockAlerts';
@@ -354,6 +355,7 @@ export const receiveTransfer = (transferId: Id, input: ReceiveInput) =>
         const brand = db.brands.find((current) => current.id === info.brandId);
         const liability = brand && currentTerms(brand).defectPolicy === 'storeAbsorbs' ? 'store' : 'brand';
         db.defects.push({ id: newId(), at, byId: me.id, productId: info.productId, variantId: line.variantId, batchId: batch?.id, branchId: to.id, qty: defects, reasonId, foundAt: 'receiving', liability, status: 'open', unitCost: currentUnitCost(db, info.productId), note: transfer.number });
+        addBatchDefects(batch?.id, defects);
       }
       Object.assign(line, { received, defects, extra });
       return { variantId: line.variantId, qty: received, defects, missing };

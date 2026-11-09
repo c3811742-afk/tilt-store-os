@@ -857,6 +857,7 @@ export const en = {
       atPrice: 'Value at selling price',
       byBranch: 'By branch',
       byBrand: 'By brand',
+      byProduct: 'By product',
       statuses: {
         available: 'Available',
         reserved: 'Reserved',
@@ -2073,6 +2074,11 @@ export const en = {
     chooseAlerts: 'Choose alerts',
   },
   help: {
+    search: 'Search help',
+    gettingStarted: 'Getting started',
+    faq: 'Common questions',
+    noAnswers: 'No answers match "{query}". Try another word, or contact support.',
+    stillNeedHelp: 'Still need help?',
     title: 'Help',
     subtitle: 'A short video and guide for your role, and support on WhatsApp.',
     video: 'Video guide',
@@ -2109,6 +2115,13 @@ export const en = {
         'Stock shows what is left per branch, size and color, and what is running low.',
         'Request a discount from Promotions and follow its results there.',
       ],
+      storekeeper: [
+        'Receive deliveries from brands in Receiving: count each item and mark any defective pieces.',
+        'Check returned items in Inspection and defects, and record what is defective.',
+        'Send and receive stock between branches in Transfers.',
+        'Count the shelves in Stock counts when one is opened for your branch.',
+        'Send defective pieces back in Returns to brands.',
+      ],
       it: [
         'Databases lists every table in the system. Open a record to check or fix it.',
         'Every fix needs a reason and is saved in the activity log.',
@@ -2117,6 +2130,48 @@ export const en = {
         'You can open every owner screen from the menu.',
       ],
       other: ['Use your account page to change your photo and password.', 'Your notifications are in the bell at the top.'],
+    },
+    faqs: {
+      owner: [
+        { q: 'Where do I approve discounts, refunds and other requests?', a: 'Open Approvals in the menu. Requests waiting for you also show at the top of the Morning summary and the Dashboard.' },
+        { q: 'How do I see one branch in its own currency?', a: 'Pick the branch in the Branch filter on the Dashboard. In Reports, open Filters, pick the branch, then choose the branch’s own currency.' },
+        { q: 'How do I find the best and worst sellers?', a: 'Reports, Sales, View by Product. Click the Units heading to sort; click it again for the slowest first. Items that did not sell at all are in Reports, Stock, Slow movers.' },
+        { q: 'Where do I change discount limits and reasons?', a: 'Policies, Discounts. The limits per role, the staff discount and the list of discount reasons are there.' },
+        { q: 'How do I see everything that happened to an item?', a: 'Stock, Stock levels, then click the size and colour. The page lists every movement: received, sold, returned, moved, counted and written off.' },
+        { q: 'How do I print barcode labels?', a: 'Products, open the product, Variants and barcodes. Enter how many labels for each size and colour (or use One of each), then Print.' },
+      ],
+      manager: [
+        { q: 'How do I approve a discount or refund at the counter?', a: 'When the cashier asks, enter your approval PIN on their screen. Requests sent to you also appear in Approvals.' },
+        { q: 'How do I check or close a register?', a: 'Registers and cash. Use Check cash to count the drawer during the day, or Close to end the cashier’s shift.' },
+        { q: 'Can I see stock in other branches?', a: 'Yes. Search the item in Stock: each branch shows how many pieces it has.' },
+        { q: 'How do I ask for more stock?', a: 'In Stock, open the item and request it. The owner sends it from the warehouse or orders it from the brand.' },
+      ],
+      cashier: [
+        { q: 'How do I put a sale on hold?', a: 'Choose Put on hold in the current sale. Find it again in Sales on hold.' },
+        { q: 'How do I print a receipt again?', a: 'Receipts. Search by receipt number, name or phone, then Print again.' },
+        { q: 'How do I do a return or an exchange?', a: 'Returns and exchanges. Scan the receipt or search for the sale, pick the items and the reason.' },
+        { q: 'A discount or refund needs a manager. What do I do?', a: 'Ask the branch manager to enter their approval PIN on your screen, or send the request to their phone.' },
+        { q: 'The cash does not match when I close my shift.', a: 'Enter what you counted and add a note saying why. The difference is recorded and the owner is told.' },
+      ],
+      storekeeper: [
+        { q: 'Some pieces in a delivery are defective.', a: 'In Receiving, enter how many of each item are defective and why. They are kept apart and counted against the delivery.' },
+        { q: 'How do I receive a transfer from another branch?', a: 'Transfers, open the transfer, count what arrived, mark any defective or missing pieces, and sign.' },
+        { q: 'A customer returned an item. Where do I check it?', a: 'Inspection and defects. Mark each piece as good to sell again or defective, with the reason.' },
+      ],
+      brandPartner: [
+        { q: 'Where do I see my sales?', a: 'Units sold shows your sales by branch and date.' },
+        { q: 'How do I know what is running low?', a: 'Stock shows what is left in each branch, by size and colour, with low items marked.' },
+        { q: 'How do I ask for a discount on my items?', a: 'Promotions. Send the request, and follow its results there once it is approved.' },
+      ],
+      it: [
+        { q: 'How do I fix a wrong record?', a: 'Databases, open the table and the record, change it and give a reason. Every fix is saved in the activity log.' },
+        { q: 'Where do I see errors people had?', a: 'Error log lists each error with the page, the person and the time.' },
+        { q: 'How do I restore data?', a: 'Backups. Download a backup, or restore one if data was damaged.' },
+      ],
+      other: [
+        { q: 'How do I change my password or photo?', a: 'Open My account from the menu at the top.' },
+        { q: 'Where are my notifications?', a: 'In the bell at the top. The number on it is how many are new.' },
+      ],
     },
   },
   cashier: {

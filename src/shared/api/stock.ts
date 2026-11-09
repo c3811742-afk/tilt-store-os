@@ -106,20 +106,37 @@ export const getStockValue = (filter: StockFilter = {}) =>
       const own = branchCurrency === currency ? row : stockSummary(db, { branchIds: [row.id], match, currency: branchCurrency }).summary;
       return { ...row, own: { currency: branchCurrency, costValue: own.costValue, retailValue: own.retailValue } };
     });
-    return { currency, total: value.summary, byBranch, byBrand: toList(value.byBrand) };
+    const byProduct = toList(value.byProduct).map((row) => {
+      const product = db.products.find((current) => current.id === row.id);
+      return { ...row, name: product?.name ?? '', brandId: product?.brandId ?? '' };
+    });
+    return { currency, total: value.summary, byBranch, byBrand: toList(value.byBrand), byProduct };
   });
 
 // Pieces in each status (available, reserved, in transit, waiting for inspection, defective...) per branch.
 export const getStockByStatus = (filter: StockFilter = {}) =>
   respond(() => {
     const match = stockMatcher(filter);
-    const counts: Record<StockStatus, Record<Id, number>> = Object.fromEntries(stockStatuses.map((status) => [status, {}])) as Record<StockStatus, Record<Id, number>>;
+    const index = variantIndex(db);
+    // Pieces per product in each status, and the same per status in total.
+    const byProduct = new Map<Id, Partial<Record<StockStatus, number>>>();
+    const totals: Partial<Record<StockStatus, number>> = {};
     stockLevels(db.movements).forEach((level) => {
-      if (!inBranch(filter, level.branchId) || !match(level.variantId)) return;
-      counts[level.status][level.branchId] = (counts[level.status][level.branchId] ?? 0) + level.qty;
+      if (!level.qty || !inBranch(filter, level.branchId) || !match(level.variantId)) return;
+      const productId = index.get(level.variantId)?.product.id;
+      if (!productId) return;
+      const row = byProduct.get(productId) ?? byProduct.set(productId, {}).get(productId)!;
+      row[level.status] = (row[level.status] ?? 0) + level.qty;
+      totals[level.status] = (totals[level.status] ?? 0) + level.qty;
     });
-    const branchIds = db.branches.filter((branch) => !branch.archived && inBranch(filter, branch.id)).map((branch) => branch.id);
-    return { branchIds, rows: stockStatuses.map((status) => ({ status, byBranch: counts[status], total: Object.values(counts[status]).reduce((sum, value) => sum + value, 0) })) };
+    const statuses = stockStatuses.filter((status) => (totals[status] ?? 0) !== 0);
+    const rows = [...byProduct.entries()]
+      .map(([productId, byStatus]) => {
+        const product = db.products.find((current) => current.id === productId);
+        return { productId, name: product?.name ?? '', brandId: product?.brandId ?? '', byStatus, total: Object.values(byStatus).reduce((sum, value) => sum + (value ?? 0), 0) };
+      })
+      .filter((row) => row.total !== 0);
+    return { statuses, rows, totals };
   });
 
 // Everything that ever happened to one variant: receiving, sales, returns, transfers, adjustments, status changes.

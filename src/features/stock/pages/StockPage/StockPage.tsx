@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router';
 import { getBranchBrandTotals, getBranchLowStock } from '@/shared/api';
-import { AsyncContent, Badge, BranchStockLevels, Notice, PageHeader, Stack, Table, Tabs } from '@/shared/components';
+import { AsyncContent, Badge, BranchStockLevels, Notice, PageHeader, Stack, Table, Tabs, OfflineStockNotice } from '@/shared/components';
 import { routes, stockStatuses, toPath } from '@/shared/constants';
 import { useAsync, useBranchScope, useFormat, useLiveVersion, useLocale, useQueryState } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
@@ -26,6 +26,7 @@ export const StockPage = () => {
   return (
     <Stack gap={vars.spacing[5]}>
       <PageHeader title={t.title} />
+      <OfflineStockNotice />
       <Tabs<StockTab>
         label={t.title}
         value={tab}

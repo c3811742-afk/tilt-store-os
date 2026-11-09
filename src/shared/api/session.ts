@@ -83,6 +83,19 @@ export const setMyPhoto = (photo: string | undefined) =>
     return toSession(user);
   });
 
+// The owner's own name (staff names are set by the owner, on Staff).
+export const setMyName = (name: string) =>
+  mutate(() => {
+    const user = actor();
+    if (!isOwner(user)) throw new ApiError('notAllowed');
+    const next = name.trim();
+    if (!next) throw new ApiError('notAllowed');
+    const from = user.name;
+    user.name = next;
+    logActivity({ action: 'update', target: { type: 'user', id: user.id, label: next }, changes: [{ field: 'name', from, to: next }] });
+    return toSession(user);
+  });
+
 // The alerts the signed-in person turned off.
 export const setMyMutedAlerts = (kinds: AlertKind[]) =>
   mutate(() => {

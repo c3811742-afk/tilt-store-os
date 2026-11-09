@@ -2,7 +2,7 @@ import { Link } from 'react-router';
 import { getNotifications, markNotificationsOpened } from '@/shared/api';
 import { useAlertText, useAsync, useLiveVersion, useLocale } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
-import { fillText, safeAsync, withDefaults } from '@/shared/utils';
+import { fillText, formatNumber, safeAsync, withDefaults } from '@/shared/utils';
 import { IconButton } from '../IconButton';
 import { Menu } from '../Menu';
 import { Stack } from '../Stack';
@@ -11,10 +11,10 @@ import { notificationBellDefaults } from './NotificationBell.defaults';
 import type { NotificationBellProps } from './NotificationBell.types';
 import styles from './NotificationBell.module.css';
 
-// The bell in the top bar: a red dot when something is new, the latest alerts in a menu.
+// The bell in the top bar: the number of new alerts on it (99+ above 99), the latest alerts in a menu.
 export const NotificationBell = (props: NotificationBellProps) => {
-  const { viewAllPath, latestCount } = withDefaults(notificationBellDefaults, props);
-  const { text } = useLocale();
+  const { viewAllPath, latestCount, maxCount } = withDefaults(notificationBellDefaults, props);
+  const { text, locale } = useLocale();
   const version = useLiveVersion();
   const state = useAsync(getNotifications, [version]);
   const alertText = useAlertText();
@@ -27,7 +27,11 @@ export const NotificationBell = (props: NotificationBellProps) => {
       trigger={({ open, toggle }) => (
         <span className={styles.bell}>
           <IconButton icon="bell" label={`${text.shell.notifications}${fresh ? `, ${fillText(text.shell.newCount, { count: fresh })}` : ''}`} onClick={toggle} expanded={open} />
-          {fresh > 0 && <span className={styles.dot} />}
+          {fresh > 0 && (
+            <span className={styles.count} aria-hidden>
+              {fresh > maxCount ? `${formatNumber(maxCount, locale)}+` : formatNumber(fresh, locale)}
+            </span>
+          )}
         </span>
       )}
       header={

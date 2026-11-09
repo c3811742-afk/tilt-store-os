@@ -1,6 +1,6 @@
 import { useParams } from 'react-router';
 import { getItemHistory } from '@/shared/api';
-import { AsyncContent, Badge, Card, Grid, PageHeader, Stack, StatCard, Table } from '@/shared/components';
+import { AsyncContent, Badge, Card, Grid, PageHeader, Stack, StatCard, Table, OfflineStockNotice } from '@/shared/components';
 import { routes, stockStatusTone, toPath } from '@/shared/constants';
 import { useAsync, useFormat, useLiveVersion, useLocale } from '@/shared/hooks';
 import type { StockPlace } from '@/shared/types';
@@ -22,6 +22,7 @@ export const ItemHistoryPage = () => {
         return (
           <Stack gap={vars.spacing[5]}>
             <PageHeader back={{ to: data.productId ? toPath(routes.owner.product, { productId: data.productId }) : routes.owner.stock, label: data.productName || t.title }} title={`${data.productName} · ${data.size} · ${data.color}`} subtitle={`${format.brand(data.brandId)} · ${data.sku}`} />
+            <OfflineStockNotice />
             <Grid>
               {data.levels.map((level) => (
                 <StatCard key={`${level.branchId}${level.locationId}${level.status}`} label={`${format.branch(level.branchId)} · ${format.text(data.locationName[level.locationId])}`} value={format.number(level.qty)} detail={t.statuses[level.status]} />
