@@ -1,7 +1,7 @@
 import { vars } from '@/shared/theme';
 import type { ColumnChartProps } from './ColumnChart.types';
 
-export const columnChartDefaults: Required<Pick<ColumnChartProps, 'points' | 'height' | 'color' | 'previousColor' | 'labelEvery' | 'ticks' | 'barWidth' | 'slotWidth'>> = {
+export const columnChartDefaults: Required<Pick<ColumnChartProps, 'points' | 'height' | 'color' | 'previousColor' | 'labelEvery' | 'ticks' | 'barWidth'>> = {
   points: [],
   height: vars.sizes.bar.chartHeight,
   color: vars.colors.primary,
@@ -9,5 +9,4 @@ export const columnChartDefaults: Required<Pick<ColumnChartProps, 'points' | 'he
   labelEvery: 1,
   ticks: 4,
   barWidth: vars.sizes.bar.columnWidth,
-  slotWidth: vars.sizes.bar.columnSlot,
 };

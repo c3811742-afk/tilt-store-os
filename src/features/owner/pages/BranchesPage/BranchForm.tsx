@@ -1,5 +1,5 @@
 import { createBranch, newLocation, updateBranch, type BranchInput } from '@/shared/api';
-import { Button, Card, CheckboxGroup, Grid, IconButton, LocalizedField, Notice, SelectField, Stack, Text, TextField } from '@/shared/components';
+import { Button, CheckboxGroup, Grid, Icon, IconButton, Notice, SelectField, Stack, Table, Text, TextField } from '@/shared/components';
 import { branchKinds } from '@/shared/constants';
 import { useErrorMessage, useForm, useFormat, useLocale, useReference } from '@/shared/hooks';
 import type { LocationKind } from '@/shared/types';
@@ -55,29 +55,44 @@ export const BranchForm = ({ branchId, initial, onDone }: BranchFormProps) => {
           onChange={(paymentMethodIds) => form.setValue('paymentMethodIds', paymentMethodIds)}
         />
       )}
-      <Card title={t.locations} background={vars.colors.surfaceMuted}>
-        <Text variant="bodySm" color={vars.colors.textMuted}>
-          {t.locationsHint}
-        </Text>
-        {locations.map((location, index) => (
-          <Stack key={location.id} direction="row" wrap align="flex-end" gap={vars.spacing[3]}>
-            <SelectField
-              label={t.locationKind}
-              value={location.kind}
-              width={vars.sizes.field.narrow}
-              onChange={(kind) => form.setValue('locations', locations.map((current, position) => (position === index ? { ...current, kind } : current)))}
-              options={locationKinds.map((kind) => ({ value: kind, label: t.locationKinds[kind] }))}
-            />
-            <LocalizedField label={text.common.name} value={location.name} onChange={(name) => form.setValue('locations', locations.map((current, position) => (position === index ? { ...current, name } : current)))} />
-            <IconButton icon="trash" label={text.common.remove} disabled={locations.length <= 1} onClick={() => form.setValue('locations', locations.filter((_, position) => position !== index))} />
-          </Stack>
-        ))}
+      {/* Stock locations: a section of the form (not a box inside it), one row per location, as an editable table. */}
+      <Stack gap={vars.spacing[3]}>
+        <Stack gap={vars.spacing[1]}>
+          <Text as="h2" variant="h4">
+            {t.locations}
+          </Text>
+          <Text variant="bodySm" color={vars.colors.textMuted}>
+            {t.locationsHint}
+          </Text>
+        </Stack>
+        <Table
+          label={t.locations}
+          columns={[
+            { key: 'kind', label: t.locationKind },
+            { key: 'en', label: `${text.common.name} (${text.common.languages.en})` },
+            { key: 'ar', label: `${text.common.name} (${text.common.languages.ar})` },
+            { key: 'remove', label: <span aria-hidden />, align: 'end', width: vars.sizes.tapTarget },
+          ]}
+          rows={locations.map((location, index) => {
+            const change = (patch: Partial<typeof location>) => form.setValue('locations', locations.map((current, position) => (position === index ? { ...current, ...patch } : current)));
+            return {
+              key: location.id,
+              cells: {
+                kind: <SelectField label={<span aria-label={t.locationKind} />} value={location.kind} onChange={(kind) => change({ kind })} options={locationKinds.map((kind) => ({ value: kind, label: t.locationKinds[kind] }))} />,
+                en: <TextField label={<span aria-label={`${text.common.name} (${text.common.languages.en})`} />} value={location.name.en} onChange={(en) => change({ name: { ...location.name, en } })} />,
+                ar: <TextField label={<span aria-label={`${text.common.name} (${text.common.languages.ar})`} />} value={location.name.ar} onChange={(ar) => change({ name: { ...location.name, ar } })} />,
+                remove: <IconButton icon="trash" label={text.common.remove} disabled={locations.length <= 1} onClick={() => form.setValue('locations', locations.filter((_, position) => position !== index))} />,
+              },
+            };
+          })}
+        />
         <Stack direction="row">
           <Button variant="secondary" size="sm" onClick={() => form.setValue('locations', [...locations, newLocation('storage', { en: '', ar: '' })])}>
+            <Icon name="plus" />
             {t.addLocation}
           </Button>
         </Stack>
-      </Card>
+      </Stack>
       <Stack direction="row" justify="flex-end">
         <Button type="submit" disabled={form.submitting}>
           {branchId ? text.common.saveChanges : form.values.kind === 'warehouse' ? t.addWarehouse : t.add}

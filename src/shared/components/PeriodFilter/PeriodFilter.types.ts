@@ -4,4 +4,5 @@ import type { PeriodPreset } from '@/shared/utils';
 export interface PeriodFilterProps {
   period: Period; // from usePeriod()
   presets?: PeriodPreset[]; // the choices shown, in order
+  width?: string; // of the dropdown and the date fields
 }

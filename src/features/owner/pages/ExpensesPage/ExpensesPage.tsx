@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { deleteExpense, listExpenses, saveExpense, type ExpenseInput } from '@/shared/api';
-import { AsyncContent, Badge, BarList, Button, Card, Checkbox, FileField, FilterBar, Grid, Icon, IconButton, Modal, Notice, PageHeader, SelectField, Stack, StatCard, Table, Tabs, TextField } from '@/shared/components';
+import { AsyncContent, Badge, BarList, Button, Card, Checkbox, FileField, FilterBar, Grid, Icon, IconButton, Modal, Notice, PageHeader, SelectField, Stack, StatCard, Table, TextField } from '@/shared/components';
 import { useAction, useAsync, useErrorMessage, useFormat, useLiveVersion, useLocale, useQueryState, useReference } from '@/shared/hooks';
 import type { Expense } from '@/shared/types';
 import { vars } from '@/shared/theme';
 import { downloadDataUrl, today } from '@/shared/utils';
-import { BranchSelect, ConfigListEditor, CurrencySelect, ExportButtons, PeriodFilter } from '../../components';
+import { BranchSelect, ConfigListModal, CurrencySelect, ExportButtons, PeriodFilter } from '../../components';
 import { usePeriod } from '../../hooks';
-
-type ExpensesTab = 'expenses' | 'categories';
 
 // Rent, salaries, utilities, marketing and other expenses, per branch or for the whole company.
 export const ExpensesPage = () => {
@@ -17,7 +15,7 @@ export const ExpensesPage = () => {
   const { settings, branches } = useReference();
   const errorMessage = useErrorMessage();
   const period = usePeriod('month');
-  const [tab, setTab] = useQueryState<ExpensesTab>('tab', 'expenses');
+  const [managing, setManaging] = useQueryState('categories', '');
   const [branchId, setBranchId] = useQueryState('branch', '');
   const [categoryId, setCategoryId] = useQueryState('category', '');
   const version = useLiveVersion();
@@ -36,106 +34,100 @@ export const ExpensesPage = () => {
         title={t.title}
         subtitle={t.subtitle}
         actions={
-          <Button onClick={() => edit()}>
-            <Icon name="plus" />
-            {t.add}
-          </Button>
+          <>
+            <Button variant="secondary" onClick={() => setManaging('1')}>
+              <Icon name="settings" />
+              {t.manageCategories}
+            </Button>
+            <Button onClick={() => edit()}>
+              <Icon name="plus" />
+              {t.add}
+            </Button>
+          </>
         }
       />
       {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
-      <Tabs<ExpensesTab>
-        label={t.title}
-        value={tab}
-        onChange={setTab}
-        tabs={[
-          { value: 'expenses', label: t.tabs.expenses },
-          { value: 'categories', label: t.tabs.categories },
-        ]}
-      >
-        {tab === 'categories' && <ConfigListEditor listKey="expenseCategories" title={t.tabs.categories} hint={t.categoriesHint} />}
-        {tab === 'expenses' && (
-          <Stack gap={vars.spacing[4]}>
-            <PeriodFilter period={period} />
-            <FilterBar>
-              <SelectField
-                label={text.owner.fields.branch}
-                placeholder={text.owner.fields.allBranches}
-                value={branchId}
-                onChange={setBranchId}
-                options={[{ value: 'company', label: text.common.wholeCompany }, ...branches.filter((branch) => !branch.archived).map((branch) => ({ value: branch.id, label: branch.name }))]}
-              />
-              <SelectField label={t.category} placeholder={text.common.all} value={categoryId} onChange={setCategoryId} options={categories.map((option) => ({ value: option.id, label: format.text(option.label) }))} />
-            </FilterBar>
-            <AsyncContent state={state}>
-              {(data) => {
-                const byCategory = categories
-                  .map((category) => ({ category, total: data.rows.filter((row) => row.expense.categoryId === category.id).reduce((sum, row) => sum + row.converted, 0) }))
-                  .filter((row) => row.total > 0);
-                return (
-                  <Stack gap={vars.spacing[4]}>
-                    <Grid>
-                      <StatCard label={t.total} value={format.money(data.total, data.currency)} highlight />
-                      <Card title={t.byCategory}>
-                        <BarList items={byCategory.map((row) => ({ key: row.category.id, label: format.text(row.category.label), value: row.total, display: format.money(row.total, data.currency) }))} />
-                      </Card>
-                    </Grid>
-                    <Card
-                      title={t.list}
-                      actions={
-                        <ExportButtons
-                          title={t.title}
-                          tables={() => [
-                            {
-                              title: t.title,
-                              headers: [text.common.date, t.category, text.owner.fields.branch, text.common.note, text.common.currency, text.common.amount],
-                              rows: data.rows.map((row) => [row.expense.date, format.option(row.expense.categoryId), format.branch(row.expense.branchId), row.expense.note, row.expense.currency, row.expense.amount]),
-                            },
-                          ]}
-                        />
-                      }
-                    >
-                      <Table
-                        label={t.list}
-                        emptyText={t.empty}
-                        columns={[
-                          { key: 'date', label: text.common.date },
-                          { key: 'category', label: t.category },
-                          { key: 'branch', label: text.owner.fields.branch },
-                          { key: 'note', label: text.common.note },
-                          { key: 'amount', label: text.common.amount, align: 'end' },
-                          { key: 'actions', label: '', align: 'end' },
-                        ]}
-                        rows={data.rows.map(({ expense }) => ({
-                          key: expense.id,
-                          cells: {
-                            date: format.date(expense.date),
-                            category: (
-                              <Stack direction="row" gap={vars.spacing[1]} wrap>
-                                {format.option(expense.categoryId)}
-                                {expense.repeatMonthly && <Badge>{t.monthly}</Badge>}
-                              </Stack>
-                            ),
-                            branch: format.branch(expense.branchId),
-                            note: expense.note,
-                            amount: format.money(expense.amount, expense.currency),
-                            actions: (
-                              <Stack direction="row" gap={vars.spacing[1]} justify="flex-end">
-                                {expense.receipt && <IconButton icon="file" label={t.receipt} onClick={() => expense.receipt && downloadDataUrl(expense.receipt.dataUrl, expense.receipt.name)} />}
-                                <IconButton icon="pencil" label={text.common.edit} onClick={() => edit(expense)} />
-                                <IconButton icon="trash" label={text.common.delete} onClick={() => action.run(expense.id, () => deleteExpense(expense.id))} />
-                              </Stack>
-                            ),
-                          },
-                        }))}
-                      />
-                    </Card>
-                  </Stack>
-                );
-              }}
-            </AsyncContent>
-          </Stack>
-        )}
-      </Tabs>
+      {managing && <ConfigListModal listKey="expenseCategories" title={t.categoriesTitle} hint={t.categoriesHint} onClose={() => setManaging('')} />}
+      <Stack gap={vars.spacing[4]}>
+        <FilterBar>
+          <PeriodFilter period={period} />
+          <SelectField
+            label={text.owner.fields.branch}
+            placeholder={text.owner.fields.allBranches}
+            value={branchId}
+            onChange={setBranchId}
+            options={[{ value: 'company', label: text.common.wholeCompany }, ...branches.filter((branch) => !branch.archived).map((branch) => ({ value: branch.id, label: branch.name }))]}
+          />
+          <SelectField label={t.category} placeholder={text.common.all} value={categoryId} onChange={setCategoryId} options={categories.map((option) => ({ value: option.id, label: format.text(option.label) }))} />
+        </FilterBar>
+        <AsyncContent state={state}>
+          {(data) => {
+            const byCategory = categories
+              .map((category) => ({ category, total: data.rows.filter((row) => row.expense.categoryId === category.id).reduce((sum, row) => sum + row.converted, 0) }))
+              .filter((row) => row.total > 0);
+            return (
+              <Stack gap={vars.spacing[4]}>
+                <Grid alignItems="start">
+                  <StatCard label={t.total} value={format.money(data.total, data.currency)} highlight />
+                  <Card title={t.byCategory}>
+                    <BarList items={byCategory.map((row) => ({ key: row.category.id, label: format.text(row.category.label), value: row.total, display: format.money(row.total, data.currency) }))} />
+                  </Card>
+                </Grid>
+                <Card
+                  title={t.list}
+                  actions={
+                    <ExportButtons
+                      title={t.title}
+                      tables={() => [
+                        {
+                          title: t.title,
+                          headers: [text.common.date, t.category, text.owner.fields.branch, text.common.note, text.common.currency, text.common.amount],
+                          rows: data.rows.map((row) => [row.expense.date, format.option(row.expense.categoryId), format.branch(row.expense.branchId), row.expense.note, row.expense.currency, row.expense.amount]),
+                        },
+                      ]}
+                    />
+                  }
+                >
+                  <Table
+                    label={t.list}
+                    emptyText={t.empty}
+                    columns={[
+                      { key: 'date', label: text.common.date },
+                      { key: 'category', label: t.category },
+                      { key: 'branch', label: text.owner.fields.branch },
+                      { key: 'note', label: text.common.note },
+                      { key: 'amount', label: text.common.amount, align: 'end' },
+                      { key: 'actions', label: '', align: 'end' },
+                    ]}
+                    rows={data.rows.map(({ expense }) => ({
+                      key: expense.id,
+                      cells: {
+                        date: format.date(expense.date),
+                        category: (
+                          <Stack direction="row" gap={vars.spacing[1]} wrap>
+                            {format.option(expense.categoryId)}
+                            {expense.repeatMonthly && <Badge>{t.monthly}</Badge>}
+                          </Stack>
+                        ),
+                        branch: format.branch(expense.branchId),
+                        note: expense.note,
+                        amount: format.money(expense.amount, expense.currency),
+                        actions: (
+                          <Stack direction="row" gap={vars.spacing[1]} justify="flex-end">
+                            {expense.receipt && <IconButton icon="file" label={t.receipt} onClick={() => expense.receipt && downloadDataUrl(expense.receipt.dataUrl, expense.receipt.name)} />}
+                            <IconButton icon="pencil" label={text.common.edit} onClick={() => edit(expense)} />
+                            <IconButton icon="trash" label={text.common.delete} onClick={() => action.run(expense.id, () => deleteExpense(expense.id))} />
+                          </Stack>
+                        ),
+                      },
+                    }))}
+                  />
+                </Card>
+              </Stack>
+            );
+          }}
+        </AsyncContent>
+      </Stack>
       <Modal
         open={draft !== null}
         onClose={() => setDraft(null)}

@@ -15,6 +15,5 @@ export interface ColumnChartProps {
   labelEvery?: number; // show every Nth label, so long ranges stay readable
   ticks?: number; // about how many steps on the y-axis (rounded to clean numbers)
   barWidth?: string; // the widest a column gets; narrower when many columns share the width
-  slotWidth?: string; // the most room one column gets, so a short period makes a compact chart instead of a wide one
   formatTick?: (value: number, top: number) => string; // a y-axis label; numbers in the active language by default
 }

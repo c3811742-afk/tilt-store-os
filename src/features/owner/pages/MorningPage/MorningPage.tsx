@@ -1,13 +1,13 @@
 import { getMorningSummary } from '@/shared/api';
-import { AsyncContent, BarList, Card, PageHeader, Stack, StatCard } from '@/shared/components';
+import { AsyncContent, BarList, Card, Grid, PageHeader, Stack, StatCard } from '@/shared/components';
 import { routes, withQuery } from '@/shared/constants';
 import { useAsync, useFormat, useLiveVersion, useLocale, useSession } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { addDays, fillText, today } from '@/shared/utils';
 import { useChange } from '../../hooks';
-import styles from './MorningPage.module.css';
 
-// One screen, made for a phone: how yesterday went and what needs the owner today.
+// How yesterday went and what needs the owner today, laid out like the dashboard: four figures of the same size,
+// then what needs the owner beside yesterday by branch. On a phone everything stacks in one column.
 export const MorningPage = () => {
   const { text } = useLocale();
   const format = useFormat();
@@ -18,26 +18,26 @@ export const MorningPage = () => {
   const t = text.owner.morning;
 
   return (
-    <div className={styles.page}>
-      <Stack gap={vars.spacing[4]}>
-        <PageHeader title={fillText(t.title, { name: session?.user.name.split(' ')[0] ?? '' })} subtitle={format.date(today())} />
-        <AsyncContent state={state}>
-          {(data) => {
-            const money = (amount: number) => format.money(amount, data.currency);
-            return (
-              <Stack gap={vars.spacing[3]}>
-                <StatCard highlight label={t.yesterday} value={money(data.yesterday.net)} {...change(data.yesterday.net, data.yesterday.lastWeek, { label: t.sameDayLastWeek })} to={withQuery(routes.owner.dashboard, { period: 'custom', from: addDays(today(), -1), to: addDays(today(), -1) })} />
-                <div className={styles.pair}>
-                  <StatCard label={t.orders} value={format.number(data.yesterday.orders)} />
-                  <StatCard label={t.grossProfit} value={money(data.yesterday.profit)} />
-                </div>
-                <div className={styles.pair}>
-                  <StatCard label={t.todaySoFar} value={money(data.today.net)} detail={fillText(t.ordersCount, { count: format.number(data.today.orders) })} />
-                  <StatCard label={t.monthToDate} value={money(data.monthToDate.net)} {...change(data.monthToDate.net, data.monthToDate.previous, { label: t.lastMonth })} />
-                </div>
-                <Card title={t.byBranch}>
-                  <BarList items={data.branches.map((row) => ({ key: row.branchId, label: format.branch(row.branchId), value: row.net, display: money(row.net) }))} />
-                </Card>
+    <Stack gap={vars.spacing[5]}>
+      <PageHeader title={fillText(t.title, { name: session?.user.name.split(' ')[0] ?? '' })} subtitle={format.date(today())} />
+      <AsyncContent state={state}>
+        {(data) => {
+          const money = (amount: number) => format.money(amount, data.currency);
+          return (
+            <Stack gap={vars.spacing[5]}>
+              <Grid columns={4}>
+                <StatCard
+                  highlight
+                  label={fillText(t.yesterdayOrders, { count: format.number(data.yesterday.orders) })}
+                  value={money(data.yesterday.net)}
+                  {...change(data.yesterday.net, data.yesterday.lastWeek, { label: t.sameDayLastWeek })}
+                  to={withQuery(routes.owner.dashboard, { period: 'custom', from: addDays(today(), -1), to: addDays(today(), -1) })}
+                />
+                <StatCard label={t.grossProfit} value={money(data.yesterday.profit)} />
+                <StatCard label={t.todaySoFar} value={money(data.today.net)} detail={fillText(t.ordersCount, { count: format.number(data.today.orders) })} />
+                <StatCard label={t.monthToDate} value={money(data.monthToDate.net)} {...change(data.monthToDate.net, data.monthToDate.previous, { label: t.lastMonth })} />
+              </Grid>
+              <Grid columns={2} alignItems="start">
                 <Card title={t.needsYou}>
                   <BarList
                     color={vars.colors.warning}
@@ -49,6 +49,9 @@ export const MorningPage = () => {
                     ]}
                   />
                 </Card>
+                <Card title={t.byBranch}>
+                  <BarList items={data.branches.map((row) => ({ key: row.branchId, label: format.branch(row.branchId), value: row.net, display: money(row.net) }))} />
+                </Card>
                 {data.cashDifferences.length > 0 && (
                   <Card title={t.cashDifferences}>
                     <BarList
@@ -57,11 +60,11 @@ export const MorningPage = () => {
                     />
                   </Card>
                 )}
-              </Stack>
-            );
-          }}
-        </AsyncContent>
-      </Stack>
-    </div>
+              </Grid>
+            </Stack>
+          );
+        }}
+      </AsyncContent>
+    </Stack>
   );
 };

@@ -344,7 +344,11 @@ export const createReturn = (input: ReturnInput) =>
     });
 
     const refundTotal = roundMoney(saleReturn.refunds.filter((refund) => refund.methodId !== 'pm-credit' || input.kind === 'return').reduce((sum, refund) => sum + refund.amount, 0));
-    logActivity({ action: 'refund', target: { type: 'return', id: saleReturn.id, label: saleReturn.number }, branchId: branch.id, amount: value, currency: sale.currency, flagged: refundTotal > db.settings.flagRules.refundAbove, changes: [{ field: 'sale', from: null, to: sale.number }] });
+    const refundLimit = convert(db.settings.flagRules.refundAbove, db.settings.baseCurrency, sale.currency, nowIso(), db.rates, db.settings.baseCurrency);
+    const largeRefund = refundTotal > refundLimit;
+    logActivity({ action: 'refund', target: { type: 'return', id: saleReturn.id, label: saleReturn.number }, branchId: branch.id, amount: value, currency: sale.currency, flagged: largeRefund, changes: [{ field: 'sale', from: null, to: sale.number }] });
+    // Above the limit in Activity › Flag settings: the owners get an alert.
+    if (largeRefund) notify('largeDiscountOrRefund', { kind: 'refund', branch: branch.name, amount: `${sale.currency} ${refundTotal}`, user: me.name }, routes.owner.activity);
     return saleReturn;
   });
 

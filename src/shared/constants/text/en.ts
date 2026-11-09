@@ -303,8 +303,12 @@ export const en = {
     dashboard: {
       title: 'Dashboard',
       subtitle: 'Sales update after every checkout in every branch.',
-      scope: 'Show',
-      allBranches: 'All branches combined',
+      scope: 'Branch',
+      allBranches: 'All branches',
+      approvalsWaiting: '{count} requests are waiting for your approval.',
+      review: 'Review',
+      grossProfitMargin: 'Gross profit · {margin} margin',
+      allReports: 'See all reports',
       quick: { today: 'Today', week: 'This week', month: 'This month' },
       quickCompare: { today: 'last week', week: 'last week', month: 'last month' },
       netSales: 'Net sales',
@@ -362,6 +366,7 @@ export const en = {
     morning: {
       title: 'Good morning, {name}',
       yesterday: 'Yesterday',
+      yesterdayOrders: 'Yesterday · {count} orders',
       sameDayLastWeek: 'last week',
       orders: 'Orders yesterday',
       grossProfit: 'Gross profit yesterday',
@@ -378,6 +383,7 @@ export const en = {
       cashDifferences: 'Cash differences yesterday',
     },
     alerts: {
+      words: { discount: 'discount', refund: 'refund', fee: 'monthly fee', payout: 'payout' }, // filled into the alerts below
       kinds: {
         lowStock: { title: '{product} is low in {branch}', body: '{qty} left, the minimum is {min}.' },
         batchCostChanged: { title: 'Cost changed for batch {batch}', body: 'Defects moved the cost per piece from {from} to {to}.' },
@@ -985,7 +991,8 @@ export const en = {
       subtitle: 'Rent, salaries, utilities, marketing and other costs, per branch or for the whole company.',
       add: 'Add expense',
       edit: 'Edit expense',
-      tabs: { expenses: 'Expenses', categories: 'Categories' },
+      manageCategories: 'Manage categories',
+      categoriesTitle: 'Expense categories',
       categoriesHint: 'The categories you choose from when adding an expense.',
       category: 'Category',
       total: 'Total in this period',
@@ -1242,7 +1249,8 @@ export const en = {
       title: 'Activity log',
       subtitle: 'Who did what, when and in which branch.',
       salesNote: 'Completed sales are never edited. They can only be reversed with a record (a void or a return), which appears here.',
-      tabs: { log: 'Activity', flags: 'What gets flagged' },
+      flagSettings: 'Flag settings',
+      flagsTitle: 'What gets flagged',
       user: 'Person',
       action: 'Action',
       target: 'On',

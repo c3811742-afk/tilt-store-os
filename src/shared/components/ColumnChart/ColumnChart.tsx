@@ -10,7 +10,7 @@ const full = 100;
 // Columns over time (daily sales), with an optional marker for the previous period at the same point.
 // A y-axis with clean steps and faint gridlines gives the scale; hovering or focusing a column shows its value.
 export const ColumnChart = (props: ColumnChartProps) => {
-  const { points, height, color, previousColor, label, labelEvery, ticks: tickCount, barWidth, slotWidth, formatTick } = withDefaults(columnChartDefaults, props);
+  const { points, height, color, previousColor, label, labelEvery, ticks: tickCount, barWidth, formatTick } = withDefaults(columnChartDefaults, props);
   const format = useFormat();
   const max = Math.max(...points.flatMap((point) => [point.value, point.previous ?? 0]), 0);
   const ticks = niceTicks(max, tickCount);
@@ -22,8 +22,6 @@ export const ColumnChart = (props: ColumnChartProps) => {
     '--column-chart-color': color,
     '--column-chart-previous': previousColor,
     '--column-chart-bar-width': barWidth,
-    '--column-chart-slot': slotWidth,
-    '--column-chart-count': Math.max(points.length, 1),
   } as CSSProperties;
 
   return (

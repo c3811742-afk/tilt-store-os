@@ -565,7 +565,10 @@ export const completeSale = (input: CompleteSaleInput) =>
     const manual = quote.lines.reduce((sum, line) => sum + line.manualDiscount + line.orderDiscount, 0);
     if (manual > 0) {
       const percent = (manual / Math.max(quote.subtotal, 1)) * 100;
-      logActivity({ action: 'discount', target: { type: 'sale', id: sale.id, label: sale.number }, branchId: branch.id, amount: roundMoney(manual), currency: branch.currency, flagged: percent > db.settings.flagRules.discountAbovePercent, changes: [{ field: 'discount', from: 0, to: `${Math.round(percent)}%` }] });
+      const large = percent > db.settings.flagRules.discountAbovePercent;
+      logActivity({ action: 'discount', target: { type: 'sale', id: sale.id, label: sale.number }, branchId: branch.id, amount: roundMoney(manual), currency: branch.currency, flagged: large, changes: [{ field: 'discount', from: 0, to: `${Math.round(percent)}%` }] });
+      // Above the limit in Activity › Flag settings: the owners get an alert.
+      if (large) notify('largeDiscountOrRefund', { kind: 'discount', branch: branch.name, amount: `${branch.currency} ${roundMoney(manual)}`, user: actor().name }, routes.owner.activity);
     }
     alertLowStock(branch, [...wanted.keys()]);
     return sale;

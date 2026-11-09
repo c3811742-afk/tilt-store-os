@@ -1,12 +1,11 @@
-/* Two columns: the y-axis labels, then the plot; the day labels sit under the plot. The plot is never wider than
-   its columns need (a week is a compact chart) and shrinks to fit a narrow screen. */
+/* Two columns: the y-axis labels, then the plot; the day labels sit under the plot. The plot fills the card's width,
+   as charts do; each column takes a share of it (no wider than the bar width). */
 .chart {
   /* The space between columns shrinks on long periods, so 90 days still show as columns, not hairlines. */
   --column-chart-gap: min(var(--spacing-1), 0.25%);
 
   display: grid;
-  grid-template-columns: auto minmax(0, calc(var(--column-chart-count) * var(--column-chart-slot)));
-  justify-content: start;
+  grid-template-columns: auto minmax(0, 1fr);
   gap: var(--spacing-2);
   margin: 0;
   padding-block-start: var(--spacing-2); /* room for the top tick label, which is centred on its gridline */

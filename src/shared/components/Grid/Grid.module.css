@@ -1,8 +1,26 @@
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(var(--grid-min-column), 1fr));
+  align-items: var(--grid-align);
   gap: var(--grid-gap);
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* A fixed number of equal columns: one on a phone, two on a tablet, all of them on a laptop. */
+.fixed {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (--md-up) {
+  .fixed {
+    grid-template-columns: repeat(min(2, var(--grid-columns)), minmax(0, 1fr));
+  }
+}
+
+@media (--lg-up) {
+  .fixed {
+    grid-template-columns: repeat(var(--grid-columns), minmax(0, 1fr));
+  }
 }

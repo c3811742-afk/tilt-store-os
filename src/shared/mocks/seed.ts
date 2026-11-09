@@ -616,7 +616,7 @@ export const buildSeed = (): Database => {
   const pendingBatch = data.batches.find((batch) => batch.redistribution === 'pending');
   const approval = (fields: Omit<Database['approvals'][number], 'id' | 'status' | 'level'>) =>
     data.approvals.push({ id: newId(), status: 'pending', level: 'owner', ...fields });
-  approval({ kind: 'discount', branchId: park.id, requestedById: manager(park.id), at: atTime(today, 12, 10), percent: 35, amount: 1400, currency: 'EGP', summary: 'Kracked Studios hoodie, regular customer', channel: 'phone' });
+  approval({ kind: 'discount', branchId: park.id, requestedById: manager(park.id), at: notAfterNow(atTime(today, 12, 10)), percent: 35, amount: 1400, currency: 'EGP', summary: 'Kracked Studios hoodie, regular customer', channel: 'phone' });
   approval({ kind: 'refund', branchId: royal.id, requestedById: manager(royal.id), at: atTime(addDays(today, -1), 18), amount: 12500, currency: 'EGP', summary: 'Refund of 7 pieces, wrong sizes', channel: 'app' });
   approval({ kind: 'stockCount', branchId: park.id, requestedById: storekeeper(park.id), at: count.at, ref: { type: 'stockCount', id: count.id }, summary: count.number });
   if (writeOff) approval({ kind: 'writeOff', branchId: souq.id, requestedById: writeOff.byId, at: writeOff.at, ref: { type: 'writeOff', id: writeOff.id }, summary: '2 pieces lost' });
@@ -635,9 +635,16 @@ export const buildSeed = (): Database => {
   if (failedSale) alert('eReceiptFailed', { number: failedSale.number }, '/owner/tax?tab=receipts', failedSale.at);
   // One of each other alert, so the notifications page shows them all.
   const lowVariant = data.products[3]?.variants[0];
-  if (lowVariant) alert('lowStock', { product: `${data.products[3].name} ${lowVariant.size}`, branch: park.name, qty: '1', min: String(settings.lowStockDefault) }, `/owner/stock/item/${lowVariant.id}`, atTime(today, 13, 20));
-  if (pendingBatch) alert('batchCostChanged', { batch: pendingBatch.number, from: '', to: '' }, `/owner/costing/${pendingBatch.id}`, pendingBatch.receivedAt);
-  alert('largeDiscountOrRefund', { kind: 'refund', branch: royal.name, amount: 'EGP 12,500', user: people.find((user) => user.id === manager(royal.id))?.name ?? '' }, '/owner/approvals', atTime(addDays(today, -1), 18, 2));
+  if (lowVariant) alert('lowStock', { product: `${data.products[3].name} ${lowVariant.size}`, branch: park.name, qty: '1', min: String(settings.lowStockDefault) }, `/owner/stock/item/${lowVariant.id}`, notAfterNow(atTime(today, 13, 20)));
+  // The cost per piece before the defects (all pieces) and after (spread over the good ones).
+  if (pendingBatch && pendingBatch.qty > pendingBatch.defects)
+    alert('batchCostChanged', { batch: pendingBatch.number, from: (pendingBatch.totalCost / pendingBatch.qty).toFixed(2), to: (pendingBatch.totalCost / (pendingBatch.qty - pendingBatch.defects)).toFixed(2) }, `/owner/costing/${pendingBatch.id}`, pendingBatch.receivedAt);
+  // A monthly fee that fell due and isn't paid yet.
+  const dueFee = data.fees.filter((fee) => !fee.paidAt && !fee.deductedInStatementId).at(-1);
+  const dueBrand = dueFee && data.brands.find((brand) => brand.id === dueFee.brandId);
+  if (dueFee && dueBrand)
+    alert('brandPaymentDue', { feeId: dueFee.id, brand: dueBrand.name, what: 'fee', amount: `${dueFee.currency} ${dueFee.amount}`, date: `${dueFee.month}-${String(settings.feeDueDay).padStart(2, '0')}` }, `/owner/payouts/${dueBrand.id}?tab=fees`, notAfterNow(atTime(`${dueFee.month}-${String(settings.feeDueDay).padStart(2, '0')}`, 9)));
+  alert('largeDiscountOrRefund', { kind: 'refund', branch: royal.name, amount: 'EGP 12500', user: people.find((user) => user.id === manager(royal.id))?.name ?? '' }, '/owner/approvals', atTime(addDays(today, -1), 18, 2));
   const shortShift = data.shifts.filter((shift) => (shift.countedCash ?? 0) < (shift.expectedCash ?? 0)).at(-1);
   if (shortShift) alert('cashDifference', { branch: branches.find((branch) => branch.id === shortShift.branchId)?.name ?? '', register: shortShift.register, amount: `${shortShift.currency} ${Math.round((shortShift.countedCash ?? 0) - (shortShift.expectedCash ?? 0))}` }, '/owner/reports/shifts', shortShift.closedAt ?? setupAt);
   alert('pickupMismatch', { number: mismatchTransfer.number }, '/owner/transfers?tab=differences', mismatchTransfer.receivedAt ?? setupAt);
