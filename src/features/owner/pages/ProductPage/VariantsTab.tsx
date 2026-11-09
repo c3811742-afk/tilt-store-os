@@ -3,7 +3,7 @@ import { generateBarcode, updateVariants } from '@/shared/api';
 import { Badge, Button, Card, Icon, Notice, Stack, Table, TextField } from '@/shared/components';
 import { useAction, useErrorMessage, useFormat, useLocale } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
-import { printLabels } from '@/shared/utils';
+import { fillText, printLabels } from '@/shared/utils';
 import type { ProductData } from './types';
 
 // Each variant's SKU and barcode (generated for items without one, refused when already used), and label printing.
@@ -18,6 +18,7 @@ export const VariantsTab = ({ data, onSaved }: { data: ProductData; onSaved: () 
   const [copies, setCopies] = useState<Record<string, string>>({});
   const [labelCurrency, setLabelCurrency] = useState(data.currencies[0] ?? '');
   const edit = (id: string, patch: Partial<(typeof draft)[string]>) => setDraft((current) => ({ ...current, [id]: { ...current[id], ...patch } }));
+  const labelCount = Object.values(copies).reduce((sum, value) => sum + Math.max(Number(value) || 0, 0), 0);
   const duplicateInForm = (barcode: string) => Object.values(draft).filter((row) => row.barcode === barcode).length > 1;
 
   const print = () =>
@@ -104,14 +105,17 @@ export const VariantsTab = ({ data, onSaved }: { data: ProductData; onSaved: () 
           >
             {t.oneLabelPerPiece}
           </Button>
+          <Button variant="secondary" onClick={() => setCopies(Object.fromEntries(variants.map((variant) => [variant.id, '1'])))}>
+            {t.oneLabelEach}
+          </Button>
           {data.currencies.map((currency) => (
             <Button key={currency} variant={currency === labelCurrency ? 'primary' : 'muted'} size="sm" onClick={() => setLabelCurrency(currency)}>
               {currency}
             </Button>
           ))}
-          <Button disabled={!Object.values(copies).some((value) => Number(value) > 0)} onClick={print}>
+          <Button disabled={labelCount === 0} onClick={print}>
             <Icon name="printer" />
-            {t.printLabels}
+            {labelCount > 0 ? fillText(t.printCount, { count: format.number(labelCount) }) : t.printLabels}
           </Button>
         </Stack>
       </Card>

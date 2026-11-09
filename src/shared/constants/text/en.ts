@@ -519,6 +519,8 @@ export const en = {
       printLabels: 'Print labels',
       printLabelsHint: 'Barcode labels and price tags, also for items that arrived without a barcode. Enter how many of each to print.',
       oneLabelPerPiece: 'One per piece in stock',
+      oneLabelEach: 'One of each',
+      printCount: 'Print {count} labels',
       pricing: {
         prices: 'Selling prices',
         pricesHint: 'Enter the price for each currency. It applies to every branch that sells in that currency. The minimum margin for this product is {margin}.',

@@ -519,6 +519,8 @@ export const ar: TextShape<typeof en> = {
       printLabels: 'طباعة الملصقات',
       printLabelsHint: 'ملصقات الباركود والأسعار، حتى للقطع التي وصلت بدون باركود. أدخل عدد الملصقات لكل صنف.',
       oneLabelPerPiece: 'ملصق لكل قطعة في المخزون',
+      oneLabelEach: 'ملصق لكل نوع',
+      printCount: 'طباعة {count} ملصق',
       pricing: {
         prices: 'أسعار البيع',
         pricesHint: 'أدخل السعر لكل عملة. يسري على كل الفروع التي تبيع بهذه العملة. الحد الأدنى للهامش لهذا المنتج {margin}.',

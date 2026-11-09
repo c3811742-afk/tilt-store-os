@@ -12,4 +12,5 @@
   font-weight: var(--font-weight-medium);
   line-height: var(--text-styles-caption-line-height);
   white-space: nowrap;
+  inline-size: fit-content; /* as wide as its text, also inside a column that stretches its items */
 }
