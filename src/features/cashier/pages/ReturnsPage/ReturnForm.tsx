@@ -36,7 +36,8 @@ export const ReturnForm = ({ sale, onBack }: { sale: ReturnableSale; onBack: () 
   const branchId = branch?.id ?? '';
   const t = text.cashier.returns;
   const action = useAction();
-  const [mode, setMode] = useState<Mode>('return');
+  // Bought in the other country: exchange only (set by the owner in Policies › Returns).
+  const [mode, setMode] = useState<Mode>(sale.crossCountry ? 'exchange' : 'return');
   const [choices, setChoices] = useState<Record<string, LineChoice>>({});
   const [approvalIds, setApprovalIds] = useState<string[]>([]);
   const [asking, setAsking] = useState<{ request: ApprovalInput; why: string; pendingId?: string } | null>(null);
@@ -68,7 +69,7 @@ export const ReturnForm = ({ sale, onBack }: { sale: ReturnableSale; onBack: () 
   const refundMethod = settings.paymentMethods.find((method) => method.id === methodId);
   const cashTooHigh = refundMethod?.kind === 'cash' && refundAmount > sale.cashRefundLimit && !has('refund');
   const cardPending = refundMethod?.kind === 'card' && refundAmount > 0 && !cardCode;
-  const ready = chosen.length > 0 && !missingReasons && policyOk && !cashTooHigh && !cardPending && (mode === 'return' || newItems.length > 0);
+  const ready = chosen.length > 0 && !missingReasons && policyOk && !cashTooHigh && !cardPending && (mode === 'return' || newItems.length > 0) && !(sale.crossCountry && difference < 0);
 
   const ask = (kind: 'returnOutsidePolicy' | 'refund') =>
     setAsking({
@@ -169,17 +170,21 @@ export const ReturnForm = ({ sale, onBack }: { sale: ReturnableSale; onBack: () 
             {t.chain}: {sale.chain.map((link) => `${t.chainKinds[link.kind]} ${link.number}`).join(' → ')}
           </Text>
         )}
-        {sale.branchId !== branchId && <Notice tone="info">{fillText(t.fromOtherBranch, { branch: sale.branchName })}</Notice>}
+        {sale.branchId !== branchId && !sale.crossCountry && <Notice tone="info">{fillText(t.fromOtherBranch, { branch: sale.branchName })}</Notice>}
         {sale.outsideWindow && <Notice tone="warning">{fillText(t.outside, { window: format.number(sale.windowDays) })}</Notice>}
-        <SegmentedControl<Mode>
-          label={t.mode}
-          value={mode}
-          onChange={setMode}
-          options={[
-            { value: 'return', label: t.modes.return },
-            { value: 'exchange', label: t.modes.exchange },
-          ]}
-        />
+        {sale.crossCountry ? (
+          <Notice tone="info">{fillText(t.crossCountry, { branch: sale.branchName, currency: sale.currency })}</Notice>
+        ) : (
+          <SegmentedControl<Mode>
+            label={t.mode}
+            value={mode}
+            onChange={setMode}
+            options={[
+              { value: 'return', label: t.modes.return },
+              { value: 'exchange', label: t.modes.exchange },
+            ]}
+          />
+        )}
       </Card>
 
       <Card>
@@ -300,7 +305,8 @@ export const ReturnForm = ({ sale, onBack }: { sale: ReturnableSale; onBack: () 
               </div>
             )}
           </AsyncContent>
-          {newItems.length > 0 && difference < 0 && (
+          {sale.crossCountry && newItems.length > 0 && difference < 0 && <Notice tone="warning">{text.errors.exchangeTooLow}</Notice>}
+          {!sale.crossCountry && newItems.length > 0 && difference < 0 && (
             <Stack gap={vars.spacing[3]}>
               <SegmentedControl<'credit' | 'refund'>
                 label={t.refundTo}

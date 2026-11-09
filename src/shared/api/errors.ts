@@ -36,6 +36,8 @@ export type ApiErrorCode =
   | 'returnNotAllowed'
   | 'tooManyReturned'
   | 'quantityMismatch'
+  | 'exchangeOnlyHere'
+  | 'exchangeTooLow'
   | 'noDiscountOnPromotion';
 
 export class ApiError extends Error {

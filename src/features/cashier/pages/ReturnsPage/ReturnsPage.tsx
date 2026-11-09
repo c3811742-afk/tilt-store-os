@@ -52,6 +52,7 @@ export const ReturnsPage = () => {
         />
         <Text variant="caption" color={vars.colors.textMuted}>
           {fillText(t.searchHint, { branches: from.join(text.common.listSeparator) })}
+          {settings.crossCountryExchange && ` ${t.crossCountryHint}`}
         </Text>
       </Stack>
       {submitted && !saleId && (

@@ -17,12 +17,19 @@ const countryOf = (branchId: Id) => {
 };
 
 // The branches whose sales this branch can take back: itself, plus the same country's other branches and online
-// store when the country's policy allows returns from another branch.
+// store when the country's policy allows returns from another branch, plus (for an exchange only) the other country's
+// branches when the owner allows exchanges across countries.
 const returnableFrom = (branchId: Id) => {
   const branch = findById(db.branches, branchId);
   const policy = countryOf(branchId)?.returns;
-  return db.branches.filter((current) => current.id === branchId || (policy?.otherBranch && current.countryCode === branch.countryCode && current.kind !== 'warehouse')).map((current) => current.id);
+  return db.branches
+    .filter((current) => current.kind !== 'warehouse')
+    .filter((current) => current.id === branchId || (current.countryCode === branch.countryCode ? policy?.otherBranch : db.settings.crossCountryExchange))
+    .map((current) => current.id);
 };
+
+// A sale from a branch in another country: it can only be exchanged here, at today's rate, never refunded.
+const isCrossCountry = (sale: Sale, branchId: Id) => db.branches.find((branch) => branch.id === sale.branchId)?.countryCode !== findById(db.branches, branchId).countryCode;
 
 const returnedQty = (saleId: Id, lineId: Id) =>
   db.returns.filter((saleReturn) => saleReturn.saleId === saleId).reduce((sum, saleReturn) => sum + saleReturn.lines.filter((line) => line.saleLineId === lineId).reduce((total, line) => total + line.qty, 0), 0);
@@ -113,6 +120,7 @@ export interface ReturnableSale {
   windowDays: number;
   outsideWindow: boolean;
   refundMethodIds: Id[]; // where a refund can go under the policy
+  crossCountry: boolean; // bought in the other country: exchange only, with prices converted to this branch's currency
   cashRefundLimit: number; // in the sale's currency: a cash refund above this needs the branch manager's approval PIN
   paidWith: Id[]; // the sale's own payment methods
   lines: ReturnableLine[];
@@ -164,19 +172,24 @@ const describeSale = (sale: Sale, branchId: Id): ReturnableSale => {
   const daysSince = Math.floor(daysBetween(toIsoDate(sale.at), toIsoDate(nowIso())));
   const windowDays = policy?.days ?? 0;
   const customer = db.customers.find((current) => current.id === sale.customerId);
+  // Bought in the other country: everything is shown in this branch's currency, at today's rate.
+  const crossCountry = isCrossCountry(sale, branchId);
+  const currency = crossCountry ? findById(db.branches, branchId).currency : sale.currency;
+  const inCurrency = (amount: number) => (crossCountry ? convert(amount, sale.currency, currency, nowIso(), db.rates, db.settings.baseCurrency) : amount);
   return {
     saleId: sale.id,
     number: sale.number,
     at: sale.at,
     branchId: sale.branchId,
     branchName: db.branches.find((branch) => branch.id === sale.branchId)?.name ?? '',
-    currency: sale.currency,
+    currency,
+    crossCountry,
     customer: customer ? { id: customer.id, name: customer.name, phone: customer.phone, storeCredit: storeCreditOf(db, customer.id) } : undefined,
     daysSince,
     windowDays,
     outsideWindow: daysSince > windowDays,
-    refundMethodIds: refundMethodsFor(sale, branchId),
-    cashRefundLimit: cashRefundLimit(sale.currency),
+    refundMethodIds: crossCountry ? [] : refundMethodsFor(sale, branchId),
+    cashRefundLimit: cashRefundLimit(currency),
     paidWith: sale.payments.map((payment) => payment.methodId),
     lines: sale.lines.map((line) => {
       const entry = index.get(line.variantId);
@@ -197,7 +210,7 @@ const describeSale = (sale: Sale, branchId: Id): ReturnableSale => {
         bought: line.qty,
         returned,
         left: line.qty - returned,
-        paidPerPiece: roundMoney((line.unitPrice * line.qty - line.discount) / line.qty),
+        paidPerPiece: roundMoney(inCurrency((line.unitPrice * line.qty - line.discount) / line.qty)),
         promotionName: line.promotionId ? db.promotions.find((promotion) => promotion.id === line.promotionId)?.name : undefined,
         blocks,
       };
@@ -255,6 +268,7 @@ export const createReturn = (input: ReturnInput) =>
     const sale = findById(db.sales, input.saleId);
     if (!returnableFrom(branch.id).includes(sale.branchId)) throw new ApiError('returnNotAllowed');
     const view = describeSale(sale, branch.id);
+    if (view.crossCountry && input.kind !== 'exchange') throw new ApiError('exchangeOnlyHere');
     const lines = input.lines.filter((line) => line.qty > 0);
     if (!lines.length) throw new ApiError('tooManyReturned');
 
@@ -298,6 +312,8 @@ export const createReturn = (input: ReturnInput) =>
       const customer = customerFor(view.customer?.name ?? '', view.customer?.phone ?? '');
       const newSale = recordExchangeSale(branch.id, me.id, customer.id, exchange, value);
       const difference = roundMoney(value - newSale.total);
+      // Across countries the new items must cost at least as much: nothing is refunded or kept as credit.
+      if (view.crossCountry && difference > 0.01) throw new ApiError('exchangeTooLow');
       if (difference > 0 && !exchange.keepAsCredit) {
         const refunded = roundMoney(input.refunds.reduce((sum, refund) => sum + refund.amount, 0));
         if (Math.abs(refunded - difference) > 0.01) throw new ApiError('notPaid');

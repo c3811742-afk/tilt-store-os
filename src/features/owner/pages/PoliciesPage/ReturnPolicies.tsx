@@ -37,7 +37,12 @@ export const ReturnPolicies = () => {
             <CheckboxGroup label={t.refundMethods} options={refundMethods.map((value) => ({ value, label: t.refundMethodNames[value] }))} value={country.returns.refundMethods} onChange={(selected) => setCountry(country.countryCode, { refundMethods: selected })} />
           </Card>
         ))}
-        <Checkbox label={t.crossCountry} hint={t.crossCountryHint} checked={values.crossCountryExchange} onChange={(checked) => set('crossCountryExchange', checked)} />
+        {/* Company-wide, not one country's rule: its own block under the country cards. */}
+        {values.countries.length > 1 && (
+          <Card title={t.crossCountryTitle} background={vars.colors.surfaceMuted}>
+            <Checkbox label={t.crossCountry} hint={t.crossCountryHint} checked={values.crossCountryExchange} onChange={(checked) => set('crossCountryExchange', checked)} />
+          </Card>
+        )}
         <CheckboxGroup
           label={t.nonReturnableCategories}
           options={categories.filter((category) => !category.archived).map((category) => ({ value: category.id, label: format.text(category.name) }))}
