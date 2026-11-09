@@ -3,7 +3,7 @@ import { comparableReports, runReport, vatExport, type ReportCell, type ReportCo
 import { AsyncContent, Button, Checkbox, Grid, Icon, InfoTip, Notice, PageHeader, SegmentedControl, SelectField, Stack, StatCard, Table, Tabs, Text } from '@/shared/components';
 import { useAsync, useChange, useFormat, useLiveVersion, useLocale, useQueryState, useReference, useTableSort } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
-import { changePercent, fillText, type ExportCell, type ExportTable } from '@/shared/utils';
+import { changePercent, fillText, signAt, type ExportCell, type ExportTable } from '@/shared/utils';
 import { ExportButtons, PeriodFilter, useAnalysisFilters } from '../../components';
 import { analysisViews, defaultAnalysisView, type AnalysisSection, type AnalysisView } from '../../constants/analysis';
 import { useExport, usePeriod } from '../../hooks';
@@ -114,11 +114,12 @@ export const ReportsPage = () => {
     if (!filter.compare || !column.compare || typeof value !== 'number') return shown;
     const before = typeof previous === 'number' ? previous : 0;
     const change = changePercent(value, before);
+    const sign = change === null ? 0 : signAt(change, 1); // percentages show one decimal
     return (
       <Stack gap={vars.spacing[0]} align="flex-end">
         <span>{shown}</span>
-        <Text as="span" variant="caption" color={change === null ? vars.colors.textMuted : change >= 0 ? vars.colors.success : vars.colors.danger}>
-          {change === null ? t.new : `${change >= 0 ? '+' : ''}${format.percent(change)}`}
+        <Text as="span" variant="caption" color={change === null || sign === 0 ? vars.colors.textMuted : sign > 0 ? vars.colors.success : vars.colors.danger}>
+          {change === null ? t.new : `${sign > 0 ? '+' : ''}${format.percent(change)}`}
         </Text>
       </Stack>
     );

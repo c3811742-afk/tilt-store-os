@@ -3,7 +3,7 @@ export { cx } from './cx';
 export { storage, tabStorage } from './storage';
 export { safeAsync, isEmptyData } from './safeAsync';
 export type { Result } from './safeAsync';
-export { formatNumber, formatPrice, formatDate, formatFileSize, formatPercent, formatDateTime, formatTime } from './format';
+export { formatNumber, formatPrice, formatDate, formatFileSize, formatPercent, formatDateTime, formatTime, signAt } from './format';
 export * from './dates';
 export * from './collections';
 export * from './rates';

@@ -4,7 +4,7 @@ import { AsyncContent, Badge, Notice, PageHeader, Stack, Table, Text, recordRows
 import { routes, toPath } from '@/shared/constants';
 import { useAsync, useFormat, useLiveVersion, useLocale } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
-import { fillText } from '@/shared/utils';
+import { fillText, signAt } from '@/shared/utils';
 
 // Every brand's balance on one screen: what the store owes it, or what it owes the store.
 export const PayoutsPage = () => {
@@ -48,10 +48,10 @@ export const PayoutsPage = () => {
                   label: '',
                   render: (row) => (
                     <Stack gap={vars.spacing[0]} align="flex-end">
-                      <Text as="span" variant="h4" color={row.balance < 0 ? vars.colors.danger : vars.colors.text}>
+                      <Text as="span" variant="h4" color={signAt(row.balance) < 0 ? vars.colors.danger : vars.colors.text}>
                         {format.money(Math.abs(row.balance), row.currency)}
                       </Text>
-                      {row.balance < 0 && (
+                      {signAt(row.balance) < 0 && (
                         <Text as="span" variant="caption" color={vars.colors.danger}>
                           {t.brandOwesUs}
                         </Text>
