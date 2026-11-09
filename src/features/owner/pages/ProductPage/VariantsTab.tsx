@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { generateBarcode, updateVariants } from '@/shared/api';
-import { Badge, Button, Card, Icon, Notice, Stack, Table, Text, TextField } from '@/shared/components';
+import { Badge, Button, Card, Icon, Notice, Stack, Table, TextField } from '@/shared/components';
 import { useAction, useErrorMessage, useFormat, useLocale } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { printLabels } from '@/shared/utils';
@@ -97,9 +97,6 @@ export const VariantsTab = ({ data, onSaved }: { data: ProductData; onSaved: () 
         />
       </Card>
       <Card title={t.printLabels}>
-        <Text variant="bodySm" color={vars.colors.textMuted}>
-          {t.printLabelsHint}
-        </Text>
         <Stack direction="row" wrap gap={vars.spacing[2]} align="flex-end">
           <Button
             variant="secondary"

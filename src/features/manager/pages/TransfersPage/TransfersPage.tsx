@@ -34,7 +34,7 @@ export const TransfersPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={text.nav.transfers} subtitle={text.owner.transfers.subtitle} actions={<Button onClick={() => navigate(routes.manager.newTransfer)}>{t.requestFrom}</Button>} />
+      <PageHeader title={text.nav.transfers} actions={<Button onClick={() => navigate(routes.manager.newTransfer)}>{t.requestFrom}</Button>} />
       <Tabs<TransfersTab>
         label={text.nav.transfers}
         value={tab}

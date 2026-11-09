@@ -115,9 +115,6 @@ export const BrandPage = () => {
               )}
               {tab === 'terms' && (
                 <Card title={t.changeTerms}>
-                  <Text variant="bodySm" color={vars.colors.textMuted}>
-                    {t.changeTermsHint}
-                  </Text>
                   {lockedUntil && <Notice tone="info">{fillText(t.lockedUntil, { date: format.date(lockedUntil) })}</Notice>}
                   <BrandTermsFields value={editing} onChange={setDraftTerms} />
                   <Stack direction="row" wrap gap={vars.spacing[3]} align="flex-end">
@@ -142,9 +139,6 @@ export const BrandPage = () => {
               {tab === 'history' && <TermsHistory brand={brand} />}
               {tab === 'agreement' && (
                 <Card title={t.tabs.agreement}>
-                  <Text variant="bodySm" color={vars.colors.textMuted}>
-                    {t.agreementHint}
-                  </Text>
                   {brand.agreement && (
                     <Stack direction="row" wrap align="center" gap={vars.spacing[3]}>
                       <Icon name="file" />

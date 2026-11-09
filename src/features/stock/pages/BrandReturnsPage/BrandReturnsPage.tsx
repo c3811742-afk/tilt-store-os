@@ -31,7 +31,7 @@ export const BrandReturnsPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} actions={<Button onClick={() => navigate(routes.storekeeper.newBrandReturn)}>{t.new}</Button>} />
+      <PageHeader title={t.title} actions={<Button onClick={() => navigate(routes.storekeeper.newBrandReturn)}>{t.new}</Button>} />
       {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
       {done && <Notice tone="success">{done}</Notice>}
       <AsyncContent state={returns} empty={<Notice>{t.none}</Notice>}>
@@ -63,9 +63,6 @@ export const BrandReturnsPage = () => {
             ) : undefined
           }
         >
-          <Text variant="bodySm" color={vars.colors.textMuted}>
-            {t.damagedHint}
-          </Text>
           <AsyncContent state={damaged} empty={<Text variant="bodySm">{t.noDamaged}</Text>}>
             {(rows) => (
               <Table

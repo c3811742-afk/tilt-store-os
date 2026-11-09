@@ -23,7 +23,7 @@ export const JobsPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       <Tabs<JobsTab> label={t.title} value={tab} onChange={setTab} tabs={(['pickup', 'onTheWay', 'done'] as const).map((value) => ({ value, label: t.tabs[value], count: value === 'done' ? undefined : views.filter(inTab[value]).length || undefined }))}>
         <AsyncContent state={state}>{(data) => <TransferCards views={data.filter(inTab[tab])} empty={t.none} pathFor={(transferId) => toPath(routes.driver.job, { transferId })} />}</AsyncContent>
       </Tabs>

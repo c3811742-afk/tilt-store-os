@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, type CSSProperties, type ReactNode } from 're
 import { useLocale } from '@/shared/hooks';
 import { withDefaults } from '@/shared/utils';
 import { Icon } from '../Icon';
+import { InfoTip } from '../InfoTip';
 import { Text } from '../Text';
 import { modalDefaults } from './Modal.defaults';
 import type { ModalProps } from './Modal.types';
@@ -18,7 +19,7 @@ const ModalBody = ({ onSubmit, children }: { onSubmit?: ModalProps['onSubmit']; 
 
 // A dialog built on the native <dialog>: focus is trapped inside and Esc closes it.
 export const Modal = (props: ModalProps) => {
-  const { open, onClose, title, children, actions, width, onSubmit } = withDefaults(modalDefaults, props);
+  const { open, onClose, title, info, children, actions, width, onSubmit } = withDefaults(modalDefaults, props);
   const { text } = useLocale();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -49,6 +50,7 @@ export const Modal = (props: ModalProps) => {
               {title && (
                 <Text as="h2" variant="h3">
                   {title}
+                  {info && <InfoTip text={info} />}
                 </Text>
               )}
             </span>

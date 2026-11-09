@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router';
 import { createReceiving } from '@/shared/api';
-import { BrandSelect, Button, Card, Checkbox, Notice, PageHeader, Stack, Text, TextAreaField, TextField } from '@/shared/components';
+import { BrandSelect, Button, Card, Checkbox, Notice, PageHeader, Stack, TextAreaField, TextField } from '@/shared/components';
 import { routes, toPath } from '@/shared/constants';
 import { useBranchScope, useErrorMessage, useForm, useLocale } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
@@ -24,9 +24,6 @@ export const NewReceivingPage = () => {
       <PageHeader back={{ to: routes.storekeeper.receiving, label: t.title }} title={t.newTitle} />
       <Card>
         <Stack as="form" gap={vars.spacing[4]} onSubmit={onSubmit}>
-          <Text variant="bodySm" color={vars.colors.textMuted}>
-            {t.newHint}
-          </Text>
           {Boolean(form.requestError) && <Notice tone="danger">{errorMessage(form.requestError)}</Notice>}
           <BrandSelect label={t.brand} allLabel={t.chooseBrand} value={form.values.brandId} onChange={(value) => form.setValue('brandId', value)} error={form.errors.brandId} width={vars.sizes.field.maxWidth} />
           <TextField label={t.batchNumber} hint={t.batchHint} {...form.field('batchNumber')} width={vars.sizes.field.maxWidth} />

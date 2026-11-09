@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { getOwnPinState, setOwnApprovalPin } from '@/shared/api';
-import { AsyncContent, Button, Card, Notice, Stack, Text, TextField } from '@/shared/components';
+import { AsyncContent, Button, Card, Notice, Stack, TextField } from '@/shared/components';
 import { useAsync, useErrorMessage, useLocale } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { safeAsync } from '@/shared/utils';
@@ -54,9 +54,6 @@ export const PinTab = () => {
                 void submit();
               }}
             >
-              <Text variant="bodySm" color={vars.colors.textMuted}>
-                {t.pinHint}
-              </Text>
               {pinState.locked ? <Notice tone="warning">{t.pinLocked}</Notice> : <Notice>{pinState.hasPin ? t.pinSet : t.pinNotSet}</Notice>}
               {Boolean(error) && <Notice tone="danger">{errorMessage(error)}</Notice>}
               {saved && <Notice tone="success">{t.pinSaved}</Notice>}

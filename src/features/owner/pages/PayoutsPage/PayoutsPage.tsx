@@ -17,7 +17,7 @@ export const PayoutsPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       <AsyncContent state={state} empty={<Notice>{t.noBrands}</Notice>}>
         {(rows) => (
           <Table

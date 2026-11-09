@@ -31,7 +31,6 @@ export const RolesPage = () => {
     <Stack gap={vars.spacing[5]}>
       <PageHeader
         title={t.title}
-        subtitle={t.subtitle}
         back={{ to: routes.owner.staff, label: text.nav.staff }}
         actions={
           <Button onClick={() => open()}>

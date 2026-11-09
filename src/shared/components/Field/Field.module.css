@@ -7,6 +7,17 @@
   min-inline-size: 0;
 }
 
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+
+.optional {
+  color: var(--colors-text-muted);
+  font-size: var(--text-styles-caption-font-size);
+}
+
 .label {
   color: var(--colors-text);
   font-size: var(--text-styles-body-sm-font-size);

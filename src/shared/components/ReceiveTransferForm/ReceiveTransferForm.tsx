@@ -9,7 +9,6 @@ import { Notice } from '../Notice';
 import { SelectField } from '../SelectField';
 import { emptySignature, SignatureForm, signatureErrors, type SignatureField, type SignatureLine, type SignatureValue } from '../SignatureForm';
 import { Stack } from '../Stack';
-import { Text } from '../Text';
 import { TextAreaField } from '../TextAreaField';
 import type { ReceiveTransferFormProps } from './ReceiveTransferForm.types';
 
@@ -72,9 +71,6 @@ export const ReceiveTransferForm = ({ view, onDone }: ReceiveTransferFormProps) 
           void submit();
         }}
       >
-        <Text variant="bodySm" color={vars.colors.textMuted}>
-          {t.receiveHint}
-        </Text>
         {Boolean(error) && <Notice tone="danger">{errorMessage(error)}</Notice>}
         <SignatureForm lines={lines} fields={fields} value={value} onChange={setValue} statement={t.receiveStatement} errors={errors} disabled={busy} />
         {hasDefects && (

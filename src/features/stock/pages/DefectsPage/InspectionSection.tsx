@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { inspectReturnedItem, listAwaitingInspection, type InspectionOutcome, type InspectionRow } from '@/shared/api';
-import { AsyncContent, Button, Card, Modal, Notice, SegmentedControl, SelectField, Stack, Table, Text, TextAreaField, TextField } from '@/shared/components';
+import { AsyncContent, Button, Card, Modal, Notice, SegmentedControl, SelectField, Stack, Table, TextAreaField, TextField } from '@/shared/components';
 import { useAsync, useBranchScope, useErrorMessage, useFormat, useLiveVersion, useLocale, useReference } from '@/shared/hooks';
 import type { DefectLiability } from '@/shared/types';
 import { vars } from '@/shared/theme';
@@ -21,9 +21,6 @@ export const InspectionSection = () => {
 
   return (
     <Card title={t.waiting}>
-      <Text variant="bodySm" color={vars.colors.textMuted}>
-        {t.waitingHint}
-      </Text>
       {done && <Notice tone="success">{t.done}</Notice>}
       <AsyncContent state={state} empty={<Notice tone="success">{t.noneWaiting}</Notice>}>
         {(rows) => (
@@ -134,7 +131,7 @@ const InspectModal = ({ row, onClose, onDone }: { row: InspectionRow; onClose: (
             <SegmentedControl<DefectLiability> label={d.whoPays} value={liability} onChange={setLiability} options={(['brand', 'store'] as const).map((value) => ({ value, label: d.liability[value] }))} />
           </>
         )}
-        <TextAreaField label={d.notes} hint={text.common.optional} value={note} onChange={setNote} />
+        <TextAreaField label={d.notes} optional value={note} onChange={setNote} />
       </Stack>
     </Modal>
   );

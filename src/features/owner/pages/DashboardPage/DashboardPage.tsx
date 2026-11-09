@@ -28,7 +28,7 @@ export const DashboardPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       <div className={styles.filters}>
         <PeriodFilter period={period} />
         <BranchSelect label={t.scope} allLabel={t.allBranches} value={branchId} onChange={setBranchId} width={vars.sizes.field.narrow} />

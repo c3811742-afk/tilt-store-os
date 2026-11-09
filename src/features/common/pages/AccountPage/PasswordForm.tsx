@@ -36,7 +36,7 @@ export const PasswordForm = ({ currentLabel, onChanged, done }: PasswordFormProp
       {done && <Notice tone="success">{t.passwordChanged}</Notice>}
       {Boolean(form.requestError) && <Notice tone="danger">{errorMessage(form.requestError)}</Notice>}
       <TextField label={currentLabel} type="password" autoComplete="current-password" {...form.field('current')} />
-      <TextField label={t.newPassword} type="password" autoComplete="new-password" hint={fillText(t.passwordHint, { min })} {...form.field('next')} />
+      <TextField label={t.newPassword} type="password" autoComplete="new-password" note={fillText(t.passwordHint, { min })} {...form.field('next')} />
       <TextField label={t.confirmPassword} type="password" autoComplete="new-password" {...form.field('confirm')} />
       <div>
         <Button type="submit" disabled={form.submitting}>

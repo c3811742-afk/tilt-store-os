@@ -27,7 +27,7 @@ export const DataPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       {saved && <Notice tone="success">{t.saved}</Notice>}
       <div className={styles.layout}>
         <Card title={t.tables}>
@@ -137,9 +137,6 @@ export const DataPage = () => {
         }
       >
         <Stack gap={vars.spacing[3]}>
-          <Text variant="caption" color={vars.colors.textMuted}>
-            {t.fixHint}
-          </Text>
           {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
           <TextAreaField label={t.fix} rows={16} value={draft} onChange={setDraft} width="100%" />
           <TextAreaField label={t.reason} rows={2} value={reason} onChange={setReason} required width="100%" />

@@ -92,9 +92,6 @@ export const PricingTab = ({ data, onSaved }: { data: ProductData; onSaved: () =
       </Card>
 
       <Card title={t.variantPrices}>
-        <Text variant="bodySm" color={vars.colors.textMuted}>
-          {t.variantPricesHint}
-        </Text>
         <Table
           label={t.variantPrices}
           columns={[{ key: 'variant', label: text.owner.fields.variant }, ...data.currencies.map((currency) => ({ key: currency, label: currency }))]}
@@ -137,9 +134,6 @@ export const PricingTab = ({ data, onSaved }: { data: ProductData; onSaved: () =
       </Card>
 
       <Card title={t.schedules}>
-        <Text variant="bodySm" color={vars.colors.textMuted}>
-          {t.schedulesHint}
-        </Text>
         <SegmentedControl<ScheduleKind>
           label={t.scheduleKind}
           value={schedule.kind}

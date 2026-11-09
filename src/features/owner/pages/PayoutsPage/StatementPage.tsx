@@ -1,6 +1,6 @@
 import { useParams } from 'react-router';
 import { decideStatement, deleteDraftStatement, getStatement, lockStatement } from '@/shared/api';
-import { AsyncContent, Badge, Button, Card, Icon, Notice, PageHeader, Stack, Table, Text } from '@/shared/components';
+import { AsyncContent, Badge, Button, Card, Icon, Notice, PageHeader, Stack, Table } from '@/shared/components';
 import { routes, toPath } from '@/shared/constants';
 import { useAction, useAsync, useErrorMessage, useFormat, useLiveVersion, useLocale } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
@@ -101,14 +101,8 @@ export const StatementPage = () => {
                   </Button>
                 </Stack>
               )}
-              <Text variant="caption" color={vars.colors.textMuted}>
-                {t.lockHint}
-              </Text>
             </Card>
             <Card title={t.items}>
-              <Text variant="caption" color={vars.colors.textMuted}>
-                {t.itemsHint}
-              </Text>
               <Table
                 label={t.items}
                 columns={[

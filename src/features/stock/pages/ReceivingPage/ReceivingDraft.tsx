@@ -98,9 +98,6 @@ export const ReceivingDraft = ({ view, onConfirmed }: { view: ReceivingView; onC
           </Button>
         }
       >
-        <Text variant="bodySm" color={vars.colors.textMuted}>
-          {t.itemsHint}
-        </Text>
         <VariantSearch onPick={add} disabled={busy} autoFocus />
         {lines.length ? (
           <SignatureForm
@@ -153,9 +150,6 @@ export const ReceivingDraft = ({ view, onConfirmed }: { view: ReceivingView; onC
 
       {lines.length > 0 && (
         <Card title={t.courierTitle}>
-          <Text variant="bodySm" color={vars.colors.textMuted}>
-            {t.courierHint}
-          </Text>
           <SignatureForm
             lines={signLines.map((line) => ({ ...line, detail: `${t.received} ${format.number(qty(line.variantId, 'received'))}` }))}
             fields={[{ key: 'delivered', label: t.delivered }]}
@@ -171,9 +165,6 @@ export const ReceivingDraft = ({ view, onConfirmed }: { view: ReceivingView; onC
       {lines.length > 0 && (
         <Card title={t.yourTitle}>
           <SignatureForm value={mine} onChange={setMine} statement={t.yourStatement} errors={errors.mine} disabled={busy} />
-          <Text variant="caption" color={vars.colors.textMuted}>
-            {t.confirmHint}
-          </Text>
           <Stack direction="row" justify="flex-end">
             <Button disabled={busy} onClick={() => void confirm()}>
               {t.confirm}

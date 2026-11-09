@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { requestNewStock } from '@/shared/api';
-import { Button, ItemLinesEditor, Modal, Notice, Stack, Text, TextAreaField, type ItemLine } from '@/shared/components';
+import { Button, ItemLinesEditor, Modal, Notice, Stack, TextAreaField, type ItemLine } from '@/shared/components';
 import { useAction, useBranchScope, useErrorMessage, useLocale } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { fillText } from '@/shared/utils';
@@ -55,12 +55,9 @@ export const RequestStockModal = ({ open, onClose, initialLines = [], onSent }: 
       }
     >
       <Stack gap={vars.spacing[4]}>
-        <Text variant="bodySm" color={vars.colors.textMuted}>
-          {t.requestHint}
-        </Text>
         {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
         <ItemLinesEditor lines={lines} onChange={setLines} error={error} disabled={Boolean(action.busy)} autoFocus stockBranchId={branchId} />
-        <TextAreaField label={text.common.note} hint={text.common.optional} value={note} onChange={setNote} />
+        <TextAreaField label={text.common.note} optional value={note} onChange={setNote} />
       </Stack>
     </Modal>
   );

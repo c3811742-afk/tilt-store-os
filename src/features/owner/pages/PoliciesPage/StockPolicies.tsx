@@ -21,7 +21,7 @@ export const StockPolicies = () => {
           <TextField label={t.slowMoverWeeks} type="number" min={1} value={String(values.slowMoverWeeks)} onChange={(value) => set('slowMoverWeeks', Math.max(toNumber(value), 1))} />
           <TextField
             label={t.agingBuckets}
-            hint={t.agingBucketsHint}
+            placeholder={t.agingBucketsHint}
             value={values.agingBuckets.join(', ')}
             onChange={(value) => set('agingBuckets', value.split(/[,\s]+/).map(Number).filter((days) => days > 0).sort((a, b) => a - b))}
           />

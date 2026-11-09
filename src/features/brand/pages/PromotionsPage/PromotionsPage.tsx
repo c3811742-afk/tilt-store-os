@@ -55,7 +55,7 @@ export const PromotionsPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} actions={<Button onClick={openNew}>{t.request}</Button>} />
+      <PageHeader title={t.title} actions={<Button onClick={openNew}>{t.request}</Button>} />
       {sent && <Notice tone="success">{sent === 'resent' ? t.resent : t.sent}</Notice>}
       <AsyncContent state={state} empty={<Notice>{t.empty}</Notice>}>
         {(rows) => (
@@ -125,9 +125,6 @@ export const PromotionsPage = () => {
         }
       >
         <Stack gap={vars.spacing[4]}>
-          <Text variant="caption" color={vars.colors.textMuted}>
-            {t.formHint}
-          </Text>
           {editing && <Notice tone="warning">{fillText(t.rejectedBecause, { reason: (state.status === 'success' ? state.data.find((row) => row.id === editing)?.decisionReason : undefined) ?? '' })}</Notice>}
           {Boolean(form.requestError) && <Notice tone="danger">{errorMessage(form.requestError)}</Notice>}
           <TextField label={t.name} {...form.field('name')} width="100%" />

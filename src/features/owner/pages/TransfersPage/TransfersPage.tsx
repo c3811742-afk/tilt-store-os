@@ -64,7 +64,7 @@ export const TransfersPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       <Tabs<TransfersTab> label={t.title} value={tab} onChange={setTab} tabs={(['all', 'inTransit', 'differences', 'signed'] as const).map((value) => ({ value, label: t.tabs[value] }))}>
         {tab !== 'signed' && (
           <AsyncContent state={transfers} empty={<Notice>{t.none}</Notice>}>

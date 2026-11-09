@@ -31,7 +31,6 @@ export const ActivityPage = () => {
     <Stack gap={vars.spacing[5]}>
       <PageHeader
         title={t.title}
-        subtitle={t.subtitle}
         actions={
           <Button variant="secondary" onClick={() => setFlagSettings('1')}>
             <Icon name="settings" />
@@ -126,9 +125,6 @@ const FlagSettingsModal = ({ onClose }: { onClose: () => void }) => {
       }
     >
       <Stack gap={vars.spacing[3]}>
-        <Text variant="bodySm" color={vars.colors.textMuted}>
-          {t.flagsHint}
-        </Text>
         {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
         <Grid minColumnWidth={vars.sizes.field.narrow}>
           <TextField label={t.flagDiscountAbove} type="number" min={0} max={100} suffix={text.common.percentSuffix} value={String(rules.discountAbovePercent)} onChange={(value) => setRules({ ...rules, discountAbovePercent: Number(value) || 0 })} />

@@ -18,7 +18,7 @@ export const MySalesPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       <AsyncContent state={state}>
         {({ currency, shift, today, list }) => (
           <Stack gap={vars.spacing[5]}>

@@ -47,9 +47,6 @@ export const NewBrandReturnPage = () => {
     <Stack gap={vars.spacing[5]}>
       <PageHeader back={{ to: routes.storekeeper.brandReturns, label: t.title }} title={t.newTitle} />
       <Card>
-        <Text variant="bodySm" color={vars.colors.textMuted}>
-          {t.newHint}
-        </Text>
         {Boolean(error) && <Notice tone="danger">{errorMessage(error)}</Notice>}
         <BrandSelect
           allLabel={t.chooseBrand}
@@ -90,7 +87,7 @@ export const NewBrandReturnPage = () => {
                     {t.addItems}
                   </Text>
                 )}
-                <TextAreaField label={text.common.note} hint={text.common.optional} value={note} onChange={setNote} />
+                <TextAreaField label={text.common.note} optional value={note} onChange={setNote} />
                 <Stack direction="row" justify="flex-end">
                   <Button disabled={busy} onClick={() => void submit(rows)}>
                     {t.send}

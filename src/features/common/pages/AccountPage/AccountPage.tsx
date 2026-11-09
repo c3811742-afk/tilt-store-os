@@ -28,7 +28,7 @@ export const AccountPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       {!session.roles.some((role) => rolesWithScreens.includes(role)) && <Notice>{text.access.noScreens}</Notice>}
       <Grid minColumnWidth={vars.sizes.card.minWidth}>
         <Card title={t.profile}>
@@ -61,9 +61,6 @@ export const AccountPage = () => {
             <PasswordForm currentLabel={t.currentPassword} done={changed} onChanged={(next) => { setSession(next); setChanged(true); }} />
           </Card>
           <Card title={t.manageAlerts}>
-            <Text variant="bodySm" color={vars.colors.textMuted}>
-              {t.alertsHint}
-            </Text>
             <div>
               <Button variant="secondary" onClick={() => navigate(withQuery(routes.notifications, { settings: '1' }))}>
                 {t.chooseAlerts}

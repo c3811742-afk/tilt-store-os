@@ -36,7 +36,7 @@ export const BranchCounts = (props: BranchCountsProps) => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} actions={<Button onClick={() => setStarting(true)}>{t.start}</Button>} />
+      <PageHeader title={t.title} actions={<Button onClick={() => setStarting(true)}>{t.start}</Button>} />
       <Tabs<CountsTab>
         label={t.title}
         value={tab}

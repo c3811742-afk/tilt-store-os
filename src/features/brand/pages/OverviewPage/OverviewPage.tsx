@@ -18,7 +18,7 @@ export const OverviewPage = () => {
     <AsyncContent state={state}>
       {(data) => (
         <Stack gap={vars.spacing[5]}>
-          <PageHeader title={fillText(t.title, { brand: data.brandName })} subtitle={t.subtitle} />
+          <PageHeader title={fillText(t.title, { brand: data.brandName })} />
           <PeriodFilter period={period} />
           <Grid minColumnWidth={vars.sizes.card.minWidth}>
             <StatCard label={t.sold} value={format.number(data.sold)} to={routes.brand.sales} highlight />

@@ -20,7 +20,7 @@ export const CurrenciesPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
       {saved && <Notice tone="success">{text.common.saved}</Notice>}
       <AsyncContent state={state}>

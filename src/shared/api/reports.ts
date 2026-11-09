@@ -1,8 +1,8 @@
-import type { CurrencyCode, Id, IsoDate } from '@/shared/types';
+import type { CurrencyCode, Id, IsoDate, SalesChannel } from '@/shared/types';
 import { addDays, currentTerms, inRange, marginPercent, previousRange, stockLevels, today, toIsoDate, type DateRange } from '@/shared/utils';
 import { onHandStatuses } from '@/shared/constants/statuses';
 import { variantIndex } from './engine';
-import { periodCosts, salesFacts, sellThrough, totalsBy, totalsOf, type Fact } from './facts';
+import { availableInPeriod, periodCosts, salesFacts, sellThrough, totalsBy, totalsOf, type Fact } from './facts';
 import { lowStockRows } from './dashboard';
 import { toTransferView } from './stock';
 import { db, respond } from './server';
@@ -14,7 +14,7 @@ export type ReportId = (typeof reportIds)[number];
 export const reportGroupings = {
   products: ['product', 'variant'],
   contribution: ['brand', 'category', 'product'],
-  sales: ['date', 'branch', 'brand', 'category', 'product', 'cashier', 'paymentMethod', 'channel'],
+  sales: ['sale', 'date', 'branch', 'brand', 'category', 'product', 'cashier', 'paymentMethod', 'channel'],
   sizes: ['size', 'color', 'sizeColor'],
   sellThrough: ['product', 'brand'],
   returns: ['reason', 'product', 'brand', 'branch', 'cashier'],
@@ -50,6 +50,15 @@ export interface ReportFilter {
   range: DateRange;
   branchId?: Id;
   brandId?: Id;
+  // Narrow the sales a report counts; every one can be combined with the others.
+  categoryId?: Id;
+  productId?: Id; // one product (e.g. drilled into from a brand)
+  variantId?: Id; // one item: a product in one size and colour
+  cashierId?: Id;
+  paymentMethodId?: Id;
+  channel?: SalesChannel;
+  size?: string;
+  color?: string;
   groupBy?: ReportGrouping;
   // 'reporting': converted to the reporting currency at each sale's rate. 'branch': each branch in its own currency.
   currencyMode?: 'reporting' | 'branch';
@@ -72,8 +81,29 @@ const names = () => {
   };
 };
 
-const factsFor = (filter: ReportFilter, range: DateRange = filter.range, currency?: CurrencyCode) =>
-  salesFacts(db, { range, branchIds: filter.branchId ? [filter.branchId] : undefined, brandIds: filter.brandId ? [filter.brandId] : undefined, currency: currency ?? 'reporting' });
+// The sale lines a report counts, with every filter applied together (branch, brand, category, staff member,
+// payment method, channel, size and colour).
+const factsFor = (filter: ReportFilter, range: DateRange = filter.range, currency?: CurrencyCode) => {
+  const index = variantIndex(db);
+  return salesFacts(db, {
+    range,
+    branchIds: filter.branchId ? [filter.branchId] : undefined,
+    brandIds: filter.brandId ? [filter.brandId] : undefined,
+    categoryIds: filter.categoryId ? [filter.categoryId] : undefined,
+    channel: filter.channel,
+    currency: currency ?? 'reporting',
+  }).filter((fact) => {
+    const variant = index.get(fact.variantId)?.variant;
+    return (
+      (!filter.productId || fact.productId === filter.productId) &&
+      (!filter.variantId || fact.variantId === filter.variantId) &&
+      (!filter.cashierId || fact.cashierId === filter.cashierId) &&
+      (!filter.paymentMethodId || fact.paymentMethodIds.includes(filter.paymentMethodId)) &&
+      (!filter.size || variant?.size === filter.size) &&
+      (!filter.color || variant?.color === filter.color)
+    );
+  });
+};
 
 // The currency a report's money is in: the branch's own currency when asked and one branch is chosen.
 const reportCurrency = (filter: ReportFilter) => {
@@ -133,11 +163,21 @@ const pnl: Builder = (filter, range) => {
   };
   const rows: ReportRow[] = branches.map((branch) => ({ key: branch.id, cells: { name: branch.name, ...row([branch.id], ownCurrency ? branch.currency : undefined) }, currency: ownCurrency ? branch.currency : undefined }));
   const showTotal = !filter.branchId && !ownCurrency;
+  const totals = showTotal ? { name: 'total', ...row(undefined) } : undefined;
+  // Costs not tied to a branch (company-wide expenses such as salaries or marketing): their own row, so every
+  // column adds up to the total.
+  if (totals) {
+    const branchSum = (key: 'expenses' | 'losses') => rows.reduce((sum, current) => sum + Number(current.cells[key] ?? 0), 0);
+    const expenses = Number(totals.expenses) - branchSum('expenses');
+    const losses = Number(totals.losses) - branchSum('losses');
+    if (Math.abs(expenses) + Math.abs(losses) > 0.5)
+      rows.push({ key: 'company', cells: { name: 'company', ...(Math.abs(losses) > 0.5 ? { losses } : {}), expenses, netProfit: -(expenses + losses) } });
+  }
   return {
     currency: db.settings.reportingCurrency,
     columns: [col('name', 'text'), col('grossSales', 'money', true), col('discounts', 'money'), col('returns', 'money'), col('netSales', 'money', true), col('cost', 'money'), col('grossProfit', 'money', true), col('margin', 'percent'), col('cardFees', 'money'), col('monthlyFees', 'money'), col('losses', 'money'), col('expenses', 'money'), col('netProfit', 'money', true)],
     rows,
-    totals: showTotal ? { name: 'total', ...row(undefined) } : undefined,
+    totals,
   };
 };
 
@@ -151,7 +191,7 @@ const products: Builder = (filter, range) => {
     currency: reportCurrency(filter),
     columns: [col('name', 'text'), col('brand', 'text'), col('units', 'number', true), col('netSales', 'money', true), col('cost', 'money'), col('grossProfit', 'money', true), col('margin', 'percent')],
     rows: groups
-      .sort((a, b) => b.totals.profit - a.totals.profit)
+      .sort((a, b) => b.totals.net - a.totals.net)
       .map(({ key, totals }) => {
         const entry = byVariant ? n.index.get(key) : undefined;
         const productId = entry?.product.id ?? key;
@@ -210,6 +250,7 @@ const brands: Builder = (filter, range) => {
     const brandId = n.index.get(level.variantId)?.product.brandId;
     if (brandId) onHand.set(brandId, (onHand.get(brandId) ?? 0) + level.qty);
   });
+  const available = availableInPeriod(db, range, (variantId) => n.index.get(variantId)?.product.brandId, filter.branchId ? [filter.branchId] : undefined);
   const defects = new Map<Id, number>();
   db.defects.filter((defect) => inRange(defect.at, range) && (!filter.branchId || defect.branchId === filter.branchId)).forEach((defect) => {
     const brandId = n.index.get(defect.variantId)?.product.brandId;
@@ -233,7 +274,7 @@ const brands: Builder = (filter, range) => {
             grossProfit: totals.profit,
             commission: totals.commission,
             margin: marginPercent(totals.profit, totals.net),
-            sellThrough: sellThrough(sold, onHand.get(key) ?? 0),
+            sellThrough: sellThrough(sold - totals.returnedUnits, available.get(key) ?? 0),
             returnRate: sold ? (totals.returnedUnits / sold) * 100 : 0,
             defectRate: sold + (onHand.get(key) ?? 0) ? ((defects.get(key) ?? 0) / (sold + (onHand.get(key) ?? 0))) * 100 : 0,
           },
@@ -242,11 +283,57 @@ const brands: Builder = (filter, range) => {
   };
 };
 
+// Each sale (and each return or exchange) as a full record: when, the receipt, branch, staff member, customer,
+// the items, how it was paid, the channel and its amounts. Newest first.
+const salesRecords = (facts: Fact[], filter: ReportFilter): Omit<ReportResult, 'previous' | 'previousTotals'> => {
+  const n = names();
+  const groups = new Map<Id, Fact[]>();
+  facts.forEach((fact) => {
+    const key = fact.returnId ?? fact.saleId;
+    groups.set(key, [...(groups.get(key) ?? []), fact]);
+  });
+  const recordColumns = salesColumns.filter((column) => column.key !== 'orders');
+  return {
+    currency: reportCurrency(filter),
+    columns: [col('dateTime', 'dateTime'), col('receipt', 'text'), col('branch', 'text'), col('cashier', 'text'), col('customer', 'text'), col('items', 'text'), col('payment', 'text'), col('channel', 'text'), ...recordColumns],
+    rows: [...groups.entries()]
+      .map(([key, group]) => {
+        const first = group[0];
+        const receipt = first.returnId ? (db.returns.find((saleReturn) => saleReturn.id === first.returnId)?.number ?? first.saleNumber) : first.saleNumber;
+        const items = group
+          .map((fact) => {
+            const entry = n.index.get(fact.variantId);
+            const totals = totalsOf([fact]);
+            return `${entry?.product.name ?? ''} ${entry?.variant.size ?? ''} ${entry?.variant.color ?? ''} × ${Math.abs(totals.soldUnits - totals.returnedUnits)}`;
+          })
+          .join(', ');
+        const { orders: _orders, ...amounts } = salesCells(group);
+        return {
+          key,
+          cells: {
+            dateTime: first.at,
+            receipt,
+            branch: n.branch.get(first.branchId) ?? '',
+            cashier: n.user.get(first.cashierId) ?? '',
+            customer: db.customers.find((customer) => customer.id === first.customerId)?.name ?? '',
+            items,
+            payment: first.paymentMethodIds.join(','),
+            channel: first.channel,
+            ...amounts,
+          },
+        };
+      })
+      .sort((a, b) => String(b.cells.dateTime).localeCompare(String(a.cells.dateTime))),
+    totals: { dateTime: 'total', ...(({ orders: _orders, ...amounts }) => amounts)(salesCells(facts)) },
+  };
+};
+
 // Sales grouped by date, branch, brand, category, product, cashier, payment method or channel (148, 161).
 const sales: Builder = (filter, range) => {
   const n = names();
-  const groupBy = filter.groupBy ?? 'date';
+  const groupBy = filter.groupBy ?? 'sale';
   const facts = factsFor(filter, range, reportCurrency(filter));
+  if (groupBy === 'sale') return salesRecords(facts, filter);
   const method = new Map(db.settings.paymentMethods.map((current) => [current.id, current.name.en]));
   const keyOf = (fact: Fact): string => {
     switch (groupBy) {
@@ -281,47 +368,61 @@ const sales: Builder = (filter, range) => {
   };
 };
 
-// Sales by size and colour, to plan reorders; best and worst first (149, 150).
+// Sales by size and colour, to plan reorders; best sellers first (149, 150).
 const sizes: Builder = (filter, range) => {
   const n = names();
   const groupBy = filter.groupBy ?? 'size';
   const facts = factsFor(filter, range, reportCurrency(filter));
+  // Per item: the product with its size, its colour, or both (a single variant). Keyed "product|size",
+  // "product|color" or "product|variant", named "Product · M".
   const keyOf = (fact: Fact) => {
-    const variant = n.index.get(fact.variantId)?.variant;
-    return groupBy === 'color' ? (variant?.color ?? '') : groupBy === 'sizeColor' ? `${variant?.size} · ${variant?.color}` : (variant?.size ?? '');
+    const entry = n.index.get(fact.variantId);
+    const extra = groupBy === 'color' ? entry?.variant.color : groupBy === 'sizeColor' ? fact.variantId : entry?.variant.size;
+    return `${fact.productId}|${extra ?? ''}`;
+  };
+  const nameOf = (key: string) => {
+    const [productId, extra] = key.split('|');
+    const product = n.product.get(productId) ?? '';
+    if (groupBy === 'sizeColor') {
+      const variant = n.index.get(extra)?.variant;
+      return `${product} · ${variant?.size ?? ''} · ${variant?.color ?? ''}`;
+    }
+    return `${product} · ${extra}`;
   };
   return {
     currency: reportCurrency(filter),
     columns: [col('name', 'text'), col('units', 'number', true), col('netSales', 'money', true), col('salesShare', 'percent'), col('returnRate', 'percent')],
     rows: totalsBy(facts, keyOf)
-      .sort((a, b) => b.totals.soldUnits - a.totals.soldUnits)
+      .sort((a, b) => b.totals.net - a.totals.net)
       .map(({ key, totals }) => ({
         key,
-        cells: { name: key, units: totals.soldUnits - totals.returnedUnits, netSales: totals.net, salesShare: totalsOf(facts).net ? (totals.net / totalsOf(facts).net) * 100 : 0, returnRate: totals.soldUnits ? (totals.returnedUnits / totals.soldUnits) * 100 : 0 },
+        cells: { name: nameOf(key), units: totals.soldUnits - totals.returnedUnits, netSales: totals.net, salesShare: totalsOf(facts).net ? (totals.net / totalsOf(facts).net) * 100 : 0, returnRate: totals.soldUnits ? (totals.returnedUnits / totals.soldUnits) * 100 : 0 },
       })),
   };
 };
 
-// Sell-through per product or brand: sold in the period / (sold + still on hand) (151).
+// Sell-through per product or brand: sold in the period / (stock at its start + received during it) (151).
 const sellThroughReport: Builder = (filter, range) => {
   const n = names();
   const byBrand = filter.groupBy === 'brand';
   const facts = factsFor(filter, range);
-  const onHand = new Map<Id, number>();
-  stockLevels(db.movements).forEach((level) => {
-    if (!onHandStatuses.includes(level.status) || (filter.branchId && level.branchId !== filter.branchId)) return;
-    const product = n.index.get(level.variantId)?.product;
-    if (!product || (filter.brandId && product.brandId !== filter.brandId)) return;
-    const key = byBrand ? product.brandId : product.id;
-    onHand.set(key, (onHand.get(key) ?? 0) + level.qty);
-  });
+  const available = availableInPeriod(
+    db,
+    range,
+    (variantId) => {
+      const product = n.index.get(variantId)?.product;
+      if (!product || (filter.brandId && product.brandId !== filter.brandId)) return undefined;
+      return byBrand ? product.brandId : product.id;
+    },
+    filter.branchId ? [filter.branchId] : undefined,
+  );
   const sold = new Map(totalsBy(facts, (fact) => (byBrand ? fact.brandId : fact.productId)).map((row) => [row.key, row.totals.soldUnits - row.totals.returnedUnits]));
-  const keys = [...new Set([...onHand.keys(), ...sold.keys()])];
+  const keys = [...new Set([...available.keys(), ...sold.keys()])];
   return {
     currency: db.settings.reportingCurrency,
-    columns: [col('name', 'text'), col('sold', 'number', true), col('onHand', 'number'), col('sellThrough', 'percent', true)],
+    columns: [col('name', 'text'), col('sold', 'number', true), col('availableInPeriod', 'number'), col('sellThrough', 'percent', true)],
     rows: keys
-      .map((key) => ({ key, cells: { name: (byBrand ? n.brand.get(key) : n.product.get(key)) ?? key, sold: sold.get(key) ?? 0, onHand: onHand.get(key) ?? 0, sellThrough: sellThrough(sold.get(key) ?? 0, onHand.get(key) ?? 0) } }))
+      .map((key) => ({ key, cells: { name: (byBrand ? n.brand.get(key) : n.product.get(key)) ?? key, sold: sold.get(key) ?? 0, availableInPeriod: available.get(key) ?? 0, sellThrough: sellThrough(sold.get(key) ?? 0, available.get(key) ?? 0) } }))
       .sort((a, b) => Number(b.cells.sellThrough) - Number(a.cells.sellThrough)),
   };
 };

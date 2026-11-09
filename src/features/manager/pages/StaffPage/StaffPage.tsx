@@ -24,7 +24,6 @@ export const StaffPage = () => {
     <Stack gap={vars.spacing[5]}>
       <PageHeader
         title={t.title}
-        subtitle={t.subtitle}
         actions={<SegmentedControl<BranchPeriod> label={text.owner.period.label} value={period} onChange={setPeriod} options={branchPeriods.map((value) => ({ value, label: periodLabels[value] }))} />}
       />
       <Tabs<StaffTab> label={t.title} value={tab} onChange={setTab} tabs={(['staff', 'discounts'] as const).map((value) => ({ value, label: t.tabs[value] }))}>

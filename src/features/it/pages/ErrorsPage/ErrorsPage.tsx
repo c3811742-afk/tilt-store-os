@@ -18,7 +18,6 @@ export const ErrorsPage = () => {
     <Stack gap={vars.spacing[5]}>
       <PageHeader
         title={t.title}
-        subtitle={t.subtitle}
         actions={
           <Button variant="secondary" disabled={Boolean(action.busy)} onClick={() => action.run('clear', clearErrors)}>
             {t.clear}

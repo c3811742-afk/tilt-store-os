@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router';
 import { listBranches, type BranchListRow } from '@/shared/api';
-import { AsyncContent, Badge, Button, Icon, PageHeader, Stack, Table, Text, recordRows } from '@/shared/components';
+import { InfoTip, AsyncContent, Badge, Button, Icon, PageHeader, Stack, Table, Text, recordRows } from '@/shared/components';
 import { routes, toPath, withQuery } from '@/shared/constants';
 import { useAsync, useFormat, useLiveVersion, useLocale } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
@@ -48,7 +48,6 @@ export const BranchesPage = () => {
     <Stack gap={vars.spacing[5]}>
       <PageHeader
         title={t.title}
-        subtitle={t.subtitle}
         actions={
           <Button onClick={() => navigate(routes.owner.newBranch)}>
             <Icon name="plus" />
@@ -65,9 +64,7 @@ export const BranchesPage = () => {
                 <Stack gap={vars.spacing[1]}>
                   <Text as="h2" variant="h3">
                     {t.warehouses}
-                  </Text>
-                  <Text variant="bodySm" color={vars.colors.textMuted}>
-                    {t.warehousesHint}
+                    <InfoTip text={t.warehousesHint} />
                   </Text>
                 </Stack>
                 <Button variant="secondary" onClick={() => navigate(withQuery(routes.owner.newBranch, { kind: 'warehouse' }))}>

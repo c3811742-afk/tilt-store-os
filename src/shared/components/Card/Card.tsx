@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router';
 import { cx, withDefaults } from '@/shared/utils';
+import { InfoTip } from '../InfoTip';
 import { Text } from '../Text';
 import { cardDefaults } from './Card.defaults';
 import type { CardProps } from './Card.types';
@@ -8,7 +9,7 @@ import styles from './Card.module.css';
 
 // A bordered, flat box for grouped content. With `title` and `actions` it is a page section.
 export const Card = (props: CardProps) => {
-  const { children, title, actions, as: Element, to, padding, gap, background, borderColor, accentColor, radius, printHidden } = withDefaults(cardDefaults, props);
+  const { children, title, info, actions, as: Element, to, padding, gap, background, borderColor, accentColor, radius, printHidden } = withDefaults(cardDefaults, props);
   const style = {
     '--card-padding': padding,
     '--card-gap': gap,
@@ -23,6 +24,7 @@ export const Card = (props: CardProps) => {
       {title && (
         <Text as="h2" variant="h4">
           {title}
+          {info && <InfoTip text={info} />}
         </Text>
       )}
       {actions && <div className={styles.actions}>{actions}</div>}

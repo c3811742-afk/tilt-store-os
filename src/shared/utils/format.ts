@@ -2,14 +2,20 @@ import type { Locale } from '@/shared/theme';
 
 export const formatNumber = (value: number, locale: Locale) => new Intl.NumberFormat(locale).format(value);
 
-export const formatPrice = (amount: number, currency: string, locale: Locale) =>
-  new Intl.NumberFormat(locale, {
+// A minus sign sits next to the number, not before the currency ("EGP -2,000", not "-EGP 2,000").
+export const formatPrice = (amount: number, currency: string, locale: Locale) => {
+  const parts = new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
     minimumFractionDigits: 0,
     // Whole amounts and totals from 1,000 up are shown without cents.
     maximumFractionDigits: Number.isInteger(amount) || Math.abs(amount) >= wholeAmountsFrom ? 0 : 2,
-  }).format(amount);
+  }).formatToParts(amount);
+  const minus = parts.find((part) => part.type === 'minusSign')?.value;
+  if (!minus) return parts.map((part) => part.value).join('');
+  const number = parts.findIndex((part) => part.type === 'integer');
+  return parts.map((part, index) => (part.type === 'minusSign' ? '' : index === number ? `${minus}${part.value}` : part.value)).join('');
+};
 
 const wholeAmountsFrom = 1000;
 

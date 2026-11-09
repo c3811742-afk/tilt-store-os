@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { newOption, saveConfigList } from '@/shared/api';
-import { Badge, Button, Card, Icon, IconButton, LocalizedField, Modal, Notice, Stack, Text } from '@/shared/components';
+import { Badge, Button, Card, Icon, IconButton, LocalizedField, Modal, Notice, Stack } from '@/shared/components';
 import { useAction, useErrorMessage, useLocale, useReference } from '@/shared/hooks';
 import type { ConfigListKey, ConfigOption } from '@/shared/types';
 import { vars } from '@/shared/theme';
@@ -68,6 +68,7 @@ export const ConfigListEditor = ({ listKey, title, hint }: ConfigListEditorProps
   return (
     <Card
       title={title}
+      info={hint}
       actions={
         <Button
           size="sm"
@@ -80,11 +81,6 @@ export const ConfigListEditor = ({ listKey, title, hint }: ConfigListEditorProps
         </Button>
       }
     >
-      {hint && (
-        <Text variant="bodySm" color={vars.colors.textMuted}>
-          {hint}
-        </Text>
-      )}
       {saved && !list.changed && <Notice tone="success">{text.common.saved}</Notice>}
       {Boolean(list.action.error) && <Notice tone="danger">{errorMessage(list.action.error)}</Notice>}
       <ConfigListFields list={list} />
@@ -103,6 +99,7 @@ export const ConfigListModal = ({ listKey, title, hint, onClose }: ConfigListEdi
       open
       onClose={onClose}
       title={title}
+      info={hint}
       onSubmit={(event) => {
         event.preventDefault();
         void list.save().then((ok) => ok && onClose());
@@ -119,11 +116,6 @@ export const ConfigListModal = ({ listKey, title, hint, onClose }: ConfigListEdi
       }
     >
       <Stack gap={vars.spacing[3]}>
-        {hint && (
-          <Text variant="bodySm" color={vars.colors.textMuted}>
-            {hint}
-          </Text>
-        )}
         {Boolean(list.action.error) && <Notice tone="danger">{errorMessage(list.action.error)}</Notice>}
         <ConfigListFields list={list} />
       </Stack>

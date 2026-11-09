@@ -19,7 +19,7 @@ export const CustomersPage = () => {
   const t = text.owner.customers;
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       <TextField type="search" label={text.common.search} placeholder={t.searchPlaceholder} value={query} onChange={setQuery} />
       <AsyncContent state={state} empty={<Notice>{text.common.noResults}</Notice>}>
         {(rows) => (

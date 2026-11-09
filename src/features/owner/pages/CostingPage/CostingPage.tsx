@@ -21,7 +21,7 @@ export const CostingPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       <Notice>{t.pastSalesNote}</Notice>
       <FilterBar>
         <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />

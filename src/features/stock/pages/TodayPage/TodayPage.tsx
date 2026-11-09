@@ -23,7 +23,6 @@ export const TodayPage = () => {
       {/* The page's actions sit in its header, as in most admin apps: the main one (new receiving) last and highlighted. */}
       <PageHeader
         title={t.title}
-        subtitle={t.subtitle}
         actions={
           <>
             <Button variant="secondary" onClick={() => navigate(withQuery(routes.storekeeper.newTransfer, { mode: 'send' }))}>

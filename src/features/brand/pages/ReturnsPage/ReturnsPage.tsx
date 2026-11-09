@@ -17,7 +17,7 @@ export const ReturnsPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       <PeriodFilter period={period} />
       <AsyncContent state={state}>
         {({ returns, defects }) => (

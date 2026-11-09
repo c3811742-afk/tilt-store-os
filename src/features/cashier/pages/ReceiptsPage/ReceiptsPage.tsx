@@ -19,7 +19,7 @@ export const ReceiptsPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       <FilterBar fieldWidth={vars.sizes.field.wide}>
         <TextField label={text.common.search} placeholder={t.search} type="search" value={query} onChange={setQuery} autoFocus />
         <TextField label={t.day} type="date" value={day} onChange={setDay} />

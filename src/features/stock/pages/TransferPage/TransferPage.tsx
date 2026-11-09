@@ -135,9 +135,6 @@ const HandOverCard = ({ view, onDone }: { view: StaffTransferView; onDone: () =>
 
   return (
     <Card title={t.handOver} printHidden>
-      <Text variant="bodySm" color={vars.colors.textMuted}>
-        {t.handOverHint}
-      </Text>
       {Boolean(error) && <Notice tone="danger">{errorMessage(error)}</Notice>}
       <SignatureForm lines={lines} fields={fields} value={value} onChange={setValue} statement={t.handOverStatement} errors={errors} disabled={busy} />
       <Stack direction="row" justify="flex-end">

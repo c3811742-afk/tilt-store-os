@@ -58,7 +58,7 @@ export const ImportProductsPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} back={{ to: routes.owner.products, label: text.owner.products.title }} />
+      <PageHeader title={t.title} back={{ to: routes.owner.products, label: text.owner.products.title }} />
       {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error) || text.errors.invalidFile}</Notice>}
       {imported !== null && (
         <Notice tone="success" action={<Button variant="secondary" size="sm" onClick={() => navigate(routes.owner.products)}>{text.common.viewAll}</Button>}>

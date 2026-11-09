@@ -33,7 +33,6 @@ export const TransfersPage = () => {
     <Stack gap={vars.spacing[5]}>
       <PageHeader
         title={text.nav.transfers}
-        subtitle={text.owner.transfers.subtitle}
         actions={
           <>
             <Button variant="secondary" onClick={() => navigate(withQuery(routes.storekeeper.newTransfer, { mode: 'request' }))}>

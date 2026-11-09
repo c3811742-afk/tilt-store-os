@@ -56,9 +56,6 @@ export const RegistrationsTab = () => {
                 <Text as="h3" variant="h4">
                   {t.vatRates}
                 </Text>
-                <Text variant="bodySm" color={vars.colors.textMuted}>
-                  {t.vatHint}
-                </Text>
                 <Stack direction="row" wrap align="flex-end" gap={vars.spacing[3]}>
                   <TextField label={t.newRate} type="number" min={0} max={100} suffix={text.common.percentSuffix} value={vatDraft.rate} onChange={(rate) => setVat((current) => ({ ...current, [country.countryCode]: { ...vatDraft, rate } }))} width={vars.sizes.field.narrow} />
                   <TextField label={t.startsOn} type="date" value={vatDraft.startDate} onChange={(startDate) => setVat((current) => ({ ...current, [country.countryCode]: { ...vatDraft, startDate } }))} width={vars.sizes.field.narrow} />

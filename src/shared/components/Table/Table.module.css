@@ -22,6 +22,19 @@
   vertical-align: middle;
 }
 
+/* One line per row (nowrap): the table scrolls sideways instead of squeezing many columns; a long text column
+   (wrap) still wraps, within a readable width. */
+.nowrap th,
+.nowrap td {
+  white-space: nowrap;
+}
+
+.nowrap .wrap {
+  min-inline-size: var(--sizes-field-narrow);
+  max-inline-size: var(--sizes-field-max-width);
+  white-space: normal;
+}
+
 .table thead th {
   background: var(--colors-surface-muted);
   color: var(--colors-text-secondary);

@@ -10,7 +10,7 @@ export const TextAreaField = (props: TextAreaFieldProps) => {
   const p = withDefaults(textAreaFieldDefaults, props);
   const id = useId();
   return (
-    <Field id={id} label={p.label} hint={p.hint} error={p.error} required={p.required} width={p.width}>
+    <Field id={id} label={p.label} hint={p.hint} note={p.note} optional={p.optional} error={p.error} required={p.required} width={p.width}>
       <textarea
         id={id}
         className={cx(controls.control, controls.textarea, p.error && controls.invalid)}

@@ -6,6 +6,7 @@ export interface TableColumn {
   align?: 'start' | 'end' | 'center';
   sortable?: boolean; // the header becomes a button that sorts by this column
   width?: string; // a fixed width (e.g. a column of quantity boxes); other columns share the rest
+  wrap?: boolean; // in a one-line table (nowrap), this column's text may still wrap (e.g. a list of items)
 }
 
 export interface TableRow {
@@ -28,4 +29,5 @@ export interface TableProps {
   onSortChange?: (sort: TableSort) => void;
   footer?: Record<string, ReactNode>; // a totals row, one cell per column key
   stackOnMobile?: boolean; // on phones each row becomes a card, each cell with its column name
+  nowrap?: boolean; // every row stays on one line and the table scrolls sideways (wide tables with many columns)
 }

@@ -242,9 +242,6 @@ const ReturnModal = ({ view, onClose, onDone }: { view: OnlineOrderView; onClose
       }
     >
       <Stack gap={vars.spacing[4]}>
-        <Text variant="bodySm" color={vars.colors.textMuted}>
-          {t.returnHint}
-        </Text>
         {Boolean(error) && <Notice tone="danger">{errorMessage(error)}</Notice>}
         <SignatureForm showSigner={false} lines={lines} fields={fields} value={value} onChange={setValue} disabled={busy} />
         {errors.lines && (

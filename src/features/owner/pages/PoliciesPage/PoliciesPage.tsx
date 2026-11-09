@@ -16,7 +16,7 @@ export const PoliciesPage = () => {
   const t = text.owner.policies;
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       <Tabs<PolicyTab> label={t.title} value={tab} onChange={setTab} tabs={(['discounts', 'approvals', 'returns', 'payments', 'stock'] as const).map((value) => ({ value, label: t.tabs[value] }))}>
         {tab === 'discounts' && <DiscountPolicies />}
         {tab === 'approvals' && <ApprovalPolicies />}

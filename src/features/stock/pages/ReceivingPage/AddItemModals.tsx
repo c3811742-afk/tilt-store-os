@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { addProductWhileReceiving, addVariantWhileReceiving, listBrandProducts, type VariantHit } from '@/shared/api';
-import { Button, CategorySelect, Modal, Notice, SelectField, Stack, Text, TextField } from '@/shared/components';
+import { Button, CategorySelect, Modal, Notice, SelectField, Stack, TextField } from '@/shared/components';
 import { useAsync, useBranchScope, useErrorMessage, useForm, useLocale, useReference } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 
@@ -107,9 +107,6 @@ const AddProductModal = ({ brandId, onClose, onAdded }: AddProductModalProps) =>
       }
     >
       <Stack gap={vars.spacing[4]}>
-        <Text variant="bodySm" color={vars.colors.textMuted}>
-          {t.productHint}
-        </Text>
         {Boolean(form.requestError) && <Notice tone="danger">{errorMessage(form.requestError)}</Notice>}
         <TextField label={t.name} {...form.field('name')} autoFocus />
         <CategorySelect label={t.category} allLabel={text.common.notSet} value={form.values.categoryId} onChange={(value) => form.setValue('categoryId', value)} error={form.errors.categoryId} />

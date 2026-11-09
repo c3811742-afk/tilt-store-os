@@ -1,5 +1,5 @@
 import { onHandStatuses } from '@/shared/constants/statuses';
-import type { BrandModel, CurrencyCode, Id, IsoDate, IsoDateTime, Sale, SalesChannel } from '@/shared/types';
+import type { BrandModel, CurrencyCode, Id, IsoDate, IsoDateTime, Sale, SalesChannel, StockStatus } from '@/shared/types';
 import {
   addFigures,
   convert,
@@ -220,7 +220,6 @@ export const stockSummary = (data: Database, filter: { branchIds?: Id[]; brandId
   const byBrand = new Map<Id, StockSummary>();
   const unitsByVariant = new Map<Id, number>();
 
-  const byBrandBranch = new Map<string, number>(); // `${brandId}|${branchId}` -> pieces
   levels.forEach((level) => {
     if (!onHandStatuses.includes(level.status)) return;
     if (filter.branchIds?.length && !filter.branchIds.includes(level.branchId)) return;
@@ -242,14 +241,35 @@ export const stockSummary = (data: Database, filter: { branchIds?: Id[]; brandId
     add(byBranch.get(level.branchId) ?? byBranch.set(level.branchId, { units: 0, costValue: 0, retailValue: 0 }).get(level.branchId)!);
     add(byBrand.get(entry.product.brandId) ?? byBrand.set(entry.product.brandId, { units: 0, costValue: 0, retailValue: 0 }).get(entry.product.brandId)!);
     unitsByVariant.set(level.variantId, (unitsByVariant.get(level.variantId) ?? 0) + level.qty);
-    const pair = `${entry.product.brandId}|${level.branchId}`;
-    byBrandBranch.set(pair, (byBrandBranch.get(pair) ?? 0) + level.qty);
   });
-  return { summary, byBranch, byBrand, byBrandBranch, unitsByVariant };
+  return { summary, byBranch, byBrand, unitsByVariant };
 };
 
-// Sell-through: the share of the pieces that were available in the period that sold (sold / (sold + still on hand)).
-export const sellThrough = (sold: number, onHand: number) => (sold + onHand > 0 ? (sold / (sold + onHand)) * 100 : 0);
+// The pieces there were to sell in a period, per key (a product or a brand): the stock when the period started (with
+// pieces already on their way in) plus what came in during it from outside the scope (deliveries from brands and,
+// for a branch, transfers from elsewhere). Moves inside the scope, and customer returns (taken off the pieces sold),
+// are not counted again.
+export const availableInPeriod = (data: Database, range: DateRange, keyOf: (variantId: Id) => Id | undefined, branchIds?: readonly Id[]) => {
+  const inScope = (branchId?: Id) => Boolean(branchId) && (!branchIds?.length || branchIds.includes(branchId as Id));
+  const counted: readonly StockStatus[] = [...onHandStatuses, 'inTransit'];
+  const result = new Map<Id, number>();
+  const add = (variantId: Id, qty: number) => {
+    const key = keyOf(variantId);
+    if (key) result.set(key, (result.get(key) ?? 0) + qty);
+  };
+  stockLevels(data.movements.filter((movement) => toIsoDate(movement.at) < range.from)).forEach((level) => {
+    if (counted.includes(level.status) && inScope(level.branchId)) add(level.variantId, level.qty);
+  });
+  data.movements.forEach((movement) => {
+    if (movement.kind === 'return' || movement.kind === 'adjust' || !inRange(movement.at, range)) return;
+    if (movement.to && inScope(movement.to.branchId) && counted.includes(movement.to.status) && !(movement.from && inScope(movement.from.branchId))) add(movement.variantId, movement.qty);
+  });
+  return result;
+};
+
+// Sell-through: the share of the pieces there were to sell in the period that sold
+// (sold / (stock at the start + received during the period)).
+export const sellThrough = (sold: number, available: number) => (available > 0 ? Math.min((sold / available) * 100, 100) : 0);
 
 // ---- Costs outside sales -------------------------------------------------------------------------------------
 
@@ -288,8 +308,36 @@ export const periodCosts = (data: Database, range: DateRange, branchIds?: Id[]):
       const share = expense.repeatMonthly ? monthShare(expense.date) : inRange(expense.date, range) ? 1 : 0;
       return share ? total + share * toReporting(data, expense.amount, expense.currency, expense.date) : total;
     }, 0);
-  // Shelf rent isn't tied to a branch: it counts for the whole company only.
-  const monthlyFees = all ? data.fees.reduce((total, fee) => total + monthShare(`${fee.month}-01`) * toReporting(data, fee.amount, fee.currency, `${fee.month}-01`), 0) : 0;
+  // Shelf rent is paid by a brand for the whole company. For a branch it is split by where that brand sold that month
+  // (or, when it sold nothing, by each branch's share of all sales), so the branches add up to the company total.
+  const salesByMonth = new Map<string, number>(); // month|brand|branch -> net sales in the reporting currency
+  if (!all) {
+    data.sales.forEach((sale) => {
+      if (sale.voidedAt) return;
+      const month = sale.at.slice(0, 7);
+      sale.lines.forEach((line) => {
+        const brandId = index.get(line.variantId)?.product.brandId ?? '';
+        const key = `${month}|${brandId}|${sale.branchId}`;
+        salesByMonth.set(key, (salesByMonth.get(key) ?? 0) + toReporting(data, line.unitPrice * line.qty - line.discount, sale.currency, sale.at));
+      });
+    });
+  }
+  const sold = (month: string, brandId: Id | null, inBranches: boolean) =>
+    [...salesByMonth.entries()].reduce((total, [key, amount]) => {
+      const [keyMonth, keyBrand, keyBranch] = key.split('|');
+      return keyMonth === month && (brandId === null || keyBrand === brandId) && (!inBranches || inScope(keyBranch)) ? total + amount : total;
+    }, 0);
+  const feeShare = (month: string, brandId: Id) => {
+    if (all) return 1;
+    const brandAll = sold(month, brandId, false);
+    if (brandAll) return sold(month, brandId, true) / brandAll;
+    const companyAll = sold(month, null, false);
+    return companyAll ? sold(month, null, true) / companyAll : 0;
+  };
+  const monthlyFees = data.fees.reduce((total, fee) => {
+    const share = monthShare(`${fee.month}-01`);
+    return share ? total + share * feeShare(fee.month, fee.brandId) * toReporting(data, fee.amount, fee.currency, `${fee.month}-01`) : total;
+  }, 0);
   const absorbedDefects = data.defects
     .filter((defect) => defect.liability === 'store' && inRange(defect.at, range) && inScope(defect.branchId))
     .reduce((total, defect) => total + toReporting(data, defect.unitCost * defect.qty, base, defect.at), 0);

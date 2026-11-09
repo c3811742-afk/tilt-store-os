@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Button, Card, Notice, Stack, Text } from '@/shared/components';
+import { Button, Card, Notice, Stack } from '@/shared/components';
 import { useErrorMessage, useLocale } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 
@@ -17,6 +17,7 @@ export const SettingsSection = ({ title, hint, children, draft }: SettingsSectio
   return (
     <Card
       title={title}
+      info={hint}
       actions={
         <>
           <Button variant="muted" size="sm" disabled={draft.busy} onClick={() => void draft.reset()}>
@@ -28,11 +29,6 @@ export const SettingsSection = ({ title, hint, children, draft }: SettingsSectio
         </>
       }
     >
-      {hint && (
-        <Text variant="bodySm" color={vars.colors.textMuted}>
-          {hint}
-        </Text>
-      )}
       {draft.saved && <Notice tone="success">{text.common.saved}</Notice>}
       {Boolean(draft.error) && <Notice tone="danger">{errorMessage(draft.error)}</Notice>}
       <Stack gap={vars.spacing[4]}>{children}</Stack>

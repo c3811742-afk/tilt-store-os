@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { approveAtTill, getApproval, listApprovers, requestApproval, type ApprovalInput } from '@/shared/api';
-import { AsyncContent, Button, Modal, Notice, PinPad, SelectField, Stack, Text } from '@/shared/components';
+import { AsyncContent, Button, Modal, Notice, PinPad, SelectField, Stack } from '@/shared/components';
 import { useAction, useAsync, useErrorMessage, useLiveVersion, useLocale } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { fillText } from '@/shared/utils';
@@ -64,18 +64,12 @@ export const ApprovalModal = ({ request, why, pendingId, onApproved, onSent, onC
               {approverId && (
                 <Stack gap={vars.spacing[1]}>
                   <PinPad label={t.pin} value={pin} onChange={setPin} onComplete={(value) => void approve(value)} disabled={Boolean(action.busy)} />
-                  <Text variant="caption" color={vars.colors.textMuted}>
-                    {t.pinHint}
-                  </Text>
                 </Stack>
               )}
             </Stack>
           )}
         </AsyncContent>
         <Stack gap={vars.spacing[2]}>
-          <Text variant="caption" color={vars.colors.textMuted}>
-            {t.sendHint}
-          </Text>
           <div>
             <Button
               variant="secondary"

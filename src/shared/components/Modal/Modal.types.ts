@@ -4,6 +4,7 @@ export interface ModalProps {
   open?: boolean;
   onClose?: () => void;
   title?: ReactNode;
+  info?: string; // what the window is about, in an (i) beside the title
   children?: ReactNode;
   actions?: ReactNode; // buttons at the bottom (e.g. Cancel and Save changes)
   width?: string;

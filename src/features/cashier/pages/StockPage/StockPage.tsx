@@ -35,7 +35,7 @@ export const StockPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       {offline && <Notice tone="warning">{text.shell.stockWarning}</Notice>}
       <SearchBox
         label={t.search}

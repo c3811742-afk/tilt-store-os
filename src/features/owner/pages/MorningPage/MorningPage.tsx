@@ -56,7 +56,7 @@ export const MorningPage = () => {
                   <Card title={t.cashDifferences}>
                     <BarList
                       color={vars.colors.danger}
-                      items={data.cashDifferences.map((row, index) => ({ key: `${row.branchId}-${index}`, label: format.branch(row.branchId), value: Math.abs(row.difference), display: format.money(row.difference, row.currency), to: withQuery(routes.owner.reports, { report: 'shifts' }) }))}
+                      items={data.cashDifferences.map((row, index) => ({ key: `${row.branchId}-${index}`, label: format.branch(row.branchId), value: Math.abs(row.difference), display: format.money(row.difference, row.currency), to: withQuery(routes.owner.reports, { view: 'shifts' }) }))}
                     />
                   </Card>
                 )}

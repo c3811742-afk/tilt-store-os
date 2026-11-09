@@ -20,13 +20,10 @@ export const HelpPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       <Grid minColumnWidth={vars.sizes.card.minWidth}>
         {video && (
           <Card title={t.video}>
-            <Text variant="bodySm" color={vars.colors.textMuted}>
-              {t.videoHint}
-            </Text>
             <video className={styles.video} src={video} controls preload="metadata" />
           </Card>
         )}
@@ -42,9 +39,6 @@ export const HelpPage = () => {
           </ol>
         </Card>
         <Card title={t.support}>
-          <Text variant="bodySm" color={vars.colors.textMuted}>
-            {t.supportHint}
-          </Text>
           <Text variant="h4">
             <bdi>{supportDefaults.whatsApp}</bdi>
           </Text>

@@ -16,7 +16,7 @@ export const SalesPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       <PeriodFilter period={period} />
       <FilterBar>
         <SelectField label={t.branch} placeholder={t.allBranches} value={branchId} onChange={setBranchId} options={branches.filter((branch) => !branch.archived && branch.kind !== 'warehouse').map((branch) => ({ value: branch.id, label: branch.name }))} />

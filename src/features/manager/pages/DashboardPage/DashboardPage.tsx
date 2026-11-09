@@ -36,7 +36,6 @@ export const DashboardPage = () => {
     <Stack gap={vars.spacing[5]}>
       <PageHeader
         title={t.title}
-        subtitle={t.subtitle}
         actions={
           <>
             <SelectField<CompareTo>
@@ -101,11 +100,9 @@ export const DashboardPage = () => {
               <ErrorBoundary>
                 <Card
                   title={t.products}
+                  info={t.productsHint}
                   actions={<SegmentedControl<BranchPeriod> label={t.products} value={period} onChange={setPeriod} options={branchPeriods.map((value) => ({ value, label: t.periods[value] }))} />}
                 >
-                  <Text variant="caption" color={vars.colors.textMuted}>
-                    {t.productsHint}
-                  </Text>
                   {data.products.length ? (
                     <Table
                       label={t.products}

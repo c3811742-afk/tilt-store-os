@@ -61,9 +61,6 @@ export const CountSheet = ({ view, onSubmitted }: CountSheetProps) => {
     <Stack gap={vars.spacing[4]}>
       <Card>
         <Stack gap={vars.spacing[3]}>
-          <Text variant="bodySm" color={vars.colors.textMuted}>
-            {t.scanHint}
-          </Text>
           <Stack direction="row" wrap gap={vars.spacing[3]} align="flex-start">
             {!count.scope?.locationId && (
               <SelectField label={t.location} value={locationId} onChange={setLocationId} options={locations.map((location) => ({ value: location.id, label: format.text(location.name) }))} width={vars.sizes.field.narrow} />
@@ -125,9 +122,6 @@ export const CountSheet = ({ view, onSubmitted }: CountSheetProps) => {
       />
       <Text variant="caption" color={vars.colors.textMuted}>
         {fillText(text.staff.items.lineCount, { lines: format.number(lines.length), pieces: format.number(lines.reduce((sum, line) => sum + line.counted, 0)) })}
-      </Text>
-      <Text variant="bodySm" color={vars.colors.textMuted}>
-        {t.submitHint}
       </Text>
       <Stack direction="row" justify="flex-end" gap={vars.spacing[2]} wrap>
         <Button variant="secondary" disabled={busy} onClick={() => void run(false)}>

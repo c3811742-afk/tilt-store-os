@@ -22,7 +22,7 @@ export const SettingsPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       <SettingsSection title={t.company} hint={t.companyHint} draft={company}>
         <Grid>
           <TextField label={t.companyName} value={company.values.company.name} onChange={(name) => company.set('company', { ...company.values.company, name })} />
@@ -59,9 +59,6 @@ export const SettingsPage = () => {
         ))}
       </SettingsSection>
       <Card title={t.demo}>
-        <Text variant="bodySm" color={vars.colors.textMuted}>
-          {t.demoHint}
-        </Text>
         {confirmReset ? (
           <Notice
             tone="warning"

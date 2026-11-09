@@ -54,7 +54,7 @@ export const StockPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} actions={<Button onClick={() => openRequest()}>{t.requestStock}</Button>} />
+      <PageHeader title={t.title} actions={<Button onClick={() => openRequest()}>{t.requestStock}</Button>} />
       {sent && <Notice tone="success">{sent}</Notice>}
       <Tabs<StockTab>
         label={t.title}
@@ -73,9 +73,6 @@ export const StockPage = () => {
           <AsyncContent state={totals}>
             {(data) => (
               <Stack gap={vars.spacing[3]}>
-                <Text variant="bodySm" color={vars.colors.textMuted}>
-                  {t.statusHint}
-                </Text>
                 <Grid>
                   {stockStatuses.map((value) => (
                     <StatCard key={value} label={statusText[value]} value={format.number(data[value] ?? 0)} to={withQuery(routes.manager.stock, { status: value })} />

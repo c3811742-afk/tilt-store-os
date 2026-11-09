@@ -20,7 +20,7 @@ export const BackupsPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       <Text variant="caption" color={vars.colors.textMuted}>
         {fillText(t.keep, { days: backupDefaults.keepDays })}
       </Text>

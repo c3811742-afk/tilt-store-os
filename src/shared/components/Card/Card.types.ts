@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 export interface CardProps {
   children?: ReactNode;
   title?: ReactNode; // a heading at the top of the card
+  info?: string; // what the card's data is, in an (i) beside the title
   actions?: ReactNode; // buttons next to the title
   as?: 'div' | 'article' | 'section' | 'li';
   to?: string; // app path (from routes.ts): the whole card is a link

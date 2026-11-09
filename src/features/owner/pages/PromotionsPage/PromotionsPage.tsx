@@ -54,7 +54,6 @@ export const PromotionsPage = () => {
     <Stack gap={vars.spacing[5]}>
       <PageHeader
         title={t.title}
-        subtitle={t.subtitle}
         actions={
           <Button onClick={() => navigate(routes.owner.newPromotion)}>
             <Icon name="plus" />

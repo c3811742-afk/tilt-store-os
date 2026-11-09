@@ -9,7 +9,7 @@ export const DefectsPage = () => {
   const { text } = useLocale();
   const t = text.storekeeper.inspection;
   return (
-    <BranchDefects title={t.title} subtitle={t.subtitle} showLiability showPhotos foundAtOptions={['storage', 'receiving', 'store', 'customerReturn']}>
+    <BranchDefects title={t.title} showLiability showPhotos foundAtOptions={['storage', 'receiving', 'store', 'customerReturn']}>
       <InspectionSection />
     </BranchDefects>
   );

@@ -26,7 +26,7 @@ export const ApprovalsPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
       <Tabs<ApprovalsTab>
         label={t.title}

@@ -82,9 +82,6 @@ export const ReportDefectModal = (props: ReportDefectModalProps) => {
       }
     >
       <Stack gap={vars.spacing[4]}>
-        <Text variant="bodySm" color={vars.colors.textMuted}>
-          {t.reportHint}
-        </Text>
         {Boolean(error) && <Notice tone="danger">{errorMessage(error)}</Notice>}
         {item ? (
           <Notice action={<Button size="sm" variant="secondary" onClick={() => setItem(null)}>{text.common.edit}</Button>}>

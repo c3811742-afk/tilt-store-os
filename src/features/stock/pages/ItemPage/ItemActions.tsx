@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { getLabelItems, moveItem, setItemStatus, setMinQty, settableStatuses, type BranchItemHistoryData } from '@/shared/api';
-import { Button, Icon, IconButton, Menu, Modal, Notice, SelectField, Stack, Text, TextAreaField, TextField, WriteOffModal } from '@/shared/components';
+import { Button, Icon, IconButton, Menu, Modal, Notice, SelectField, Stack, TextAreaField, TextField, WriteOffModal } from '@/shared/components';
 import { useBranchScope, useErrorMessage, useFormat, useLocale, useQtyError } from '@/shared/hooks';
 import type { StockStatus } from '@/shared/types';
 import { vars } from '@/shared/theme';
@@ -98,6 +98,7 @@ const ActionModal = ({ title, hint, onClose, save, children }: { title: string; 
       open
       onClose={onClose}
       title={title}
+      info={hint}
       onSubmit={(event) => {
         event.preventDefault();
         void submit();
@@ -114,9 +115,6 @@ const ActionModal = ({ title, hint, onClose, save, children }: { title: string; 
       }
     >
       <Stack gap={vars.spacing[4]}>
-        <Text variant="bodySm" color={vars.colors.textMuted}>
-          {hint}
-        </Text>
         {Boolean(error) && <Notice tone="danger">{errorMessage(error)}</Notice>}
         {children}
       </Stack>
@@ -166,7 +164,7 @@ const StatusModal = ({ data, item, onClose }: ActionModalProps) => {
       )}
       <SelectField<StockStatus | ''> label={t.toStatus} placeholder={t.toStatus} value={to} onChange={setTo} error={errors.to} options={settableStatuses.filter((status) => status !== from).map((status) => ({ value: status, label: statuses[status] }))} />
       <TextField label={text.common.quantity} type="number" inputMode="numeric" min={1} max={there} value={qty} onChange={setQty} error={errors.qty} aside={fillText(text.common.ofMax, { count: format.number(there) })} width={vars.sizes.field.narrow} />
-      <TextAreaField label={text.common.note} hint={text.common.optional} value={note} onChange={setNote} />
+      <TextAreaField label={text.common.note} optional value={note} onChange={setNote} />
     </ActionModal>
   );
 };

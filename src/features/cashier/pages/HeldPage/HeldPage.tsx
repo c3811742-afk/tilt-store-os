@@ -22,7 +22,7 @@ export const HeldPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       {cart.items.length > 0 && <Notice tone="warning">{text.cashier.cart.replaceCart}</Notice>}
       {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
       <AsyncContent state={state} empty={<Notice>{t.empty}</Notice>}>

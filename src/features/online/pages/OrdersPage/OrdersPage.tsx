@@ -49,7 +49,6 @@ export const OrdersPage = () => {
     <Stack gap={vars.spacing[5]}>
       <PageHeader
         title={t.title}
-        subtitle={t.subtitle}
         actions={
           <Button
             variant="secondary"

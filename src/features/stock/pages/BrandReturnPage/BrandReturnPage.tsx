@@ -107,9 +107,6 @@ export const BrandReturnPage = () => {
               </Notice>
             ) : (
               <Card title={t.settleTitle} printHidden>
-                <Text variant="bodySm" color={vars.colors.textMuted}>
-                  {t.settleHint}
-                </Text>
                 {Boolean(error) && <Notice tone="danger">{errorMessage(error)}</Notice>}
                 <SegmentedControl<Kind> label={t.settleTitle} value={kind} onChange={setKind} options={(['replacement', 'credit'] as const).map((value) => ({ value, label: t.kinds[value] }))} />
                 {kind === 'credit' ? (
@@ -117,7 +114,7 @@ export const BrandReturnPage = () => {
                 ) : (
                   <TextField label={t.replacementQty} type="number" inputMode="numeric" min={1} max={pieces} placeholder={String(pieces)} value={qty} onChange={setQty} error={fieldError} width={vars.sizes.field.narrow} />
                 )}
-                <TextAreaField label={text.common.note} hint={text.common.optional} value={note} onChange={setNote} />
+                <TextAreaField label={text.common.note} optional value={note} onChange={setNote} />
                 <Stack direction="row" justify="flex-end">
                   <Button disabled={busy} onClick={() => void settle()}>
                     {t.settle}

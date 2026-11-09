@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import { withDefaults } from '@/shared/utils';
 import { Checkbox } from '../Checkbox';
+import { InfoTip } from '../InfoTip';
 import { checkboxGroupDefaults } from './CheckboxGroup.defaults';
 import type { CheckboxGroupProps } from './CheckboxGroup.types';
 import styles from './CheckboxGroup.module.css';
@@ -16,7 +17,12 @@ export const CheckboxGroup = <T extends string>(props: CheckboxGroupProps<T>) =>
 
   return (
     <fieldset className={styles.group}>
-      {label && <legend className={styles.legend}>{label}</legend>}
+      {label && (
+        <legend className={styles.legend}>
+          {label}
+          {typeof hint === 'string' && <InfoTip text={hint} />}
+        </legend>
+      )}
       <div className={styles.options} style={{ '--checkbox-group-min': minColumnWidth } as CSSProperties}>
         {options.map((option) => (
           <Checkbox
@@ -32,7 +38,7 @@ export const CheckboxGroup = <T extends string>(props: CheckboxGroupProps<T>) =>
           {error}
         </span>
       ) : (
-        hint && <span className={styles.hint}>{hint}</span>
+        hint && !(label && typeof hint === 'string') && <span className={styles.hint}>{hint}</span>
       )}
     </fieldset>
   );

@@ -1,0 +1,46 @@
+/* A small (i) next to a label; its explanation shows on hover or keyboard focus. */
+.tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: var(--spacing-1);
+  color: var(--colors-text-muted);
+  vertical-align: middle;
+  cursor: help;
+}
+
+.tip:focus-visible {
+  border-radius: var(--radii-sm);
+  outline: var(--borders-width-thick) var(--borders-style) var(--colors-focus);
+}
+
+.bubble {
+  position: absolute;
+  z-index: var(--z-index-dropdown);
+  inset-block-start: calc(100% + var(--spacing-1));
+  inset-inline-start: 50%;
+  display: none;
+  inline-size: max-content;
+  max-inline-size: var(--sizes-menu-min-width);
+  padding: var(--spacing-2) var(--spacing-3);
+  border: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  border-radius: var(--radii-md);
+  background: var(--colors-surface);
+  color: var(--colors-text);
+  font-size: var(--text-styles-caption-font-size);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--text-styles-caption-line-height);
+  text-align: start;
+  text-transform: none;
+  white-space: normal;
+  translate: -50% 0;
+}
+
+.bubble:dir(rtl) {
+  translate: 50% 0;
+}
+
+.tip:hover .bubble,
+.tip:focus-visible .bubble {
+  display: block;
+}

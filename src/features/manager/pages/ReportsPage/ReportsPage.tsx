@@ -24,7 +24,7 @@ export const ReportsPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       <Tabs<ReportsTab> label={t.title} value={tab} onChange={setTab} tabs={(['sales', 'returns'] as const).map((value) => ({ value, label: t.tabs[value] }))}>
         {tab === 'sales' && (
           <Stack gap={vars.spacing[4]}>

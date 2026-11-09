@@ -32,7 +32,6 @@ export const ExpensesPage = () => {
     <Stack gap={vars.spacing[5]}>
       <PageHeader
         title={t.title}
-        subtitle={t.subtitle}
         actions={
           <>
             <Button variant="secondary" onClick={() => setManaging('1')}>

@@ -22,7 +22,7 @@ export const CustomersPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       <SearchBox label={t.search} placeholder={t.search} inputMode="tel" value={phone} onChange={setPhone} onSubmit={() => undefined} autoFocus />
       <AsyncContent state={state} empty={<Notice>{searching ? t.none : t.empty}</Notice>}>
           {(list) => (

@@ -18,7 +18,7 @@ export const ReceivingListPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} actions={<Button onClick={() => navigate(routes.storekeeper.newReceiving)}>{t.new}</Button>} />
+      <PageHeader title={t.title} actions={<Button onClick={() => navigate(routes.storekeeper.newReceiving)}>{t.new}</Button>} />
       <AsyncContent state={state} empty={<Notice>{t.none}</Notice>}>
         {(views) => (
           <Stack gap={vars.spacing[3]}>

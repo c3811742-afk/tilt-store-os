@@ -34,7 +34,6 @@ export const StaffPage = () => {
     <Stack gap={vars.spacing[5]}>
       <PageHeader
         title={t.title}
-        subtitle={t.subtitle}
         actions={
           <>
             <Button variant="secondary" onClick={() => navigate(routes.owner.roles)}>

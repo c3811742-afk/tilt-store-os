@@ -14,9 +14,6 @@ export const ShiftGate = () => {
         <Text as="h2" variant="h3">
           {text.cashier.shiftNeeded}
         </Text>
-        <Text variant="bodySm" color={vars.colors.textMuted}>
-          {text.cashier.shiftNeededHint}
-        </Text>
         <Button onClick={() => navigate(routes.cashier.shift)}>{text.cashier.openShift}</Button>
       </Stack>
     </Card>

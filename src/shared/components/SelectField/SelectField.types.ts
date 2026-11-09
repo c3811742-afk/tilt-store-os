@@ -4,6 +4,7 @@ export interface SelectOption<T extends string = string> {
   value: T;
   label: string;
   disabled?: boolean;
+  group?: string; // options with the same group are listed under that heading
 }
 
 export interface SelectFieldProps<T extends string = string> {

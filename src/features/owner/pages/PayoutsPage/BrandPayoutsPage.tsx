@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { createStatement, getBrandPayouts, getBrandSales, recordBrandPayment, recordFeePayment } from '@/shared/api';
-import { AsyncContent, Badge, Button, Card, DetailList, Grid, Notice, PageHeader, SelectField, Stack, StatCard, Table, Tabs, Text, TextField } from '@/shared/components';
+import { AsyncContent, Badge, Button, Card, DetailList, Grid, Notice, PageHeader, SelectField, Stack, StatCard, Table, Tabs, TextField } from '@/shared/components';
 import { brandPaymentMethods, feeStateTone, routes, toPath } from '@/shared/constants';
 import { useAction, useAsync, useErrorMessage, useFormat, useLiveVersion, useLocale, useQueryState } from '@/shared/hooks';
 import type { BrandPaymentMethod } from '@/shared/types';
@@ -49,9 +49,6 @@ export const BrandPayoutsPage = () => {
               {tab === 'statements' && (
                 <Stack gap={vars.spacing[4]}>
                   <Card title={t.generate}>
-                    <Text variant="bodySm" color={vars.colors.textMuted}>
-                      {t.generateHint}
-                    </Text>
                     <Stack direction="row" wrap align="flex-end" gap={vars.spacing[3]}>
                       <TextField label={text.common.from} type="date" value={period2.from} onChange={(from) => setRange({ ...period2, from })} width={vars.sizes.field.narrow} />
                       <TextField label={text.common.to} type="date" value={period2.to} min={period2.from} onChange={(to) => setRange({ ...period2, to })} width={vars.sizes.field.narrow} />

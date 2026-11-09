@@ -1,6 +1,6 @@
 import type { CurrencyCode, Id } from '@/shared/types';
 import { addDays, datesIn, presetRange, previousRange, sortBy, stockLevels, today, type DateRange } from '@/shared/utils';
-import { netProfitOf, periodCosts, salesFacts, sellThrough, stockSummary, totalsBy, totalsOf, type PeriodCosts, type Totals } from './facts';
+import { netProfitOf, periodCosts, salesFacts, stockSummary, totalsBy, totalsOf, type PeriodCosts, type Totals } from './facts';
 import { db, respond } from './server';
 
 export interface DashboardFilter {
@@ -27,12 +27,6 @@ export interface BranchRow {
   orders: number;
 }
 
-export interface BrandBranchCell {
-  net: number;
-  profit: number;
-  sellThrough: number;
-}
-
 export interface Dashboard {
   currency: CurrencyCode;
   totals: Totals;
@@ -43,7 +37,6 @@ export interface Dashboard {
   previousNetProfit: number;
   quick: { key: 'today' | 'week' | 'month'; net: number; previous: number }[];
   branches: BranchRow[];
-  brandComparison: { brandId: Id; cells: Record<Id, BrandBranchCell> }[];
   stock: { units: number; costValue: number; retailValue: number };
   topProducts: RankedRow[];
   slowProducts: RankedRow[];
@@ -84,22 +77,7 @@ export const getDashboard = (filter: DashboardFilter) =>
         return { branchId: branch.id, currency: branch.currency, netLocal: local.net, net: reporting.net, profit: reporting.profit, orders: reporting.orders };
       });
 
-    // Sell-through per brand per branch uses the pieces still on hand in that branch.
     const stock = stockSummary(db, { branchIds, brandIds });
-    const brandIdsSold = [...new Set(facts.map((fact) => fact.brandId))];
-    const brandComparison = sortBy(
-      brandIdsSold.map((brandId) => {
-        const cells: Record<Id, BrandBranchCell> = {};
-        branches.forEach((row) => {
-          const cellTotals = totalsOf(facts.filter((fact) => fact.brandId === brandId && fact.branchId === row.branchId));
-          const onHand = stock.byBrandBranch.get(`${brandId}|${row.branchId}`) ?? 0;
-          cells[row.branchId] = { net: cellTotals.net, profit: cellTotals.profit, sellThrough: sellThrough(cellTotals.soldUnits, onHand) };
-        });
-        return { brandId, cells, total: Object.values(cells).reduce((sum, cell) => sum + cell.net, 0) };
-      }),
-      (row) => row.total,
-      'desc',
-    ).map(({ brandId, cells }) => ({ brandId, cells }));
 
     const productName = new Map(db.products.map((product) => [product.id, product.name]));
     const brandName = new Map(db.brands.map((brand) => [brand.id, brand.name]));
@@ -136,7 +114,6 @@ export const getDashboard = (filter: DashboardFilter) =>
       previousNetProfit: netProfitOf(previous, previousCosts),
       quick,
       branches,
-      brandComparison,
       stock: stock.summary,
       topProducts: sortBy(byProduct, (row) => row.units, 'desc').slice(0, rankedLimit),
       slowProducts: sortBy(slow, (row) => row.units).slice(0, rankedLimit),

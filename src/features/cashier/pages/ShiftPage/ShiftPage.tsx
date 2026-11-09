@@ -56,7 +56,7 @@ export const ShiftPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
       <AsyncContent state={state}>
         {({ summary, devices, currency }) => {
@@ -64,9 +64,6 @@ export const ShiftPage = () => {
           if (!summary) {
             return (
               <Card title={t.openTitle}>
-                <Text variant="bodySm" color={vars.colors.textMuted}>
-                  {t.openHint}
-                </Text>
                 {devices.length > 0 && <SelectField label={t.till} value={deviceId || devices[0].id} onChange={setDeviceId} options={devices.map((device) => ({ value: device.id, label: device.name }))} width={vars.sizes.field.maxWidth} />}
                 <CashCount currency={currency} value={opening} onChange={setOpening} />
                 <div>
@@ -161,9 +158,6 @@ export const ShiftPage = () => {
               </Card>
 
               <Card title={t.closeTitle}>
-                <Text variant="bodySm" color={vars.colors.textMuted}>
-                  {t.closeHint}
-                </Text>
                 <CashCount currency={currency} value={closing} onChange={setClosing} />
                 <div className={styles.compare}>
                   <div className={styles.figure}>

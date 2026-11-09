@@ -32,7 +32,6 @@ export const CategoriesPage = () => {
     <Stack gap={vars.spacing[5]}>
       <PageHeader
         title={t.title}
-        subtitle={t.subtitle}
         back={{ to: routes.owner.products, label: text.owner.products.title }}
         actions={
           <Button onClick={() => open()}>

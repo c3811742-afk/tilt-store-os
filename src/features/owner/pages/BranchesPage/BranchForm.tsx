@@ -1,5 +1,5 @@
 import { createBranch, newLocation, updateBranch, type BranchInput } from '@/shared/api';
-import { Button, CheckboxGroup, Grid, Icon, IconButton, Notice, SelectField, Stack, Table, Text, TextField } from '@/shared/components';
+import { InfoTip, Button, CheckboxGroup, Grid, Icon, IconButton, Notice, SelectField, Stack, Table, Text, TextField } from '@/shared/components';
 import { branchKinds } from '@/shared/constants';
 import { useErrorMessage, useForm, useFormat, useLocale, useReference } from '@/shared/hooks';
 import type { LocationKind } from '@/shared/types';
@@ -60,9 +60,7 @@ export const BranchForm = ({ branchId, initial, onDone }: BranchFormProps) => {
         <Stack gap={vars.spacing[1]}>
           <Text as="h2" variant="h4">
             {t.locations}
-          </Text>
-          <Text variant="bodySm" color={vars.colors.textMuted}>
-            {t.locationsHint}
+            <InfoTip text={t.locationsHint} />
           </Text>
         </Stack>
         <Table

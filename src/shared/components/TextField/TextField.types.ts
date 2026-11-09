@@ -7,7 +7,9 @@ export interface TextFieldProps {
   onBlur?: () => void;
   type?: HTMLInputTypeAttribute;
   placeholder?: string;
-  hint?: ReactNode;
+  hint?: ReactNode; // what the field is, as an (i) beside the label
+  note?: ReactNode; // a rule the value must meet, shown under the field
+  optional?: boolean;
   error?: string;
   invalid?: boolean; // red outline without a message under the box (the message is shown elsewhere, e.g. under a row with a button)
   required?: boolean;

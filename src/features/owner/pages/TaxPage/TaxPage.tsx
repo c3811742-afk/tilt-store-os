@@ -14,7 +14,7 @@ export const TaxPage = () => {
   const t = text.owner.tax;
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       <Tabs<TaxTab>
         label={t.title}
         value={tab}

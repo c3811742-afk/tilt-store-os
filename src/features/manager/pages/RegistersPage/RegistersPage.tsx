@@ -22,7 +22,7 @@ export const RegistersPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader title={t.title} />
       <Tabs<RegistersTab> label={t.title} value={tab} onChange={setTab} tabs={(['registers', 'closing'] as const).map((value) => ({ value, label: t.tabs[value] }))}>
         {tab === 'registers' && (
           <AsyncContent state={registers} empty={<Notice>{t.none}</Notice>}>

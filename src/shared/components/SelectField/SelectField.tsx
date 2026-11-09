@@ -3,13 +3,25 @@ import { cx, withDefaults } from '@/shared/utils';
 import { Field } from '../Field';
 import controls from '../Field/controls.module.css';
 import { selectFieldDefaults } from './SelectField.defaults';
-import type { SelectFieldProps } from './SelectField.types';
+import type { SelectFieldProps, SelectOption } from './SelectField.types';
 
 // A labelled native select: works with the keyboard, screen readers and phones without extra code. An aside shows
 // quiet text inside the box, before the arrow (e.g. how many the chosen option has).
 export const SelectField = <T extends string>(props: SelectFieldProps<T>) => {
   const p = withDefaults(selectFieldDefaults, props);
   const id = useId();
+  const item = (option: SelectOption<T>) => (
+    <option key={option.value} value={option.value} disabled={option.disabled}>
+      {option.label}
+    </option>
+  );
+  // Options in order, under their group heading when they have one.
+  const groups = (p.options as SelectOption<T>[]).reduce<{ group?: string; options: SelectOption<T>[] }[]>((list, option) => {
+    const last = list[list.length - 1];
+    if (last && last.group === option.group) last.options.push(option);
+    else list.push({ group: option.group, options: [option] });
+    return list;
+  }, []);
   const select = (
     <select
       id={id}
@@ -21,11 +33,15 @@ export const SelectField = <T extends string>(props: SelectFieldProps<T>) => {
       aria-invalid={Boolean(p.error)}
     >
       {p.placeholder !== undefined && <option value="">{p.placeholder}</option>}
-      {p.options.map((option) => (
-        <option key={option.value} value={option.value} disabled={option.disabled}>
-          {option.label}
-        </option>
-      ))}
+      {groups.map(({ group, options }) =>
+        group ? (
+          <optgroup key={group} label={group}>
+            {options.map(item)}
+          </optgroup>
+        ) : (
+          options.map(item)
+        ),
+      )}
     </select>
   );
   return (
