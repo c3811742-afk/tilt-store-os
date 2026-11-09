@@ -3,6 +3,7 @@ import { useLocale } from '@/shared/hooks';
 import { withDefaults } from '@/shared/utils';
 import { Button } from '../Button';
 import { Field } from '../Field';
+import { Icon } from '../Icon';
 import controls from '../Field/controls.module.css';
 import { scanFieldDefaults } from './ScanField.defaults';
 import type { ScanFieldProps } from './ScanField.types';
@@ -32,21 +33,29 @@ export const ScanField = (props: ScanFieldProps) => {
   return (
     <Field id={id} label={p.label ?? text.staff.items.scan} hint={p.hint ?? text.staff.items.scanHint} width={p.width}>
       <div className={styles.row}>
-        <input
-          id={id}
-          className={controls.control}
-          type="search"
-          inputMode="search"
-          autoComplete="off"
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
-          onKeyDown={onKeyDown}
-          disabled={p.disabled}
-          autoFocus={p.autoFocus}
-        />
-        <Button variant="secondary" onClick={scan} disabled={p.disabled}>
-          {p.buttonLabel ?? text.staff.items.find}
-        </Button>
+        <span className={styles.box}>
+          <span className={styles.icon}>
+            <Icon name="search" />
+          </span>
+          <input
+            id={id}
+            className={controls.control}
+            type="search"
+            inputMode="search"
+            autoComplete="off"
+            placeholder={p.placeholder ?? text.owner.products.searchPlaceholder}
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            onKeyDown={onKeyDown}
+            disabled={p.disabled}
+            autoFocus={p.autoFocus}
+          />
+        </span>
+        <span className={styles.button}>
+          <Button variant="secondary" onClick={scan} disabled={p.disabled}>
+            {p.buttonLabel ?? text.staff.items.find}
+          </Button>
+        </span>
       </div>
     </Field>
   );

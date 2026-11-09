@@ -96,7 +96,6 @@ export const approveShiftClosing = (shiftId: Id, reasonId: string) =>
     const shift = findById(db.shifts, shiftId);
     const me = assertManager(shift.branchId);
     if (!shift.closedAt || shift.approvedById) throw new ApiError('alreadyDecided');
-    if (!reasonId) throw new ApiError('missingReason');
     const difference = (shift.countedCash ?? 0) - (shift.expectedCash ?? 0);
     if (difference !== 0 && !shift.note) throw new ApiError('missingReason');
     Object.assign(shift, { approvedById: me.id, approvedAt: nowIso(), approvalReason: reasonId });

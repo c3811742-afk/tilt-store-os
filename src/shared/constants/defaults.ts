@@ -180,8 +180,22 @@ export const defaultSettings: Settings = {
     approvalReasons: [
       option('ar-ok-policy', 'Within policy', 'ضمن السياسة'),
       option('ar-customer', 'Keep the customer happy', 'لإرضاء العميل'),
+    ],
+    rejectionReasons: [
       option('ar-too-high', 'Too high', 'أعلى من المسموح'),
       option('ar-no-reason', 'No valid reason', 'لا يوجد سبب مقبول'),
+      option('rj-not-needed', 'Not needed now', 'غير مطلوب حاليًا'),
+      option('rj-no-stock', 'Not enough stock to send', 'لا يوجد مخزون كافٍ للإرسال'),
+      option('rj-wrong', 'Wrong items or quantities', 'أصناف أو كميات خاطئة'),
+      option('rj-policy', 'Against store policy', 'مخالف لسياسة المتجر'),
+    ],
+    voidReasons: [
+      option('vr-scanned', 'Scanned by mistake', 'مسح خاطئ'),
+      option('vr-price', 'Wrong price charged', 'سعر خاطئ'),
+      option('vr-payment', 'Wrong payment method', 'طريقة دفع خاطئة'),
+      option('vr-twice', 'Sale entered twice', 'البيع مسجل مرتين'),
+      option('vr-cancelled', 'Customer cancelled before leaving', 'ألغى العميل قبل المغادرة'),
+      option('vr-other', 'Other', 'أخرى'),
     ],
     cashMoveReasons: [
       option('cm-change', 'Change for the drawer', 'فكة للدرج'),
@@ -207,6 +221,7 @@ export const tillDefaults = {
   reservationHours: [2, 24, 48], // how long a piece can be held for a customer in another branch
   phoneDigits: 7, // a customer's phone counts as complete from this many digits
   searchDigits: 3, // digits or letters typed before a customer or receipt search starts
+  recentCustomers: 20, // customers listed on the till's Customers page before anything is typed, newest first
   // Notes and coins counted in the drawer, per currency.
   denominations: { EGP: [200, 100, 50, 20, 10, 5, 1, 0.5], SAR: [500, 200, 100, 50, 20, 10, 5, 1] } as Record<string, number[]>,
 };

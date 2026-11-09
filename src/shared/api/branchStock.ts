@@ -9,6 +9,7 @@ import { assertBranch, hasRole } from './branchScope';
 import { checkStockAlerts } from './stockAlerts';
 import { lowStockRows } from './dashboard';
 import { describeVariant, variantLabel } from './stock';
+import { customerFor } from './till';
 import { actor, db, findById, isOwner, logActivity, mutate, newId, nextNumber, notify, respond } from './server';
 
 // Stock of one branch for its branch manager and storekeeper: quantities only, never cost or value.
@@ -386,6 +387,7 @@ export const requestFromBranch = (input: ForCustomer) =>
     const me = actor();
     if (!input.customer.name.trim() || !input.customer.phone.trim()) throw new ApiError('customerRequired');
     if (availableIn(db, input.variantId, from.id) < input.qty) throw new ApiError('outOfStock');
+    customerFor(input.customer.name, input.customer.phone);
     const request: StockRequest = { id: newId(), number: nextNumber('RQ', 4), branchId: branch.id, requestedById: me.id, at: nowIso(), lines: [{ variantId: input.variantId, qty: input.qty }], status: 'pending', fromBranchId: from.id, customer: input.customer, note: `For ${input.customer.name}, from ${from.name}` };
     db.stockRequests.push(request);
     db.approvals.unshift({ id: newId(), kind: 'stockRequest', level: 'owner', branchId: branch.id, requestedById: me.id, at: request.at, ref: { type: 'stockRequest', id: request.id }, summary: `${request.number}: ${variantLabel(input.variantId)} from ${from.name}`, status: 'pending', channel: 'app' });
@@ -405,6 +407,7 @@ export const reserveInBranch = (input: ForCustomer & { hours: number }) =>
     const levels = stockLevels(db.movements.filter((movement) => movement.variantId === input.variantId));
     const place = levels.filter((level) => level.branchId === from.id && level.status === 'available' && level.qty >= input.qty).sort((a, b) => b.qty - a.qty)[0];
     if (!place) throw new ApiError('outOfStock');
+    customerFor(input.customer.name, input.customer.phone);
     const at = nowIso();
     const reservation: Reservation = {
       id: newId(),
@@ -441,4 +444,42 @@ export const closeReservation = (reservationId: Id, collected: boolean) =>
     }
     logActivity({ action: 'update', target: { type: 'reservation', id: reservation.id, label: reservation.number }, branchId: reservation.branchId, changes: [{ field: 'status', from: 'active', to: reservation.status }] });
     return reservation;
+  });
+
+export interface BranchVariantHit {
+  variantId: Id;
+  barcode: string;
+  productId: Id;
+  productName: string;
+  brandId: Id;
+  size: string;
+  color: string;
+  sku: string;
+  available: number; // pieces available in the branch
+  min: number; // the branch minimum for this item
+}
+
+// Every item matching the search (name, brand, SKU, barcode, size or colour; every word must match) with what the
+// branch has: out of stock and low items first, the ones to reorder, then the rest by name. A scanned barcode or an
+// exact SKU finds just that item.
+export const searchVariantsForBranch = (branchId: Id, query: string) =>
+  respond((): BranchVariantHit[] => {
+    assertBranch(branchId);
+    const needle = query.trim();
+    if (!needle) return [];
+    const products = db.products.filter((product) => !product.archived);
+    const hit = (variantId: Id, barcode: string): BranchVariantHit => ({ variantId, barcode, ...describeVariant(variantId), available: availableIn(db, variantId, branchId), min: minFor(variantId, branchId) });
+    for (const product of products) {
+      const exact = product.variants.find((variant) => !variant.archived && (variant.barcode === needle || variant.sku.toLowerCase() === needle.toLowerCase()));
+      if (exact) return [hit(exact.id, exact.barcode)];
+    }
+    const rank = (row: BranchVariantHit) => (row.available <= 0 ? 0 : row.available <= row.min ? 1 : 2);
+    return products
+      .flatMap((product) => {
+        const brand = db.brands.find((current) => current.id === product.brandId)?.name ?? '';
+        return product.variants
+          .filter((variant) => !variant.archived && matchesVariant(needle, { name: `${product.name} ${brand}`, sku: variant.sku, barcode: variant.barcode, size: variant.size, color: variant.color }))
+          .map((variant) => hit(variant.id, variant.barcode));
+      })
+      .sort((a, b) => rank(a) - rank(b) || a.available - b.available || a.productName.localeCompare(b.productName) || a.size.localeCompare(b.size));
   });

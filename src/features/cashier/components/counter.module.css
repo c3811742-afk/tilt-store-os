@@ -230,6 +230,14 @@
   font-size: var(--text-styles-body-sm-font-size);
 }
 
+/* The scrolling part and the fixed bottom of the sale (stacked as one column on smaller screens). */
+.cartBody,
+.cartFooter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
 .cartTop {
   display: flex;
   align-items: center;
@@ -242,10 +250,33 @@
     grid-template-columns: minmax(0, 1fr) var(--sizes-counter-cart);
   }
 
-  .cart {
+  /* The sale stays in view: it fits the screen below where it starts, the items and customer scroll inside it, and the
+     total and the pay buttons stay at its bottom. */
+  .layout > :last-child {
     position: sticky;
     inset-block-start: calc(var(--sizes-header-height) + var(--spacing-4));
-    max-block-size: calc(var(--sizes-viewport-full-height) - var(--sizes-header-height) - var(--spacing-8));
+  }
+
+  .cart {
+    max-block-size: calc(var(--sizes-viewport-full-height) - var(--cart-top, var(--sizes-header-height)) - var(--spacing-4));
+    overflow: hidden;
+  }
+
+  .cartBody {
+    flex: 1 1 auto;
+    min-block-size: 0;
+    margin-inline: calc(-1 * var(--spacing-4));
+    padding-inline: var(--spacing-4);
     overflow-y: auto;
+  }
+
+  .cartFooter {
+    flex: none;
+    padding-block-start: var(--spacing-3);
+    border-block-start: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  }
+
+  .cartFooter:empty {
+    display: none;
   }
 }

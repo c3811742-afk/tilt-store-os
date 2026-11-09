@@ -1,10 +1,9 @@
-import { storageKeys } from '@/shared/constants';
 import type { Permission } from '@/shared/constants/permissions';
 import type { AlertKind, BuiltInRole, User } from '@/shared/types';
-import { nowIso, storage } from '@/shared/utils';
+import { nowIso } from '@/shared/utils';
 import { ApiError } from './errors';
 import { builtInRolesOf } from './branchScope';
-import { actor, db, isOwner, logActivity, mutate, respond, sessionUserId } from './server';
+import { actor, db, isOwner, logActivity, mutate, respond, sessionUserId, setSessionUserId } from './server';
 
 export interface SessionUser {
   user: Omit<User, 'password' | 'pin' | 'approvalPin'>;
@@ -25,7 +24,7 @@ const toSession = (user: User): SessionUser => {
 };
 
 const startSession = (user: User, how: 'password' | 'pin') => {
-  storage.set(storageKeys.session, user.id);
+  setSessionUserId(user.id);
   logActivity({ action: 'signIn', target: { type: 'user', id: user.id, label: user.name }, userId: user.id, at: nowIso(), changes: [{ field: 'method', from: null, to: how }] });
   return toSession(user);
 };
@@ -59,7 +58,7 @@ export const signOut = (reason: 'manual' | 'idle' | 'switch' = 'manual') =>
   mutate(() => {
     const user = db.users.find((current) => current.id === sessionUserId());
     if (user) logActivity({ action: 'signOut', target: { type: 'user', id: user.id, label: user.name }, userId: user.id, changes: [{ field: 'reason', from: null, to: reason }] });
-    storage.set(storageKeys.session, '');
+    setSessionUserId('');
     return true;
   });
 
@@ -98,6 +97,7 @@ export interface DemoAccount {
   username: string;
   password: string;
   pin: string;
+  approvalPin?: string; // managers and owners: the PIN for approving discounts and refunds at a till
   role: BuiltInRole;
   branch?: string; // branch staff: the branch the account works in
   temporary: boolean; // a temporary password from the owner, changed on first sign-in
@@ -124,7 +124,7 @@ export const demoAccounts = () =>
           const key = perBranch ? `${kind}|${branch?.id ?? ''}` : kind;
           if (kind !== 'owner' && !user.mustChangePassword && shown.has(key)) return [];
           shown.add(key);
-          return [{ name: user.name, username: user.username, password: user.password, pin: user.brandId ? '' : user.pin, role: kind, branch: branch?.name, temporary: user.mustChangePassword }];
+          return [{ name: user.name, username: user.username, password: user.password, pin: user.brandId ? '' : user.pin, approvalPin: user.approvalPin, role: kind, branch: branch?.name, temporary: user.mustChangePassword }];
         }),
     );
   });

@@ -30,6 +30,8 @@ export const ApprovalPolicies = () => {
         </Grid>
       </SettingsSection>
       <ConfigListEditor listKey="approvalReasons" title={t.approvalReasons} hint={t.approvalReasonsHint} />
+      <ConfigListEditor listKey="rejectionReasons" title={t.rejectionReasons} hint={t.rejectionReasonsHint} />
+      <ConfigListEditor listKey="voidReasons" title={t.voidReasons} hint={t.voidReasonsHint} />
     </Stack>
   );
 };

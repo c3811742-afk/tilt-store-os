@@ -1,7 +1,7 @@
 import { mockConfig, routes, toPath, tillDefaults } from '@/shared/constants';
 import type { ApprovalKind, ApprovalLevel, ApprovalRequest, Branch, Customer, HeldSale, Id, ManualDiscount, PromoCode, Sale, User } from '@/shared/types';
 import { currentTerms, nowIso, regularPrice, stockLevels, today, type StockLevel, roundMoney, phoneDigits } from '@/shared/utils';
-import { activePromotion, sellingPrice } from '@/shared/utils/pricing';
+import { activePromotion, activeSalePrice, sellingPrice } from '@/shared/utils/pricing';
 import type { Database } from './database';
 import { availableIn, recordSale, variantIndex } from './engine';
 import { ApiError } from './errors';
@@ -126,7 +126,7 @@ export interface QuoteLine {
   manualDiscount: number; // the line's own discount
   orderDiscount: number; // its share of the discount on the whole sale
   total: number;
-  manualAllowed: boolean; // promotion items and brands that don't allow discounts can't get a manual discount
+  manualAllowed: boolean; // items on promotion or at a sale price (unless the owner allows it), and brands that don't allow discounts, can't get a manual discount
 }
 
 export interface ApprovalNeed {
@@ -177,9 +177,11 @@ const discountApprovalLevel = (user: User, percent: number): ApprovalLevel | nul
   return hasRole(user, 'manager') ? 'owner' : requiredApprovalLevel({ kind: 'discount', percent });
 };
 
+// An approval covers a discount up to the percent it was given for. Discounts are rounded to whole units of money, so
+// "20%" can be 20.01% of the price: anything within a tenth of a percent counts as the same discount.
 const approvalCovers = (approvalId: Id | undefined, percent: number) => {
   const approval = approvalId && db.approvals.find((current) => current.id === approvalId);
-  return Boolean(approval && approval.status === 'approved' && (approval.percent ?? 0) + 0.001 >= percent);
+  return Boolean(approval && approval.status === 'approved' && (approval.percent ?? 0) + 0.1 >= percent);
 };
 
 // Where a discount's approval stands when it doesn't cover it yet: waiting on a phone, or rejected.
@@ -213,7 +215,9 @@ const priceCart = (input: CartInput) => {
     const promo = terms?.allowDiscounts ? activePromotion(db.promotions, product, variant.id, branch.id, unitPrice, now) : undefined;
     const promotionDiscount = roundMoney((promo?.discount ?? 0) * item.qty);
     const codeDiscount = code && terms?.allowDiscounts ? roundMoney((code.discountType === 'percent' ? (unitPrice * code.value) / 100 : code.value) * item.qty) : 0;
-    const manualAllowed = Boolean(terms?.allowDiscounts) && (allowOnPromotion || !promo);
+    // Already reduced (a promotion, or a sale price the owner set): no manual discount on top unless the owner allows it.
+    const reduced = Boolean(promo || activeSalePrice(db.schedules, product, variant, branch.currency, now));
+    const manualAllowed = Boolean(terms?.allowDiscounts) && (allowOnPromotion || !reduced);
     const base = Math.max(unitPrice * item.qty - promotionDiscount - codeDiscount, 0);
     const manualDiscount = manualAllowed ? roundMoney(manualAmount(item.discount, base)) : 0;
     return [{ item, product, variant, brandName: brand?.name ?? '', unitPrice, promo, promotionDiscount, codeDiscount, manualAllowed, base, manualDiscount }];
@@ -231,15 +235,18 @@ const priceCart = (input: CartInput) => {
     left = roundMoney(left - share);
   });
 
+  // A discount is judged by the percent the cashier gave (a 10% discount is 10%, even when rounding to whole money makes
+  // it 10.01% of the price); an amount off is judged by its real share of the price.
+  const percentOf = (discount: ManualDiscount, amount: number, base: number) => (discount.type === 'percent' ? discount.value : (amount / base) * 100);
   const approvals: ApprovalNeed[] = [];
   lines.forEach((line) => {
     if (!line.item.discount || !line.manualDiscount || !line.base) return;
-    const percent = (line.manualDiscount / line.base) * 100;
+    const percent = percentOf(line.item.discount, line.manualDiscount, line.base);
     const level = discountApprovalLevel(me, percent);
     if (level && !approvalCovers(line.item.discount.approvalId, percent)) approvals.push({ scope: 'line', variantId: line.variant.id, kind: 'discount', level, percent, limit: discountLimitOf(me), amount: line.manualDiscount, ...approvalState(line.item.discount.approvalId) });
   });
   if (input.orderDiscount && orderAmount && splitBase) {
-    const percent = (orderAmount / splitBase) * 100;
+    const percent = percentOf(input.orderDiscount, orderAmount, splitBase);
     const level = discountApprovalLevel(me, percent);
     if (level && !approvalCovers(input.orderDiscount.approvalId, percent)) approvals.push({ scope: 'order', kind: 'discount', level, percent, limit: discountLimitOf(me), amount: orderAmount, ...approvalState(input.orderDiscount.approvalId) });
   }
@@ -405,6 +412,21 @@ const toCustomerView = (customer: Customer): CustomerView => ({
   orders: db.sales.filter((sale) => sale.customerId === customer.id).length,
   storeCredit: storeCreditOf(db, customer.id),
 });
+
+// The customers seen most recently (their last purchase, or when they were added), newest first: the till's
+// Customers page before anything is typed.
+export const listRecentCustomers = () =>
+  respond((): CustomerView[] => {
+    const lastSeen = new Map<Id, string>();
+    db.customers.forEach((customer) => lastSeen.set(customer.id, customer.createdAt));
+    db.sales.forEach((sale) => {
+      if (sale.customerId && sale.at > (lastSeen.get(sale.customerId) ?? '')) lastSeen.set(sale.customerId, sale.at);
+    });
+    return [...db.customers]
+      .sort((a, b) => (lastSeen.get(b.id) ?? '').localeCompare(lastSeen.get(a.id) ?? ''))
+      .slice(0, tillDefaults.recentCustomers)
+      .map(toCustomerView);
+  });
 
 // Customers whose phone number contains what was typed.
 export const findCustomers = (phone: string) =>
@@ -582,6 +604,8 @@ export const holdSale = (input: CartInput & { customer?: { name: string; phone: 
     assertBranch(input.branchId);
     const me = actor();
     const held: HeldSale = { id: newId(), number: nextNumber('H', 4), branchId: input.branchId, cashierId: me.id, at: nowIso(), customer: input.customer?.name || input.customer?.phone ? input.customer : undefined, items: input.items, orderDiscount: input.orderDiscount, promoCode: input.promoCode };
+    // A customer with a name and a full phone number is saved now, so they can be found before the sale is paid.
+    if (input.customer?.name.trim() && phoneDigits(input.customer.phone).length >= tillDefaults.phoneDigits) customerFor(input.customer.name, input.customer.phone);
     db.heldSales.push(held);
     logActivity({ action: 'create', target: { type: 'heldSale', id: held.id, label: held.number }, branchId: input.branchId });
     return held;

@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { searchVariants, type VariantHit } from '@/shared/api';
+import { searchVariants, searchVariantsForBranch, type BranchVariantHit, type VariantHit } from '@/shared/api';
 import { useErrorMessage, useFormat, useLocale } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { fillText, safeAsync, withDefaults } from '@/shared/utils';
+import { Badge } from '../Badge';
 import { Button } from '../Button';
 import { Notice } from '../Notice';
 import { ScanField } from '../ScanField';
@@ -12,21 +13,22 @@ import { variantSearchDefaults } from './VariantSearch.defaults';
 import type { VariantSearchProps } from './VariantSearch.types';
 import styles from './VariantSearch.module.css';
 
-// Scan a barcode or search by name or SKU, then pick the size and colour. Used wherever staff list items.
+// Scan a barcode or search by name or SKU, then pick the size and colour. Used wherever staff list items. With a
+// branch, every match shows what the branch has, out of stock and low items first.
 export const VariantSearch = (props: VariantSearchProps) => {
   const p = withDefaults(variantSearchDefaults, props);
   const { text } = useLocale();
   const format = useFormat();
   const errorMessage = useErrorMessage();
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<{ query: string; hits: VariantHit[] } | null>(null);
+  const [result, setResult] = useState<{ query: string; hits: (VariantHit & Partial<Pick<BranchVariantHit, 'available' | 'min'>>)[] } | null>(null);
   const [error, setError] = useState<unknown>(null);
   const t = text.staff.items;
 
   const onScan = async (query: string) => {
     setBusy(true);
     setError(null);
-    const found = await safeAsync(() => searchVariants(query));
+    const found = await safeAsync(() => (p.stockBranchId ? searchVariantsForBranch(p.stockBranchId, query) : searchVariants(query)));
     setBusy(false);
     if (!found.ok) return setError(found.error);
     if (found.data.length === 1 && (found.data[0].barcode === query || found.data[0].sku.toLowerCase() === query.toLowerCase())) {
@@ -59,6 +61,18 @@ export const VariantSearch = (props: VariantSearchProps) => {
                   {[hit.size, hit.color, format.brand(hit.brandId), hit.sku].filter(Boolean).join(' · ')}
                 </Text>
               </Stack>
+              {hit.available !== undefined && (
+                <span className={styles.stock}>
+                  {hit.available <= 0 ? (
+                    <Badge variant="danger">{text.staff.stock.out}</Badge>
+                  ) : hit.available <= (hit.min ?? 0) ? (
+                    <Badge variant="warning">{text.staff.stock.low}</Badge>
+                  ) : null}
+                  <Text as="span" variant="caption" color={vars.colors.textMuted}>
+                    {fillText(text.staff.stock.inStock, { count: format.number(Math.max(hit.available, 0)) })}
+                  </Text>
+                </span>
+              )}
               <Button size="sm" variant="secondary" onClick={() => pick(hit)}>
                 {t.add}
               </Button>

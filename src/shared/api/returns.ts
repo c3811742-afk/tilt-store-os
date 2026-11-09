@@ -1,6 +1,6 @@
 import { routes, tillDefaults } from '@/shared/constants';
 import type { Defect, Id, ReturnCondition, Sale, SaleReturn } from '@/shared/types';
-import { daysBetween, nowIso, toIsoDate, roundMoney, phoneDigits } from '@/shared/utils';
+import { convert, daysBetween, nowIso, toIsoDate, roundMoney, phoneDigits } from '@/shared/utils';
 import { addMovement, availableIn, currentUnitCost, placeIn, recordSale, variantIndex } from './engine';
 import { ApiError } from './errors';
 import { actor, db, findById, isOwner, logActivity, mutate, newId, nextNumber, notify, respond } from './server';
@@ -113,6 +113,7 @@ export interface ReturnableSale {
   windowDays: number;
   outsideWindow: boolean;
   refundMethodIds: Id[]; // where a refund can go under the policy
+  cashRefundLimit: number; // in the sale's currency: a cash refund above this needs the branch manager's approval PIN
   paidWith: Id[]; // the sale's own payment methods
   lines: ReturnableLine[];
   chain: ChainLink[]; // the first sale, then every return and exchange after it
@@ -175,6 +176,7 @@ const describeSale = (sale: Sale, branchId: Id): ReturnableSale => {
     windowDays,
     outsideWindow: daysSince > windowDays,
     refundMethodIds: refundMethodsFor(sale, branchId),
+    cashRefundLimit: cashRefundLimit(sale.currency),
     paidWith: sale.payments.map((payment) => payment.methodId),
     lines: sale.lines.map((line) => {
       const entry = index.get(line.variantId);
@@ -235,7 +237,13 @@ export interface ReturnInput {
   };
 }
 
-const approved = (ids: Id[] | undefined, kind: string) => (ids ?? []).some((id) => db.approvals.find((approval) => approval.id === id && approval.kind === kind && approval.status === 'approved'));
+// An approval the cashier got for this return; for a refund, only up to the amount the approver saw.
+const approved = (ids: Id[] | undefined, kind: string, amount = 0) =>
+  (ids ?? []).some((id) => db.approvals.find((approval) => approval.id === id && approval.kind === kind && approval.status === 'approved' && (approval.amount ?? 0) + 0.01 >= amount));
+
+// The cash refund limit (set in the base currency in Policies) in the sale's currency, at today's rate.
+const cashRefundLimit = (currency: string) =>
+  roundMoney(convert(db.settings.refundApprovalAbove, db.settings.baseCurrency, currency, nowIso(), db.rates, db.settings.baseCurrency));
 
 // Records a return or an exchange: checks the policy, puts the pieces where the cashier sent them, refunds what was
 // actually paid, and for an exchange records the new sale linked to this one.
@@ -262,7 +270,7 @@ export const createReturn = (input: ReturnInput) =>
     value = roundMoney(value);
 
     const cashBack = input.refunds.filter((refund) => refund.methodId === 'pm-cash').reduce((sum, refund) => sum + refund.amount, 0);
-    if (cashBack > db.settings.refundApprovalAbove && !approved(input.approvalIds, 'refund')) throw new ApiError('approvalNeeded');
+    if (cashBack > cashRefundLimit(sale.currency) && !approved(input.approvalIds, 'refund', cashBack)) throw new ApiError('approvalNeeded');
     if (input.refunds.some((refund) => refund.amount < 0 || !view.refundMethodIds.includes(refund.methodId))) throw new ApiError('notPaid');
 
     const saleReturn: SaleReturn = {
@@ -324,6 +332,9 @@ export const createReturn = (input: ReturnInput) =>
           status: 'open',
           unitCost: currentUnitCost(db, saleLine.productId, saleReturn.at),
           note: line.defectOrigin === 'store' ? 'Send to the main warehouse' : 'Return to the brand',
+          locationId: placeIn(stockBranch, 'backRoom').locationId,
+          // Received defective: already set aside for the brand, so the next return to the brand closes this defect.
+          ...(line.defectOrigin === 'received' ? { markedToReturnById: me.id, markedToReturnAt: saleReturn.at } : {}),
         };
         db.defects.push(defect);
         const product = db.products.find((current) => current.id === saleLine.productId);

@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { findCustomers } from '@/shared/api';
+import { findCustomers, listRecentCustomers } from '@/shared/api';
 import { AsyncContent, Notice, PageHeader, SearchBox, Stack, Table } from '@/shared/components';
 import { routes, toPath, tillDefaults } from '@/shared/constants';
-import { useAsync, useFormat, useLocale, useBranchScope } from '@/shared/hooks';
+import { useAsync, useFormat, useLiveVersion, useLocale, useBranchScope } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { phoneDigits } from '@/shared/utils';
 
-// Find a customer by phone number.
+// The till's customers: the most recent first, and a search by phone number for anyone else.
 export const CustomersPage = () => {
   const { text } = useLocale();
   const format = useFormat();
@@ -15,17 +15,16 @@ export const CustomersPage = () => {
   const { branch } = useBranchScope();
   const [phone, setPhone] = useState('');
   const t = text.cashier.customers;
-  const state = useAsync(() => findCustomers(phone), [phone]);
+  const version = useLiveVersion();
+  const searching = phoneDigits(phone).length >= tillDefaults.searchDigits;
+  const state = useAsync(() => (searching ? findCustomers(phone) : listRecentCustomers()), [phone, searching, version]);
   const currency = branch?.currency ?? '';
 
   return (
     <Stack gap={vars.spacing[5]}>
       <PageHeader title={t.title} subtitle={t.subtitle} />
       <SearchBox label={t.search} placeholder={t.search} inputMode="tel" value={phone} onChange={setPhone} onSubmit={() => undefined} autoFocus />
-      {phoneDigits(phone).length < tillDefaults.searchDigits ? (
-        <Notice>{t.empty}</Notice>
-      ) : (
-        <AsyncContent state={state} empty={<Notice>{t.none}</Notice>}>
+      <AsyncContent state={state} empty={<Notice>{searching ? t.none : t.empty}</Notice>}>
           {(list) => (
             <Table
               label={t.title}
@@ -43,8 +42,7 @@ export const CustomersPage = () => {
               }))}
             />
           )}
-        </AsyncContent>
-      )}
+      </AsyncContent>
     </Stack>
   );
 };

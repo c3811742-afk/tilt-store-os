@@ -127,6 +127,7 @@ export const SignInPage = () => {
                         <span className={styles.how}>
                           {mode === 'pin' ? fillText(text.signIn.demoPin, { pin: account.pin }) : account.username}
                           {mode === 'password' && account.temporary && <span className={styles.role}>{text.signIn.demoFirstLogin}: {account.password}</span>}
+                          {account.approvalPin && <span className={styles.role}>{fillText(text.signIn.demoApprovalPin, { pin: account.approvalPin })}</span>}
                         </span>
                       </button>
                     </li>

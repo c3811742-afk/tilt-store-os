@@ -61,7 +61,14 @@ export const ApprovalModal = ({ request, why, pendingId, onApproved, onSent, onC
                 options={list.map((approver) => ({ value: approver.id, label: approver.locked ? `${approver.name} (${t.locked})` : approver.name, disabled: approver.locked }))}
                 width="100%"
               />
-              {approverId && <PinPad label={t.pin} value={pin} onChange={setPin} onComplete={(value) => void approve(value)} disabled={Boolean(action.busy)} />}
+              {approverId && (
+                <Stack gap={vars.spacing[1]}>
+                  <PinPad label={t.pin} value={pin} onChange={setPin} onComplete={(value) => void approve(value)} disabled={Boolean(action.busy)} />
+                  <Text variant="caption" color={vars.colors.textMuted}>
+                    {t.pinHint}
+                  </Text>
+                </Stack>
+              )}
             </Stack>
           )}
         </AsyncContent>

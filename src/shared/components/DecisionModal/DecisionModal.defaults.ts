@@ -1,7 +1,6 @@
 import type { DecisionModalProps } from './DecisionModal.types';
 
-export const decisionModalDefaults: Required<Pick<DecisionModalProps, 'open' | 'decision' | 'reasons'>> = {
+export const decisionModalDefaults: Required<Pick<DecisionModalProps, 'open' | 'decision'>> = {
   open: false,
   decision: 'approve',
-  reasons: 'approvalReasons',
 };

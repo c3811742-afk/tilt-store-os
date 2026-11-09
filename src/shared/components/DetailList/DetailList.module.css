@@ -22,3 +22,35 @@
   font-variant-numeric: var(--numeric-tabular);
   overflow-wrap: anywhere;
 }
+
+/* Rows: one line per item, the value at the end, thin lines between them. */
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.rows .item {
+  flex-direction: row;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  padding-block: var(--spacing-2);
+  border-block-end: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+}
+
+.rows .item:first-child {
+  padding-block-start: 0;
+}
+
+.rows .item:last-child {
+  padding-block-end: 0;
+  border-block-end: none;
+}
+
+.rows .label {
+  font-size: var(--text-styles-body-sm-font-size);
+}
+
+.rows .value {
+  text-align: end;
+}

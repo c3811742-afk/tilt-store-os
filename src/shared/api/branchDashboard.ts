@@ -1,5 +1,5 @@
-import type { CurrencyCode, Id } from '@/shared/types';
-import { presetRange, previousRange, type DateRange } from '@/shared/utils';
+import type { CurrencyCode, Id, IsoDate } from '@/shared/types';
+import { compareRange, presetRange, type CompareTo, type DateRange } from '@/shared/utils';
 import { assertBranch } from './branchScope';
 import { lowStockRows } from './dashboard';
 import { salesFacts, totalsBy, totalsOf, type Fact } from './facts';
@@ -30,8 +30,8 @@ export interface BranchProductRow {
 
 export interface BranchDashboard {
   currency: CurrencyCode;
-  today: { current: BranchSales; previous: BranchSales };
-  week: { current: BranchSales; previous: BranchSales };
+  today: { current: BranchSales; previous: BranchSales; previousRange: DateRange };
+  week: { current: BranchSales; previous: BranchSales; previousRange: DateRange };
   products: BranchProductRow[]; // every product sold in the chosen period, best-selling first
   attention: { approvals: number; lowStock: number; arriving: number; openRegisters: number };
 }
@@ -43,10 +43,11 @@ const salesOf = (facts: readonly Fact[]): BranchSales => {
   return { sales: totals.net + totals.returnsAmount, returns: totals.returnsAmount, net: totals.net, orders: totals.orders, units: totals.soldUnits - totals.returnedUnits };
 };
 
-const compare = (branchId: Id, currency: CurrencyCode, range: DateRange) => ({
-  current: salesOf(branchFacts(branchId, currency, range)),
-  previous: salesOf(branchFacts(branchId, currency, previousRange(range))),
-});
+// A period and the period the manager compares it with.
+const compare = (branchId: Id, currency: CurrencyCode, range: DateRange, compareTo: CompareTo, date?: IsoDate) => {
+  const previousRange = compareRange(range, compareTo, date);
+  return { current: salesOf(branchFacts(branchId, currency, range)), previous: salesOf(branchFacts(branchId, currency, previousRange)), previousRange };
+};
 
 // Products ranked by units sold, each with its share of the branch's units and net sales.
 export const branchProductRows = (facts: readonly Fact[]): BranchProductRow[] => {
@@ -70,14 +71,14 @@ export const branchProductRows = (facts: readonly Fact[]): BranchProductRow[] =>
     .sort((a, b) => b.units - a.units || b.net - a.net);
 };
 
-export const getBranchDashboard = (branchId: Id, period: BranchPeriod) =>
+export const getBranchDashboard = (branchId: Id, period: BranchPeriod, compareTo: CompareTo = 'previous', compareDate?: IsoDate) =>
   respond((): BranchDashboard => {
     const branch = assertBranch(branchId);
     const currency = branch.currency;
     return {
       currency,
-      today: compare(branchId, currency, presetRange('today')),
-      week: compare(branchId, currency, presetRange('week')),
+      today: compare(branchId, currency, presetRange('today'), compareTo, compareDate),
+      week: compare(branchId, currency, presetRange('week'), compareTo, compareDate),
       products: branchProductRows(branchFacts(branchId, currency, presetRange(period))),
       attention: {
         approvals: db.approvals.filter((approval) => approval.status === 'pending' && approval.level === 'manager' && approval.branchId === branchId).length,

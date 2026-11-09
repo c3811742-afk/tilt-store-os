@@ -53,10 +53,18 @@ const assertManagerOf = (branchId: Id | undefined, user: User = actor()) => {
 export const listBranchApprovals = (branchId: Id) =>
   respond(() => {
     const me = assertManagerOf(branchId);
-    const list = db.approvals.filter((approval) => approval.branchId === branchId && approval.level === 'manager').sort((a, b) => b.at.localeCompare(a.at));
+    const branchApprovals = db.approvals.filter((approval) => approval.branchId === branchId);
     return {
-      waiting: list.filter((approval) => approval.status === 'pending').map((approval): ApprovalView => ({ approval, blocked: blockedFor(approval, me) })),
-      log: list.filter((approval) => approval.status !== 'pending').map((approval): ApprovalView => ({ approval })),
+      // Waiting for the manager, newest request first.
+      waiting: branchApprovals
+        .filter((approval) => approval.level === 'manager' && approval.status === 'pending')
+        .sort((a, b) => b.at.localeCompare(a.at))
+        .map((approval): ApprovalView => ({ approval, blocked: blockedFor(approval, me) })),
+      // Every decision about the branch (the manager's and the owners'), the latest decision first.
+      log: branchApprovals
+        .filter((approval) => approval.status !== 'pending')
+        .sort((a, b) => (b.decidedAt ?? b.at).localeCompare(a.decidedAt ?? a.at))
+        .map((approval): ApprovalView => ({ approval })),
     };
   });
 
@@ -66,7 +74,7 @@ const decide = async (approvalId: Id, approve: boolean, reasonId: string, note: 
   const me = actor();
   assertManagerOf(approval.branchId, me);
   if (approval.status !== 'pending') throw new ApiError('alreadyDecided');
-  if (!reasonId) throw new ApiError('missingReason');
+  if (!approve && !reasonId) throw new ApiError('missingReason');
   const blocked = blockedFor(approval, me);
   if (blocked === 'ownRequest') throw new ApiError('ownRequest');
   if (blocked === 'aboveLimit') throw new ApiError('notAllowed');
@@ -138,7 +146,7 @@ export const voidSale = (saleId: Id, reasonId: string, note?: string) =>
     const me = assertManagerOf(sale.branchId);
     if (sale.voidedAt) throw new ApiError('alreadyDecided');
     if (sale.cashierId === me.id) throw new ApiError('ownRequest');
-    if (!reasonId) throw new ApiError('missingReason');
+    if (!db.settings.lists.voidReasons.some((option) => option.id === reasonId)) throw new ApiError('missingReason');
     if (db.returns.some((saleReturn) => saleReturn.saleId === sale.id)) throw new ApiError('notAllowed');
     const at = nowIso();
     db.movements

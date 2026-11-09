@@ -77,7 +77,9 @@ export interface Settings {
     writeOffReasons: ConfigOption[];
     countReasons: ConfigOption[];
     expenseCategories: ConfigOption[];
-    approvalReasons: ConfigOption[];
+    approvalReasons: ConfigOption[]; // optional, when approving
+    rejectionReasons: ConfigOption[]; // required, when rejecting a request
+    voidReasons: ConfigOption[]; // required, when a manager voids a sale
     cashMoveReasons: ConfigOption[];
   };
 }

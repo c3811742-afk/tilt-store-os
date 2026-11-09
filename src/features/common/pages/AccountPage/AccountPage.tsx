@@ -65,7 +65,7 @@ export const AccountPage = () => {
               {t.alertsHint}
             </Text>
             <div>
-              <Button variant="secondary" onClick={() => navigate(withQuery(routes.notifications, { tab: 'settings' }))}>
+              <Button variant="secondary" onClick={() => navigate(withQuery(routes.notifications, { settings: '1' }))}>
                 {t.chooseAlerts}
               </Button>
             </div>

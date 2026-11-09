@@ -22,3 +22,4 @@ export { useIdleTimeout } from './useIdleTimeout';
 export { usePeriod } from './usePeriod';
 export type { Period } from './usePeriod';
 export * from './useQtyError';
+export * from './useTopOffset';

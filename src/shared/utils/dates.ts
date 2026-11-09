@@ -68,6 +68,28 @@ export const previousRange = ({ from, to }: DateRange): DateRange => {
   return { from: addDays(from, -length), to: addDays(to, -length) };
 };
 
+// What a period is compared with: the period just before it, the same days a month or a year earlier, or a day the
+// person picks (a single day is compared with that day; a longer period with as many days from the start of that
+// day's week).
+export type CompareTo = 'previous' | 'lastMonth' | 'lastYear' | 'date';
+
+export const compareRange = (range: DateRange, compareTo: CompareTo, date?: IsoDate): DateRange => {
+  const length = daysBetween(range.from, range.to);
+  switch (compareTo) {
+    case 'lastMonth':
+      return { from: addMonths(range.from, -1), to: addMonths(range.to, -1) };
+    case 'lastYear':
+      return { from: addMonths(range.from, -12), to: addMonths(range.to, -12) };
+    case 'date': {
+      if (!date) return previousRange(range);
+      const from = length === 0 ? date : startOfWeek(date);
+      return { from, to: addDays(from, length) };
+    }
+    default:
+      return previousRange(range);
+  }
+};
+
 export const inRange = (date: IsoDate | IsoDateTime, { from, to }: DateRange) => {
   const day = toIsoDate(date);
   return day >= from && day <= to;

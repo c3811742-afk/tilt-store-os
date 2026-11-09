@@ -8,4 +8,5 @@ export interface VariantSearchProps {
   disabled?: boolean;
   autoFocus?: boolean;
   width?: string;
+  stockBranchId?: string; // show what this branch has: every match, with out of stock and low items first (e.g. requesting stock)
 }

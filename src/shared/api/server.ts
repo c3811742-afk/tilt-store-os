@@ -1,6 +1,6 @@
 import { mockConfig, storageKeys } from '@/shared/constants';
 import type { ActivityAction, ActivityChange, ActivityEntry, ActivityTarget, AlertKind, Id, StaffAlertKind, User } from '@/shared/types';
-import { compressText, decompressText, nowIso, safeAsync, storage } from '@/shared/utils';
+import { compressText, decompressText, nowIso, safeAsync, storage, tabStorage } from '@/shared/utils';
 import { buildSeed } from '@/shared/mocks/seed';
 import type { Database } from './database';
 import { countOfflineChange } from './connection';
@@ -48,6 +48,19 @@ const changed = () => {
   setTimeout(() => listeners.forEach((listener) => listener()));
 };
 
+// Another tab of this browser saved (e.g. the manager approving in one tab while the cashier waits in another): load
+// what it saved and refresh this tab's pages, so several people can use the demo side by side. A change still waiting
+// to be saved here is dropped, because the newer saved data already counts from the other tab.
+window.addEventListener('storage', (event) => {
+  if (event.key !== storageKeys.database || !event.newValue) return;
+  clearTimeout(saveTimer);
+  void loadSaved().then((saved) => {
+    if (!saved) return;
+    db = saved;
+    listeners.forEach((listener) => listener());
+  });
+});
+
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Simulates a network call: waits, sometimes fails (see mockConfig), then runs `handle`.
@@ -84,7 +97,20 @@ export const resetDatabase = async () => {
 
 // ---- Session -------------------------------------------------------------------------------------------------
 
-export const sessionUserId = () => storage.get(storageKeys.session);
+// Who is signed in, per tab: each tab keeps its own person (a cashier in one tab, the manager in another), and a new
+// tab starts as whoever signed in last in this browser.
+export const sessionUserId = () => {
+  const own = tabStorage.get(storageKeys.session);
+  if (own !== null) return own;
+  const last = storage.get(storageKeys.session);
+  if (last) tabStorage.set(storageKeys.session, last);
+  return last;
+};
+
+export const setSessionUserId = (userId: string) => {
+  tabStorage.set(storageKeys.session, userId);
+  storage.set(storageKeys.session, userId);
+};
 
 // The signed-in user, or an error the page shows as "Please sign in again".
 export const actor = (): User => {

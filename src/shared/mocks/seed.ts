@@ -14,6 +14,9 @@ import { addStaffDemoData } from './staffSeed';
 
 const atTime = (day: string, hour: number, minute = 0) => new Date(`${day}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`).toISOString();
 
+// Nothing in the demo has happened after now: a time still ahead becomes a minute ago.
+const notAfterNow = (iso: string) => (new Date(iso).getTime() > Date.now() ? new Date(Date.now() - 60_000).toISOString() : iso);
+
 const location = (id: string, kind: 'floor' | 'backRoom' | 'storage', en: string, ar: string) => ({ id, kind, name: { en, ar } });
 const floor = (prefix: string) => location(`${prefix}-floor`, 'floor', 'Shop floor', 'صالة العرض');
 const backRoom = (prefix: string) => location(`${prefix}-back`, 'backRoom', 'Back room', 'المخزن الخلفي');
@@ -329,7 +332,7 @@ export const buildSeed = (): Database => {
     name: `${random.pick(firstNames)} ${random.pick(lastNames)}`,
     // Demo numbers only (01000 0xxxxx), never real ones.
     phone: index % 5 === 4 ? `+9665000${String(index).padStart(5, '0')}` : `010000${String(index).padStart(5, '0')}`,
-    createdAt: atTime(addDays(historyStart, random.int(-60, mockConfig.historyDays)), 12),
+    createdAt: notAfterNow(atTime(addDays(historyStart, random.int(-60, mockConfig.historyDays)), 12)),
   }));
   const egyptCustomers = data.customers.filter((customer) => customer.phone.startsWith('010'));
   const saudiCustomers = data.customers.filter((customer) => customer.phone.startsWith('+966'));
@@ -416,7 +419,7 @@ export const buildSeed = (): Database => {
         });
         const methodIds = branch.paymentMethodIds.filter((id) => id !== 'pm-credit');
         const split = random.chance(0.08) && methodIds.length > 1;
-        const at = atTime(day, random.int(11, closeHour), random.int(0, 59));
+        const at = notAfterNow(atTime(day, random.int(11, closeHour), random.int(0, 59)));
         const customers = branch.countryCode === 'SA' ? saudiCustomers : egyptCustomers;
         const movementsBefore = data.movements.length;
         const sale = recordSale(data, {

@@ -66,7 +66,7 @@ export const ReturnForm = ({ sale, onBack }: { sale: ReturnableSale; onBack: () 
   const difference = roundMoney(newTotal - value); // > 0: the customer pays; < 0: the customer gets money back
   const refundAmount = mode === 'return' ? value : difference < 0 && !keepAsCredit ? -difference : 0;
   const refundMethod = settings.paymentMethods.find((method) => method.id === methodId);
-  const cashTooHigh = refundMethod?.kind === 'cash' && refundAmount > settings.refundApprovalAbove && !has('refund');
+  const cashTooHigh = refundMethod?.kind === 'cash' && refundAmount > sale.cashRefundLimit && !has('refund');
   const cardPending = refundMethod?.kind === 'card' && refundAmount > 0 && !cardCode;
   const ready = chosen.length > 0 && !missingReasons && policyOk && !cashTooHigh && !cardPending && (mode === 'return' || newItems.length > 0);
 
@@ -80,7 +80,7 @@ export const ReturnForm = ({ sale, onBack }: { sale: ReturnableSale; onBack: () 
         currency: sale.currency,
         summary: kind === 'refund' ? fillText(text.cashier.approval.summaryRefund, { amount: money(refundAmount), number: sale.number }) : fillText(text.cashier.approval.summaryPolicy, { number: sale.number }),
       },
-      why: kind === 'refund' ? fillText(text.cashier.approval.refundWhy, { amount: money(refundAmount), limit: money(settings.refundApprovalAbove) }) : fillText(text.cashier.approval.policyWhy, { why: blocks.map((block) => t.blocks[block]).join(text.common.listSeparator) }),
+      why: kind === 'refund' ? fillText(text.cashier.approval.refundWhy, { amount: money(refundAmount), limit: money(sale.cashRefundLimit) }) : fillText(text.cashier.approval.policyWhy, { why: blocks.map((block) => t.blocks[block]).join(text.common.listSeparator) }),
     });
 
   const refunds = (): TillPayment[] => (refundAmount > 0 ? [{ methodId, amount: refundAmount, reference: cardCode || undefined }] : []);
@@ -124,7 +124,7 @@ export const ReturnForm = ({ sale, onBack }: { sale: ReturnableSale; onBack: () 
       {methodId === 'pm-credit' && sale.customer && <Text variant="caption" color={vars.colors.textMuted}>{fillText(t.creditBalance, { amount: money(sale.customer.storeCredit) })}</Text>}
       {cashTooHigh && (
         <Notice tone="warning" action={<Button size="sm" variant="secondary" onClick={() => ask('refund')}>{t.askManager}</Button>}>
-          {fillText(text.cashier.approval.refundWhy, { amount: money(refundAmount), limit: money(settings.refundApprovalAbove) })}
+          {fillText(text.cashier.approval.refundWhy, { amount: money(refundAmount), limit: money(sale.cashRefundLimit) })}
         </Notice>
       )}
       {refundMethod?.kind === 'card' && refundAmount > 0 && (

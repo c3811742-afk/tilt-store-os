@@ -1,12 +1,13 @@
 import { getBranchDashboard, type BranchDashboard, type BranchPeriod } from '@/shared/api';
-import { AsyncContent, Card, ErrorBoundary, Grid, Notice, PageHeader, SegmentedControl, Stack, StatCard, Table, Text } from '@/shared/components';
+import { AsyncContent, Card, ErrorBoundary, Grid, Notice, PageHeader, SegmentedControl, SelectField, Stack, StatCard, Table, Text, TextField } from '@/shared/components';
 import { routes, withQuery } from '@/shared/constants';
 import { useAsync, useBranchScope, useChange, useFormat, useLiveVersion, useLocale, useQueryState } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
-import { fillText } from '@/shared/utils';
+import { addDays, fillText, today as todayDate, type CompareTo } from '@/shared/utils';
 import { branchPeriods } from '../../constants/periods';
 
-// The branch manager's home: today's and this week's sales against the previous period, what needs attention,
+// The branch manager's home: today's and this week's sales against the period the manager picks (the previous one,
+// the same days last month or last year, or a day they choose), what needs attention,
 // and the products that sell. Selling figures only; cost and profit never reach this screen.
 export const DashboardPage = () => {
   const { text } = useLocale();
@@ -15,8 +16,13 @@ export const DashboardPage = () => {
   const { branchId } = useBranchScope();
   const version = useLiveVersion();
   const [period, setPeriod] = useQueryState<BranchPeriod>('period', 'week');
-  const state = useAsync(() => getBranchDashboard(branchId, period), [branchId, period, version]);
+  const [compareTo, setCompareTo] = useQueryState<CompareTo>('compare', 'previous');
+  const [compareDate, setCompareDate] = useQueryState('on', addDays(todayDate(), -7));
+  const state = useAsync(() => getBranchDashboard(branchId, period, compareTo, compareDate || undefined), [branchId, period, compareTo, compareDate, version]);
   const t = text.manager.dashboard;
+  // What each figure is compared with, in words: "yesterday", "the same days last month", "the week of Nov 2"...
+  const vs = (kind: 'day' | 'week', from: string) =>
+    compareTo === 'lastMonth' ? t.vsLastMonth[kind] : compareTo === 'lastYear' ? t.vsLastYear[kind] : compareTo === 'date' ? (kind === 'day' ? format.date(from) : fillText(t.vsWeekOf, { date: format.date(from) })) : kind === 'day' ? t.yesterday : t.lastWeek;
 
   const attention = (data: BranchDashboard) =>
     [
@@ -28,7 +34,22 @@ export const DashboardPage = () => {
 
   return (
     <Stack gap={vars.spacing[5]}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader
+        title={t.title}
+        subtitle={t.subtitle}
+        actions={
+          <>
+            <SelectField<CompareTo>
+              label={t.compareTo}
+              value={compareTo}
+              onChange={setCompareTo}
+              options={(['previous', 'lastMonth', 'lastYear', 'date'] as const).map((value) => ({ value, label: t.compareOptions[value] }))}
+              width={vars.sizes.field.narrow}
+            />
+            {compareTo === 'date' && <TextField label={t.compareDate} type="date" max={todayDate()} value={compareDate} onChange={setCompareDate} width={vars.sizes.field.narrow} />}
+          </>
+        }
+      />
       <AsyncContent state={state}>
         {(data) => {
           const money = (amount: number) => format.money(amount, data.currency);
@@ -42,19 +63,19 @@ export const DashboardPage = () => {
                     {t.today}
                   </Text>
                   <Grid>
-                    <StatCard label={t.sales} value={money(today.current.sales)} {...change(today.current.sales, today.previous.sales, { label: t.yesterday })} />
-                    <StatCard label={t.returns} value={money(today.current.returns)} {...change(today.current.returns, today.previous.returns, { label: t.yesterday, lowerIsBetter: true })} />
-                    <StatCard highlight label={t.net} value={money(today.current.net)} {...change(today.current.net, today.previous.net, { label: t.yesterday })} />
-                    <StatCard label={t.orders} value={format.number(today.current.orders)} {...change(today.current.orders, today.previous.orders, { label: t.yesterday })} />
+                    <StatCard label={t.sales} value={money(today.current.sales)} {...change(today.current.sales, today.previous.sales, { label: vs('day', today.previousRange.from) })} />
+                    <StatCard label={t.returns} value={money(today.current.returns)} {...change(today.current.returns, today.previous.returns, { label: vs('day', today.previousRange.from), lowerIsBetter: true })} />
+                    <StatCard highlight label={t.net} value={money(today.current.net)} {...change(today.current.net, today.previous.net, { label: vs('day', today.previousRange.from) })} />
+                    <StatCard label={t.orders} value={format.number(today.current.orders)} {...change(today.current.orders, today.previous.orders, { label: vs('day', today.previousRange.from) })} />
                   </Grid>
                   <Text as="h2" variant="label" color={vars.colors.textMuted}>
                     {t.week}
                   </Text>
                   <Grid>
-                    <StatCard label={t.sales} value={money(week.current.sales)} {...change(week.current.sales, week.previous.sales, { label: t.lastWeek })} />
-                    <StatCard label={t.returns} value={money(week.current.returns)} {...change(week.current.returns, week.previous.returns, { label: t.lastWeek, lowerIsBetter: true })} />
-                    <StatCard label={t.net} value={money(week.current.net)} {...change(week.current.net, week.previous.net, { label: t.lastWeek })} />
-                    <StatCard label={t.orders} value={format.number(week.current.orders)} {...change(week.current.orders, week.previous.orders, { label: t.lastWeek })} />
+                    <StatCard label={t.sales} value={money(week.current.sales)} {...change(week.current.sales, week.previous.sales, { label: vs('week', week.previousRange.from) })} />
+                    <StatCard label={t.returns} value={money(week.current.returns)} {...change(week.current.returns, week.previous.returns, { label: vs('week', week.previousRange.from), lowerIsBetter: true })} />
+                    <StatCard label={t.net} value={money(week.current.net)} {...change(week.current.net, week.previous.net, { label: vs('week', week.previousRange.from) })} />
+                    <StatCard label={t.orders} value={format.number(week.current.orders)} {...change(week.current.orders, week.previous.orders, { label: vs('week', week.previousRange.from) })} />
                   </Grid>
                 </Stack>
               </ErrorBoundary>

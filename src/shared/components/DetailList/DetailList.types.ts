@@ -9,4 +9,5 @@ export interface DetailItem {
 export interface DetailListProps {
   items?: DetailItem[];
   minColumnWidth?: string; // label and value side by side above this width
+  layout?: 'grid' | 'rows'; // grid: label above value, in columns; rows: one line each, value at the end (a money breakdown)
 }

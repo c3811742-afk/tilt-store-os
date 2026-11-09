@@ -12,7 +12,7 @@ export const TextField = (props: TextFieldProps) => {
   const input = (
     <input
       id={id}
-      className={cx(controls.control, p.error && controls.invalid)}
+      className={cx(controls.control, (p.error || p.invalid) && controls.invalid)}
       type={p.type}
       value={p.value}
       onChange={(event) => p.onChange?.(event.target.value)}
@@ -27,7 +27,7 @@ export const TextField = (props: TextFieldProps) => {
       autoFocus={p.autoFocus}
       inputMode={p.inputMode}
       maxLength={p.maxLength}
-      aria-invalid={Boolean(p.error)}
+      aria-invalid={Boolean(p.error || p.invalid)}
       aria-describedby={p.error || p.hint ? `${id}-message` : undefined}
     />
   );

@@ -31,18 +31,25 @@ export const ShiftPage = () => {
   const [closing, setClosing] = useState<Record<string, number>>({});
   const [cardCounted, setCardCounted] = useState('');
   const [note, setNote] = useState('');
+  const [closeTried, setCloseTried] = useState(false);
   const [closed, setClosed] = useState<ShiftSummary | null>(null);
 
   if (closed) {
     return (
       <Stack gap={vars.spacing[5]}>
-        <PageHeader title={t.closed} subtitle={fillText(t.closedAt, { time: format.time(closed.shift.closedAt ?? '') })} />
+        <PageHeader
+          title={t.closed}
+          subtitle={fillText(t.closedAt, { time: format.time(closed.shift.closedAt ?? '') })}
+          actions={
+            <>
+              <Button variant="secondary" onClick={() => setClosed(null)}>
+                {t.openNew}
+              </Button>
+              <Button onClick={() => window.print()}>{t.print}</Button>
+            </>
+          }
+        />
         <ShiftSummaryCard summary={closed} />
-        <div>
-          <Button variant="secondary" onClick={() => setClosed(null)}>
-            {t.openNew}
-          </Button>
-        </div>
       </Stack>
     );
   }
@@ -177,23 +184,26 @@ export const ShiftPage = () => {
                     <span className={styles.figureLabel}>{t.systemCard}</span>
                     <span className={styles.figureValue}>{money(summary.cardTotal)}</span>
                   </div>
-                  <TextField label={t.machineTotal} type="number" inputMode="decimal" min={0} step="any" prefix={currency} value={cardCounted} onChange={setCardCounted} />
+                  <TextField label={t.machineTotal} type="number" inputMode="decimal" min={0} step="any" prefix={currency} value={cardCounted} onChange={setCardCounted} error={closeTried && machine === null ? text.validation.required : undefined} />
                   <div className={styles.figure}>
                     <span className={styles.figureLabel}>{t.difference}</span>
                     <span className={cx(styles.figureValue, cardDifference ? styles.off : styles.even)}>{machine === null ? '' : cardDifference ? money(cardDifference) : t.matches}</span>
                   </div>
                 </div>
-                <TextAreaField label={t.differenceNote} hint={t.differenceNoteHint} rows={2} value={note} onChange={setNote} required={needsNote} />
+                <TextAreaField label={t.differenceNote} hint={t.differenceNoteHint} rows={2} value={note} onChange={setNote} required={needsNote} error={closeTried && needsNote && !note.trim() ? text.validation.required : undefined} />
                 <div>
                   <Button
-                    disabled={Boolean(action.busy) || machine === null || (needsNote && !note.trim())}
+                    disabled={Boolean(action.busy)}
                     onClick={async () => {
+                      setCloseTried(true);
+                      if (machine === null || (needsNote && !note.trim())) return;
                       const result = await action.run('close', () => closeShift(shift.id, { count: closing, total: counted, cardCounted: machine ?? 0, note }));
                       if (result) {
                         setClosed(result);
                         setClosing({});
                         setCardCounted('');
                         setNote('');
+                        setCloseTried(false);
                       }
                     }}
                   >

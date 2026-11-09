@@ -1,5 +1,5 @@
 import { storageKeys } from '@/shared/constants';
-import { storage } from '@/shared/utils';
+import { storage, tabStorage } from '@/shared/utils';
 
 // Errors that happened in this browser, for the IT admin to investigate: when, on which page, for whom, and the
 // technical message. Every error the app logs with console.error ends up here too.
@@ -26,7 +26,7 @@ const expected = (message: string) => message.startsWith('ApiError: signedOut');
 
 export const recordError = (message: string) => {
   if (expected(message)) return;
-  const entry: ErrorEntry = { id: crypto.randomUUID(), at: new Date().toISOString(), page: window.location.hash.replace(/^#/, '') || '/', userId: storage.get(storageKeys.session) ?? '', message: message.slice(0, 2000) };
+  const entry: ErrorEntry = { id: crypto.randomUUID(), at: new Date().toISOString(), page: window.location.hash.replace(/^#/, '') || '/', userId: tabStorage.get(storageKeys.session) ?? storage.get(storageKeys.session) ?? '', message: message.slice(0, 2000) };
   storage.set(storageKeys.errorLog, JSON.stringify([entry, ...read()].slice(0, keep)));
 };
 

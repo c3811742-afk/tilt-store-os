@@ -12,4 +12,5 @@ export interface ItemLinesEditorProps {
   error?: string; // shown under the list (e.g. "Add at least one item.")
   disabled?: boolean;
   autoFocus?: boolean; // focus the scan field, ready for the scanner
+  stockBranchId?: string; // the search shows this branch's stock, low items first (e.g. requesting stock)
 }

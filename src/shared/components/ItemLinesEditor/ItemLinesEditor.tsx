@@ -13,14 +13,15 @@ import type { ItemLine, ItemLinesEditorProps } from './ItemLinesEditor.types';
 
 // A list of items and quantities built by scanning or searching. Scanning the same item again adds one more.
 export const ItemLinesEditor = (props: ItemLinesEditorProps) => {
-  const { lines, onChange, quantityLabel, error, disabled, autoFocus } = withDefaults(itemLinesEditorDefaults, props);
+  const { lines, onChange, quantityLabel, error, disabled, autoFocus, stockBranchId } = withDefaults(itemLinesEditorDefaults, props);
   const { text } = useLocale();
   const format = useFormat();
   const t = text.staff.items;
 
   const add = (hit: VariantHit) => {
     const existing = lines.find((line) => line.variantId === hit.variantId);
-    onChange?.(existing ? lines.map((line) => (line === existing ? { ...line, qty: line.qty + 1 } : line)) : [...lines, { ...hit, qty: 1 }]);
+    const { variantId, barcode, productId, productName, brandId, size, color, sku } = hit;
+    onChange?.(existing ? lines.map((line) => (line === existing ? { ...line, qty: line.qty + 1 } : line)) : [...lines, { variantId, barcode, productId, productName, brandId, size, color, sku, qty: 1 }]);
   };
   const setQty = (line: ItemLine, value: string) => {
     const qty = Math.max(0, Math.floor(Number(value) || 0));
@@ -32,7 +33,7 @@ export const ItemLinesEditor = (props: ItemLinesEditorProps) => {
 
   return (
     <Stack gap={vars.spacing[3]}>
-      <VariantSearch onPick={add} disabled={disabled} autoFocus={autoFocus} />
+      <VariantSearch onPick={add} disabled={disabled} autoFocus={autoFocus} stockBranchId={stockBranchId} />
       <Table
         label={t.item}
         stackOnMobile

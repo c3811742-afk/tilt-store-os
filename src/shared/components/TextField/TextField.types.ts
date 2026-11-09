@@ -9,6 +9,7 @@ export interface TextFieldProps {
   placeholder?: string;
   hint?: ReactNode;
   error?: string;
+  invalid?: boolean; // red outline without a message under the box (the message is shown elsewhere, e.g. under a row with a button)
   required?: boolean;
   disabled?: boolean;
   min?: string | number;

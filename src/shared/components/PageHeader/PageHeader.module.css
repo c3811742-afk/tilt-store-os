@@ -22,10 +22,29 @@
   min-inline-size: 0;
 }
 
+/* The actions keep their own width (the title wraps first), lined up at the bottom so a labelled field sits level with
+   the buttons beside it. */
 .actions {
   display: flex;
+  flex: none;
   flex-wrap: wrap;
+  align-items: flex-end;
   gap: var(--spacing-2);
+  max-inline-size: 100%;
+}
+
+/* A field in the actions takes its own set width (fields fill their container elsewhere), so fields and buttons share
+   one row. */
+.actions > * {
+  flex: none;
+  inline-size: var(--field-width, auto);
+}
+
+/* Beside the title (tablets and up), the actions stay on one line. */
+@media (--md-up) {
+  .actions {
+    flex-wrap: nowrap;
+  }
 }
 
 .back {

@@ -12,10 +12,10 @@ import { TextAreaField } from '../TextAreaField';
 import { decisionModalDefaults } from './DecisionModal.defaults';
 import type { DecisionModalProps } from './DecisionModal.types';
 
-// Approve or reject something with a reason from the owner's list (and an optional note). The reason is required,
-// so every decision is saved with who decided, when and why.
+// Approve or reject something, with an optional note. Rejecting needs a reason from the owner's rejection reasons, so
+// every "no" is saved with why; approving can take one of the approval reasons, but doesn't have to.
 export const DecisionModal = (props: DecisionModalProps) => {
-  const { open, decision, title, summary, reasons: list, confirmLabel, onConfirm, onClose } = withDefaults(decisionModalDefaults, props);
+  const { open, decision, title, summary, reasons, confirmLabel, onConfirm, onClose } = withDefaults(decisionModalDefaults, props);
   const { text } = useLocale();
   const format = useFormat();
   const { settings } = useReference();
@@ -26,10 +26,11 @@ export const DecisionModal = (props: DecisionModalProps) => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const t = text.staff.decision;
-  const reasons = settings.lists[list].filter((option) => !option.archived);
+  const required = decision === 'reject';
+  const options = settings.lists[reasons ?? (required ? 'rejectionReasons' : 'approvalReasons')].filter((option) => !option.archived);
 
   const submit = async () => {
-    if (!reasonId) return setMissing(true);
+    if (required && !reasonId) return setMissing(true);
     setBusy(true);
     setError(null);
     const result = await safeAsync(() => onConfirm?.({ reasonId, note: note.trim() || undefined }) ?? Promise.resolve());
@@ -63,7 +64,8 @@ export const DecisionModal = (props: DecisionModalProps) => {
         {Boolean(error) && <Notice tone="danger">{errorMessage(error)}</Notice>}
         <SelectField
           label={t.reason}
-          required
+          required={required}
+          hint={required ? undefined : text.common.optional}
           placeholder={t.chooseReason}
           value={reasonId}
           onChange={(value) => {
@@ -71,7 +73,7 @@ export const DecisionModal = (props: DecisionModalProps) => {
             setMissing(false);
           }}
           error={missing ? t.reasonRequired : undefined}
-          options={reasons.map((option) => ({ value: option.id, label: format.option(option.id) }))}
+          options={options.map((option) => ({ value: option.id, label: format.option(option.id) }))}
         />
         <TextAreaField label={t.note} hint={text.common.optional} value={note} onChange={setNote} />
       </Stack>

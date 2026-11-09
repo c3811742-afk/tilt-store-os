@@ -2,3 +2,31 @@
   display: flex;
   gap: var(--spacing-2);
 }
+
+/* The box: a search icon at the start, as in every search field. */
+.box {
+  position: relative;
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.icon {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  inset-block: 0;
+  inset-inline-start: var(--sizes-input-padding-x);
+  color: var(--colors-text-muted);
+  pointer-events: none;
+}
+
+.box input {
+  padding-inline-start: calc(var(--sizes-input-padding-x) * 2 + var(--sizes-icon-sm));
+}
+
+/* The button keeps its one-line label and the box's height. */
+.button {
+  display: flex;
+  flex: none;
+  white-space: nowrap;
+}

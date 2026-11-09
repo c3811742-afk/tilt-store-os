@@ -15,3 +15,21 @@ export const storage = {
     }
   },
 };
+
+// The same, for this browser tab only (sessionStorage): e.g. who is signed in here, while another tab is someone else.
+export const tabStorage = {
+  get: (key: string) => {
+    try {
+      return window.sessionStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  },
+  set: (key: string, value: string) => {
+    try {
+      window.sessionStorage.setItem(key, value);
+    } catch {
+      // Unavailable: the value just isn't remembered.
+    }
+  },
+};

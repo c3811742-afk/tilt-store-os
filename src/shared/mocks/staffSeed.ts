@@ -7,9 +7,11 @@ import type { Id, IsoDate, OnlineOrder } from '@/shared/types';
 // Names, amounts and times are made up for the demo.
 
 // A time on `day`; minutes past 59 roll over into the next hour (e.g. a fourth till opening at 10:60 is 11:00).
+// A time still ahead (the demo opened early in the morning) moves back a day, so nothing has happened in the future.
 const at = (day: IsoDate, hour: number, minute = 0) => {
   const time = new Date(`${day}T00:00:00`);
   time.setMinutes(hour * 60 + minute);
+  if (time.getTime() > Date.now()) time.setDate(time.getDate() - 1);
   return time.toISOString();
 };
 

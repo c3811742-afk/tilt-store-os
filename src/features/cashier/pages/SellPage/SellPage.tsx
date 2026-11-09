@@ -16,7 +16,7 @@ import {
 } from '@/shared/api';
 import { AsyncContent, Button, Modal, Notice, SearchBox, Stack, Text } from '@/shared/components';
 import { routes, toPath, withQuery, tillDefaults } from '@/shared/constants';
-import { useAction, useAsync, useConnection, useErrorMessage, useFormat, useLiveVersion, useLocale, useBranchScope } from '@/shared/hooks';
+import { useAction, useAsync, useConnection, useErrorMessage, useFormat, useLiveVersion, useLocale, useBranchScope, useReference } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { fillText, safeAsync, phoneDigits } from '@/shared/utils';
 import { ApprovalModal } from '../../components/ApprovalModal';
@@ -36,6 +36,7 @@ const pageSize = 48;
 export const SellPage = () => {
   const { text } = useLocale();
   const format = useFormat();
+  const { settings } = useReference();
   const navigate = useNavigate();
   const errorMessage = useErrorMessage();
   const version = useLiveVersion();
@@ -111,7 +112,7 @@ export const SellPage = () => {
     branchId,
     kind: need.kind,
     level: need.level,
-    percent: Math.round(need.percent * 10) / 10,
+    percent: need.percent, // exact: a rounded-down percent would no longer cover the discount it approves
     amount: need.amount,
     currency: currentQuote?.currency,
     summary:
@@ -232,7 +233,7 @@ export const SellPage = () => {
           approvalFor && (
             <>
               {fillText(t.approval.discountWhy, { percent: format.percent(approvalFor.percent, 1), limit: format.percent(approvalFor.limit, 0) })}{' '}
-              {approvalFor.level === 'owner' && fillText(t.approval.ownerWhy, { limit: format.percent(currentQuote?.discountLimit ?? 0, 0) })}
+              {approvalFor.level === 'owner' && fillText(t.approval.ownerWhy, { limit: format.percent(settings.discountLimits.manager, 0) })}
             </>
           )
         }

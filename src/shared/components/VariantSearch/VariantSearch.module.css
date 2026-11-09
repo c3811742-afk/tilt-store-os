@@ -21,3 +21,12 @@
 .item + .item {
   border-block-start: var(--borders-width-thin) var(--borders-style) var(--colors-border);
 }
+
+/* What the branch has, before the Add button: a Low or Out of stock tag and the count. */
+.stock {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-inline-start: auto;
+}

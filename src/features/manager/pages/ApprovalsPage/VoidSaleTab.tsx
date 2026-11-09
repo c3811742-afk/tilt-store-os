@@ -30,7 +30,7 @@ export const VoidSaleTab = () => {
 
   return (
     <Stack gap={vars.spacing[4]}>
-      <ScanField label={t.saleNumber} hint={t.saleHint} buttonLabel={t.findSale} onScan={(number) => {
+      <ScanField label={t.saleNumber} hint={t.saleHint} placeholder={t.salePlaceholder} buttonLabel={t.findSale} onScan={(number) => {
           setDone('');
           void find(number);
         }} clearOnScan={false} />
@@ -69,6 +69,7 @@ export const VoidSaleTab = () => {
         <DecisionModal
           open={voiding}
           decision="reject"
+          reasons="voidReasons"
           title={fillText(t.voidTitle, { number: found.sale.number })}
           summary={t.voidHint}
           confirmLabel={t.voidSale}

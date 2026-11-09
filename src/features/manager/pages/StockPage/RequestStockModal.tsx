@@ -59,7 +59,7 @@ export const RequestStockModal = ({ open, onClose, initialLines = [], onSent }: 
           {t.requestHint}
         </Text>
         {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
-        <ItemLinesEditor lines={lines} onChange={setLines} error={error} disabled={Boolean(action.busy)} autoFocus />
+        <ItemLinesEditor lines={lines} onChange={setLines} error={error} disabled={Boolean(action.busy)} autoFocus stockBranchId={branchId} />
         <TextAreaField label={text.common.note} hint={text.common.optional} value={note} onChange={setNote} />
       </Stack>
     </Modal>
