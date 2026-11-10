@@ -39,6 +39,7 @@ export const BackupsPage = () => {
             ]}
             rows={list.map((backup) => ({
               key: backup.id,
+              values: { day: `${backup.day}T12:00:00` },
               cells: {
                 day: format.date(`${backup.day}T12:00:00`),
                 made: format.time(backup.at),

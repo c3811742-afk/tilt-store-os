@@ -6,7 +6,7 @@ export interface CartState {
   items: CartItemInput[];
   orderDiscount?: ManualDiscount;
   promoCode: string;
-  customer: { name: string; phone: string };
+  customer: { name: string; phone: string; age?: string }; // age is optional
   heldSaleId?: string; // resumed from hold
 }
 

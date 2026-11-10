@@ -38,6 +38,7 @@ export const ErrorsPage = () => {
             ]}
             rows={entries.map((entry) => ({
               key: entry.id,
+              values: { when: entry.at },
               cells: {
                 when: format.dateTime(entry.at),
                 page: <code className={styles.code}>{entry.page}</code>,

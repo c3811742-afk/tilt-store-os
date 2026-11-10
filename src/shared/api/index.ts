@@ -33,6 +33,7 @@ export * from './branchReports';
 export * from './stockAlerts';
 export * from './receiving';
 export * from './brandReturns';
+export * from './pausedBrands';
 export * from './storekeeperToday';
 export * from './onlineOrders';
 export * from './connection';

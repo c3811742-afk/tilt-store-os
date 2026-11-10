@@ -92,7 +92,7 @@ export const PricingTab = ({ data, onSaved }: { data: ProductData; onSaved: () =
       </Card>
 
       <Card title={t.variantPrices}>
-        <Table
+        <Table filterable={false}
           label={t.variantPrices}
           columns={[{ key: 'variant', label: text.owner.fields.variant }, ...data.currencies.map((currency) => ({ key: currency, label: currency }))]}
           rows={product.variants
@@ -172,7 +172,7 @@ export const PricingTab = ({ data, onSaved }: { data: ProductData; onSaved: () =
             {t.schedule}
           </Button>
         </Stack>
-        <Table
+        <Table filterable={false}
           label={t.schedules}
           emptyText={t.noSchedules}
           columns={[
@@ -208,7 +208,7 @@ export const PricingTab = ({ data, onSaved }: { data: ProductData; onSaved: () =
       </Card>
 
       <Card title={t.history}>
-        <Table
+        <Table filterable={false}
           label={t.history}
           emptyText={t.noHistory}
           columns={[
@@ -223,6 +223,7 @@ export const PricingTab = ({ data, onSaved }: { data: ProductData; onSaved: () =
             const money = (value: number | null) => (value === null ? '—' : format.money(value, row.currency));
             return {
               key: row.id,
+              values: { when: row.at },
               cells: {
                 when: format.dateTime(row.at),
                 what: `${t.historyKinds[row.kind]} · ${row.currency}${variant ? ` · ${variant.size} ${variant.color}` : ''}`,

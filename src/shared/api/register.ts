@@ -166,7 +166,7 @@ export const closeShift = (shiftId: Id, closing: CloseInput) =>
       const branch = db.branches.find((current) => current.id === shift.branchId);
       const managers = db.users.filter((user) => user.status === 'active' && !isOwner(user) && user.roleIds.includes('role-manager') && user.branchIds.includes(shift.branchId)).map((user) => user.id);
       notify('cashDifference', { branch: branch?.name ?? '', register: shift.register, amount: `${shift.currency} ${cashDifference}` }, routes.owner.reports, managers);
-      logActivity({ action: 'cashDifference', target: { type: 'shift', id: shift.id, label: shift.register }, branchId: shift.branchId, flagged: db.settings.flagRules.cashDifferences, changes: [{ field: 'cash', from: summary.expectedCash, to: shift.countedCash ?? 0 }] });
+      logActivity({ action: 'cashDifference', target: { type: 'shift', id: shift.id, label: shift.register }, branchId: shift.branchId, flagged: db.settings.flagRules.cashDifferences, alerted: true, changes: [{ field: 'cash', from: summary.expectedCash, to: shift.countedCash ?? 0 }] });
     }
     return summarizeShift(shift);
   });

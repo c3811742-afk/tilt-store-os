@@ -92,6 +92,7 @@ export interface Customer {
   id: Id;
   name: string;
   phone: string;
+  birthYear?: number; // from the age given at the till (optional), so the age stays right every year
   createdAt: IsoDateTime;
 }
 

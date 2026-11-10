@@ -74,7 +74,7 @@ export const closeRegister = (shiftId: Id, countedCash: number, note?: string) =
     if (difference !== 0) {
       notify('cashDifference', { branch: findById(db.branches, shift.branchId).name, register: shift.register, amount: `${shift.currency} ${difference}` }, '/owner/reports/shifts');
     }
-    logActivity({ action: difference ? 'cashDifference' : 'update', target: { type: 'shift', id: shift.id, label: shift.register }, branchId: shift.branchId, amount: difference, currency: shift.currency, flagged: difference !== 0 });
+    logActivity({ action: difference ? 'cashDifference' : 'update', target: { type: 'shift', id: shift.id, label: shift.register }, branchId: shift.branchId, amount: difference, currency: shift.currency, flagged: difference !== 0, alerted: difference !== 0 });
     return toView(shift);
   });
 

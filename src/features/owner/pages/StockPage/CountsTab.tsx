@@ -51,7 +51,7 @@ export const CountsTab = ({ filter }: { filter: StockFilter }) => {
                   {fillText(t.countSummary, { lines: format.number(count.lines.length), difference: format.number(totalDifference), user: format.user(count.byId), blind: count.blind ? t.blind : '' })}
                 </Text>
                 {differences.length > 0 && (
-                  <Table
+                  <Table paged filterable={false}
                     label={count.number}
                     columns={[
                       { key: 'item', label: text.owner.fields.product },

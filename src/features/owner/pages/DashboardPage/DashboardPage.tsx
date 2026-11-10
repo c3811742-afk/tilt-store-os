@@ -1,13 +1,12 @@
 import { Link, useNavigate } from 'react-router';
 import { getDashboard, type Dashboard } from '@/shared/api';
-import { AsyncContent, BarList, Button, Card, ColumnChart, Grid, Notice, PageHeader, Stack, StatCard, Table, Text } from '@/shared/components';
+import { AsyncContent, BarList, Button, Card, ColumnChart, FilterToolbar, Grid, Notice, PageHeader, Stack, StatCard, Table, Text, filterField } from '@/shared/components';
 import { routes, toPath } from '@/shared/constants';
 import { useAsync, useFormat, useLiveVersion, useLocale, useQueryState } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { daysBetween, fillText, marginPercent } from '@/shared/utils';
 import { BranchSelect, BrandSelect, PeriodFilter } from '../../components';
 import { useChange, usePeriod } from '../../hooks';
-import styles from './DashboardPage.module.css';
 
 const chartLabelEvery = 7; // a date under every 7th column on long periods
 
@@ -29,11 +28,13 @@ export const DashboardPage = () => {
   return (
     <Stack gap={vars.spacing[5]}>
       <PageHeader title={t.title} />
-      <div className={styles.filters}>
-        <PeriodFilter period={period} />
-        <BranchSelect label={t.scope} allLabel={t.allBranches} value={branchId} onChange={setBranchId} width={vars.sizes.field.narrow} />
-        <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} width={vars.sizes.field.narrow} />
-      </div>
+      <FilterToolbar
+        leading={<PeriodFilter period={period} />}
+        fields={[
+          filterField('branch', <BranchSelect label={t.scope} allLabel={t.allBranches} value={branchId} onChange={setBranchId} />, { label: t.scope, value: branchId && format.branch(branchId), clear: () => setBranchId('') }),
+          filterField('brand', <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />, { label: text.owner.fields.brand, value: brandId && format.brand(brandId), clear: () => setBrandId('') }),
+        ]}
+      />
       <AsyncContent state={state}>
         {(data: Dashboard) => {
           const money = (amount: number) => format.money(amount, data.currency);
@@ -73,7 +74,7 @@ export const DashboardPage = () => {
 
               <Grid columns={2} alignItems="start">
                 <Card title={t.branches}>
-                  <Table
+                  <Table paged filterable={false}
                     label={t.branches}
                     columns={[
                       { key: 'branch', label: text.owner.fields.branch },

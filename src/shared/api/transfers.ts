@@ -3,7 +3,7 @@ import { currentTerms, nowIso, stockLevels } from '@/shared/utils';
 import { ApiError } from './errors';
 import { assertBranch, hasRole, notifyUsers, staffWithRole } from './branchScope';
 import { currentUnitCost, placeIn } from './engine';
-import { addBatchDefects } from './costing';
+import { addBatchDefects, batchForDefect } from './costing';
 import { describeVariant, toTransferView } from './stock';
 import { actor, db, findById, isOwner, logActivity, mutate, newId, nextNumber, notify, respond } from './server';
 import { checkStockAlerts } from './stockAlerts';
@@ -130,37 +130,39 @@ export interface TransferInput {
 
 // Creates a transfer. Asked for by the receiving branch, or prepared by the sending one (a dispatch).
 // It waits for the sending branch's manager unless that branch has none (the warehouse) or the manager made it.
-export const createTransfer = (input: TransferInput) =>
-  mutate(() => {
-    if (input.fromBranchId === input.toBranchId) throw new ApiError('notAllowed');
-    const me = actor();
-    const ownSide = me.branchIds.includes(input.toBranchId) || isOwner(me) ? input.toBranchId : input.fromBranchId;
-    assertRoleIn(ownSide, ['manager', 'storekeeper']);
-    const from = findById(db.branches, input.fromBranchId);
-    const to = findById(db.branches, input.toBranchId);
-    const autoApproved = !needsManager(from.id) || (hasRole(me, 'manager') && me.branchIds.includes(from.id));
-    const transfer: Transfer = {
-      id: newId(),
-      number: nextNumber('TR', 4),
-      fromBranchId: from.id,
-      toBranchId: to.id,
-      lines: cleanLines(input.lines),
-      status: autoApproved ? 'approved' : 'requested',
-      requestedById: me.id,
-      createdAt: nowIso(),
-      note: input.note,
-      stockStatus: input.stockStatus,
-      ...(autoApproved ? { decidedById: me.id, decidedAt: nowIso() } : {}),
-    };
-    db.transfers.push(transfer);
-    if (autoApproved) notifyUsers('transferReady', { number: transfer.number, to: to.name }, '/storekeeper/transfers?tab=prepare', storekeepersOf(from.id));
-    else {
-      db.approvals.push({ id: newId(), kind: 'transfer', level: 'manager', status: 'pending', branchId: from.id, requestedById: me.id, at: transfer.createdAt, ref: { type: 'transfer', id: transfer.id }, summary: describe(transfer) });
-      notifyUsers('approvalWaiting', { summary: describe(transfer), user: me.name }, '/manager/approvals', managersOf(from.id));
-    }
-    log(transfer, 'create', ownSide);
-    return transfer;
-  });
+export const createTransfer = (input: TransferInput) => mutate(() => openTransfer(input));
+
+// The change itself, also used to send a paused brand's stock to the warehouse. An owner's transfer needs no approval.
+export const openTransfer = (input: TransferInput) => {
+  if (input.fromBranchId === input.toBranchId) throw new ApiError('notAllowed');
+  const me = actor();
+  const ownSide = me.branchIds.includes(input.toBranchId) || isOwner(me) ? input.toBranchId : input.fromBranchId;
+  assertRoleIn(ownSide, ['manager', 'storekeeper']);
+  const from = findById(db.branches, input.fromBranchId);
+  const to = findById(db.branches, input.toBranchId);
+  const autoApproved = isOwner(me) || !needsManager(from.id) || (hasRole(me, 'manager') && me.branchIds.includes(from.id));
+  const transfer: Transfer = {
+    id: newId(),
+    number: nextNumber('TR', 4),
+    fromBranchId: from.id,
+    toBranchId: to.id,
+    lines: cleanLines(input.lines),
+    status: autoApproved ? 'approved' : 'requested',
+    requestedById: me.id,
+    createdAt: nowIso(),
+    note: input.note,
+    stockStatus: input.stockStatus,
+    ...(autoApproved ? { decidedById: me.id, decidedAt: nowIso() } : {}),
+  };
+  db.transfers.push(transfer);
+  if (autoApproved) notifyUsers('transferReady', { number: transfer.number, to: to.name }, '/storekeeper/transfers?tab=prepare', storekeepersOf(from.id));
+  else {
+    db.approvals.push({ id: newId(), kind: 'transfer', level: 'manager', status: 'pending', branchId: from.id, requestedById: me.id, at: transfer.createdAt, ref: { type: 'transfer', id: transfer.id }, summary: describe(transfer) });
+    notifyUsers('approvalWaiting', { summary: describe(transfer), user: me.name }, '/manager/approvals', managersOf(from.id));
+  }
+  log(transfer, 'create', ownSide);
+  return transfer;
+};
 
 // The sending branch's manager approves (the storekeepers are told to prepare it) or rejects it with a reason.
 export const decideTransfer = (transferId: Id, approve: boolean, reason?: string, note?: string) =>
@@ -351,7 +353,7 @@ export const receiveTransfer = (transferId: Id, input: ReceiveInput) =>
       }
       if (defects > 0) {
         const info = describeVariant(line.variantId);
-        const batch = db.batches.filter((current) => current.productId === info.productId).sort((a, b) => b.receivedAt.localeCompare(a.receivedAt))[0];
+        const batch = batchForDefect(info.productId, to.id);
         const brand = db.brands.find((current) => current.id === info.brandId);
         const liability = brand && currentTerms(brand).defectPolicy === 'storeAbsorbs' ? 'store' : 'brand';
         db.defects.push({ id: newId(), at, byId: me.id, productId: info.productId, variantId: line.variantId, batchId: batch?.id, branchId: to.id, qty: defects, reasonId, foundAt: 'receiving', liability, status: 'open', unitCost: currentUnitCost(db, info.productId), note: transfer.number });

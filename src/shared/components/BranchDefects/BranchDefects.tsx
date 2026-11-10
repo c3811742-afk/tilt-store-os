@@ -83,6 +83,7 @@ export const BranchDefects = (props: BranchDefectsProps) => {
                 ]}
                 rows={rows.map((row) => ({
                   key: row.id,
+                  values: { when: row.at },
                   cells: {
                     when: format.dateTime(row.at),
                     item: (
@@ -130,6 +131,7 @@ export const BranchDefects = (props: BranchDefectsProps) => {
                 ]}
                 rows={rows.map(({ writeOff, productName, size, color }) => ({
                   key: writeOff.id,
+                  values: { when: writeOff.at },
                   cells: {
                     when: format.dateTime(writeOff.at),
                     item: `${productName} · ${size} · ${color}`,

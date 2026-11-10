@@ -49,6 +49,7 @@ export const ApprovalsPage = () => {
                   ]}
                   rows={data.log.map(({ approval }) => ({
                     key: approval.id,
+                    values: { when: approval.decidedAt ?? approval.at },
                     cells: {
                       when: format.dateTime(approval.decidedAt ?? approval.at),
                       what: `${text.owner.approvalsPage.kinds[approval.kind]} · ${approval.summary}${approval.amount !== undefined ? ` · ${format.money(approval.amount, approval.currency)}` : ''}`,

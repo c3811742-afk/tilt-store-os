@@ -1,6 +1,0 @@
-/* Lines the checkbox up with the search field next to it. */
-.check {
-  display: inline-flex;
-  align-items: center;
-  min-block-size: var(--sizes-input-height);
-}

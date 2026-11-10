@@ -240,7 +240,7 @@ export const ReportsPage = () => {
                       })}
                     </Grid>
                   )}
-                  <Table
+                  <Table paged filterable={false}
                     label={title}
                     nowrap
                     sort={table.sort}

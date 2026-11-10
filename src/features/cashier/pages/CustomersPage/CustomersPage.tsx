@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { findCustomers, listRecentCustomers } from '@/shared/api';
-import { AsyncContent, Notice, PageHeader, SearchBox, Stack, Table } from '@/shared/components';
+import { AsyncContent, FilterToolbar, Notice, PageHeader, SearchBox, Stack, Table, useTableFilters } from '@/shared/components';
 import { routes, toPath, tillDefaults } from '@/shared/constants';
 import { useAsync, useFormat, useLiveVersion, useLocale, useBranchScope } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
@@ -19,19 +19,22 @@ export const CustomersPage = () => {
   const searching = phoneDigits(phone).length >= tillDefaults.searchDigits;
   const state = useAsync(() => (searching ? findCustomers(phone) : listRecentCustomers()), [phone, searching, version]);
   const currency = branch?.currency ?? '';
+  const columnFilters = useTableFilters();
 
   return (
     <Stack gap={vars.spacing[5]}>
       <PageHeader title={t.title} />
-      <SearchBox label={t.search} placeholder={t.search} inputMode="tel" value={phone} onChange={setPhone} onSubmit={() => undefined} autoFocus />
+      <FilterToolbar leading={<SearchBox label={t.search} placeholder={t.search} inputMode="tel" value={phone} onChange={setPhone} onSubmit={() => undefined} autoFocus />} table={columnFilters} />
       <AsyncContent state={state} empty={<Notice>{searching ? t.none : t.empty}</Notice>}>
           {(list) => (
             <Table
+              filters={columnFilters}
               label={t.title}
               stackOnMobile
               columns={[
-                { key: 'name', label: text.common.name },
-                { key: 'phone', label: t.search },
+                // Name and phone are the search box.
+                { key: 'name', label: text.common.name, filterable: false },
+                { key: 'phone', label: t.search, filterable: false },
                 { key: 'orders', label: t.orders, align: 'end' },
                 { key: 'credit', label: t.storeCredit, align: 'end' },
               ]}

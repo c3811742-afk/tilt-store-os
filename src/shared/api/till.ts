@@ -1,13 +1,13 @@
-import { mockConfig, routes, toPath, tillDefaults } from '@/shared/constants';
+import { mockConfig, routes, toPath, tillDefaults, withQuery } from '@/shared/constants';
 import type { ApprovalKind, ApprovalLevel, ApprovalRequest, Branch, Customer, HeldSale, Id, ManualDiscount, PromoCode, Sale, User } from '@/shared/types';
-import { currentTerms, nowIso, regularPrice, stockLevels, today, type StockLevel, roundMoney, phoneDigits } from '@/shared/utils';
+import { currentTerms, nowIso, regularPrice, stockLevels, today, type StockLevel, roundMoney, phoneDigits, birthYearFromAge } from '@/shared/utils';
 import { activePromotion, activeSalePrice, sellingPrice } from '@/shared/utils/pricing';
 import type { Database } from './database';
 import { availableIn, recordSale, variantIndex } from './engine';
 import { ApiError } from './errors';
 import { assertBranch, hasRole, notifyUsers } from './branchScope';
 import { requiredApprovalLevel } from './branchApprovals';
-import { actor, db, findById, isOwner, logActivity, mutate, newId, nextNumber, notify, respond } from './server';
+import { actor, db, findById, isOwner, logActivity, mutate, newId, nextNumber, notify, peopleAbove, respond } from './server';
 
 // The cashier's counter: what can be sold in a branch, pricing a cart, approvals at the till, payment and
 // completing a sale. Cashiers never get cost, margin, commission or profit from these calls.
@@ -470,12 +470,25 @@ export const getTillCustomer = (customerId: Id) =>
     return { customer: toCustomerView(customer), purchases };
   });
 
+// A discount or refund above the owner's limit: the owners (when the alert is on, or always for a manager's own) and
+// the branch's other managers are told.
+export const alertLargeAmount = (params: Record<string, string>, branchId: Id) => {
+  const { managers, owners } = peopleAbove(actor().id, branchId);
+  notify('largeDiscountOrRefund', params, routes.owner.activity, owners);
+  if (managers.length) notify('largeDiscountOrRefund', params, withQuery(routes.manager.staff, { tab: 'discounts' }), managers, false);
+};
+
 // The customer with this phone number, or a new one saved for future sales.
-export const customerFor = (name: string, phone: string): Customer => {
+// An age given at the till (optional) is kept as the year of birth, also for a customer already saved.
+export const customerFor = (name: string, phone: string, age?: string): Customer => {
   const clean = phoneDigits(phone);
+  const birthYear = birthYearFromAge(age);
   const existing = db.customers.find((customer) => phoneDigits(customer.phone) === clean);
-  if (existing) return existing;
-  const customer: Customer = { id: newId(), name: name.trim(), phone: phone.trim(), createdAt: nowIso() };
+  if (existing) {
+    if (birthYear && existing.birthYear !== birthYear) existing.birthYear = birthYear;
+    return existing;
+  }
+  const customer: Customer = { id: newId(), name: name.trim(), phone: phone.trim(), birthYear, createdAt: nowIso() };
   db.customers.push(customer);
   logActivity({ action: 'create', target: { type: 'customer', id: customer.id, label: customer.name } });
   return customer;
@@ -505,7 +518,7 @@ export interface TillPayment {
 }
 
 export interface CompleteSaleInput extends CartInput {
-  customer: { name: string; phone: string };
+  customer: { name: string; phone: string; age?: string };
   payments: TillPayment[];
   heldSaleId?: Id; // the sale was resumed from hold
 }
@@ -536,7 +549,7 @@ export const completeSale = (input: CompleteSaleInput) =>
     const paid = roundMoney(input.payments.reduce((sum, payment) => sum + payment.amount, 0));
     if (Math.abs(paid - quote.total) > 0.01 || input.payments.some((payment) => payment.amount < 0 || !branch.paymentMethodIds.includes(payment.methodId))) throw new ApiError('notPaid');
 
-    const customer = customerFor(input.customer.name, input.customer.phone);
+    const customer = customerFor(input.customer.name, input.customer.phone, input.customer.age);
     const credit = input.payments.filter((payment) => payment.methodId === 'pm-credit').reduce((sum, payment) => sum + payment.amount, 0);
     if (credit > storeCreditOf(db, customer.id) + 0.01) throw new ApiError('notEnoughCredit');
 
@@ -566,9 +579,9 @@ export const completeSale = (input: CompleteSaleInput) =>
     if (manual > 0) {
       const percent = (manual / Math.max(quote.subtotal, 1)) * 100;
       const large = percent > db.settings.flagRules.discountAbovePercent;
-      logActivity({ action: 'discount', target: { type: 'sale', id: sale.id, label: sale.number }, branchId: branch.id, amount: roundMoney(manual), currency: branch.currency, flagged: large, changes: [{ field: 'discount', from: 0, to: `${Math.round(percent)}%` }] });
-      // Above the limit in Activity › Flag settings: the owners get an alert.
-      if (large) notify('largeDiscountOrRefund', { kind: 'discount', branch: branch.name, amount: `${branch.currency} ${roundMoney(manual)}`, user: actor().name }, routes.owner.activity);
+      logActivity({ action: 'discount', target: { type: 'sale', id: sale.id, label: sale.number }, branchId: branch.id, amount: roundMoney(manual), currency: branch.currency, flagged: large, alerted: large, changes: [{ field: 'discount', from: 0, to: `${Math.round(percent)}%` }] });
+      // Above the limit in Activity › Flag settings: the owners and the branch's managers get an alert.
+      if (large) alertLargeAmount({ kind: 'discount', branch: branch.name, amount: `${branch.currency} ${roundMoney(manual)}`, user: actor().name }, branch.id);
     }
     alertLowStock(branch, [...wanted.keys()]);
     return sale;
@@ -602,13 +615,13 @@ export const listHeldSales = (branchId: Id) =>
       .map((held) => ({ ...held, pieces: held.items.reduce((sum, item) => sum + item.qty, 0), names: held.items.map((item) => index.get(item.variantId)?.product.name ?? '').join(', ') }));
   });
 
-export const holdSale = (input: CartInput & { customer?: { name: string; phone: string } }) =>
+export const holdSale = (input: CartInput & { customer?: { name: string; phone: string; age?: string } }) =>
   mutate((): HeldSale => {
     assertBranch(input.branchId);
     const me = actor();
     const held: HeldSale = { id: newId(), number: nextNumber('H', 4), branchId: input.branchId, cashierId: me.id, at: nowIso(), customer: input.customer?.name || input.customer?.phone ? input.customer : undefined, items: input.items, orderDiscount: input.orderDiscount, promoCode: input.promoCode };
     // A customer with a name and a full phone number is saved now, so they can be found before the sale is paid.
-    if (input.customer?.name.trim() && phoneDigits(input.customer.phone).length >= tillDefaults.phoneDigits) customerFor(input.customer.name, input.customer.phone);
+    if (input.customer?.name.trim() && phoneDigits(input.customer.phone).length >= tillDefaults.phoneDigits) customerFor(input.customer.name, input.customer.phone, input.customer.age);
     db.heldSales.push(held);
     logActivity({ action: 'create', target: { type: 'heldSale', id: held.id, label: held.number }, branchId: input.branchId });
     return held;

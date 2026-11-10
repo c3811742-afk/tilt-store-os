@@ -104,7 +104,7 @@ export const DashboardPage = () => {
                   actions={<SegmentedControl<BranchPeriod> label={t.products} value={period} onChange={setPeriod} options={branchPeriods.map((value) => ({ value, label: t.periods[value] }))} />}
                 >
                   {data.products.length ? (
-                    <Table
+                    <Table paged
                       label={t.products}
                       stackOnMobile
                       columns={[

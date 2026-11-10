@@ -107,7 +107,7 @@ export const ImportProductsPage = () => {
             </Button>
           }
         >
-          <Table
+          <Table filterable={false}
             label={t.title}
             columns={[
               { key: 'line', label: t.line, align: 'end' },

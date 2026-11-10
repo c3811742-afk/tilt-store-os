@@ -68,6 +68,7 @@ export const DataPage = () => {
                   result && (
                     <Stack gap={vars.spacing[3]}>
                       <Table
+                        filterable={false} // the search box looks through every field
                         label={name(table)}
                         emptyText={t.empty}
                         columns={[

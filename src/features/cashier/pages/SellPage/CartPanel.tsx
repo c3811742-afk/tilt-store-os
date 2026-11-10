@@ -50,7 +50,7 @@ export const CartPanel = ({ quote, stockOf, missing, onReserve, onDiscount, onAp
   const describe = (discount: ManualDiscount) => (discount.type === 'percent' ? format.percent(discount.value, 1) : format.money(discount.value, currency));
   const setQty = (variantId: string, qty: number) => setCart((current) => ({ ...current, items: current.items.map((item) => (item.variantId === variantId ? { ...item, qty } : item)) }));
   const remove = (variantId: string) => setCart((current) => ({ ...current, items: current.items.filter((item) => item.variantId !== variantId) }));
-  const setCustomer = (field: 'name' | 'phone', value: string) => {
+  const setCustomer = (field: 'name' | 'phone' | 'age', value: string) => {
     if (field === 'phone' && customer) onCustomerFound(null);
     setCart((current) => ({ ...current, customer: { ...current.customer, [field]: value } }));
   };
@@ -195,6 +195,7 @@ export const CartPanel = ({ quote, stockOf, missing, onReserve, onDiscount, onAp
                 />
                 {phoneMissing && <Text variant="caption" color={vars.colors.danger}>{text.validation.required}</Text>}
                 <TextField label={t.customerName} value={cart.customer.name} onChange={(value) => setCustomer('name', value)} error={nameMissing ? text.validation.required : undefined} />
+                <TextField label={text.common.age} optional type="number" inputMode="numeric" min={1} max={120} value={cart.customer.age ?? ''} onChange={(value) => setCustomer('age', value)} />
                 {phoneDigits(cart.customer.phone).length >= tillDefaults.phoneDigits && matches.status === 'success' && !matches.data.length && (
                   <Text variant="caption" color={vars.colors.textMuted}>
                     {t.newCustomer}

@@ -88,6 +88,7 @@ export const TransfersPage = () => {
                 ]}
                 rows={records.map((record) => ({
                   key: record.id,
+                  values: { when: record.signature.signedAt },
                   cells: {
                     when: format.dateTime(record.signature.signedAt),
                     document: `${record.document}${record.fromBranchId ? ` · ${format.branch(record.fromBranchId)} → ` : ' · '}${format.branch(record.toBranchId)}`,

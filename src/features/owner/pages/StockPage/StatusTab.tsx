@@ -5,7 +5,6 @@ import { routes, toPath } from '@/shared/constants';
 import { useAsync, useFormat, useLiveVersion, useLocale, useTableSort } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 
-const rowLimit = 300; // the most rows drawn at once; narrow the filters to see others
 
 // Pieces of each product in each status (available, reserved, in transit, waiting for inspection, defective...),
 // one column per status that has pieces. Opens with the products with the most pieces first.
@@ -22,10 +21,7 @@ export const StatusTab = ({ filter }: { filter: StockFilter }) => {
         const rows = table.sorted(data.rows, (row, key) => (key === 'name' ? row.name : key === 'total' ? row.total : (row.byStatus[key as keyof typeof row.byStatus] ?? 0)));
         return (
           <Stack gap={vars.spacing[2]}>
-            <Text variant="caption" color={vars.colors.textMuted}>
-              {rows.length > rowLimit ? `${format.number(rowLimit)} / ${format.number(rows.length)} · ${t.narrowFilters}` : format.number(rows.length)}
-            </Text>
-            <Table
+            <Table paged filterable={false}
               label={t.tabs.status}
               sort={table.sort}
               onSortChange={table.setSort}
@@ -34,7 +30,7 @@ export const StatusTab = ({ filter }: { filter: StockFilter }) => {
                 ...data.statuses.map((status) => ({ key: status, label: t.statuses[status], align: 'end' as const, sortable: true })),
                 { key: 'total', label: text.common.total, align: 'end', sortable: true },
               ]}
-              rows={rows.slice(0, rowLimit).map((row) => ({
+              rows={rows.map((row) => ({
                 key: row.productId,
                 cells: {
                   name: (

@@ -1,5 +1,5 @@
 import { eReceiptCounts, listEReceipts, resendEReceipt } from '@/shared/api';
-import { AsyncContent, Badge, Button, FilterBar, Grid, Notice, SelectField, Stack, StatCard, Table } from '@/shared/components';
+import { AsyncContent, Badge, Button, FilterToolbar, Grid, Notice, SelectField, Stack, StatCard, Table, filterField, useTableFilters } from '@/shared/components';
 import { eReceiptTone } from '@/shared/constants';
 import { useAction, useAsync, useErrorMessage, useFormat, useLiveVersion, useLocale, useQueryState } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
@@ -16,6 +16,7 @@ export const ReceiptsTab = () => {
   const counts = useAsync(eReceiptCounts, [version]);
   const state = useAsync(() => listEReceipts({ status: status || undefined, branchId: branchId || undefined }), [status, branchId, version]);
   const action = useAction();
+  const columnFilters = useTableFilters();
   const t = text.owner.tax;
 
   return (
@@ -30,26 +31,28 @@ export const ReceiptsTab = () => {
         )}
       </AsyncContent>
       {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
-      <FilterBar>
-        <SelectField
-          label={text.common.status}
-          placeholder={text.common.all}
-          value={status}
-          onChange={setStatus}
-          options={(['sent', 'failed', 'pending'] as const).map((value) => ({ value, label: t.receiptStates[value] }))}
-        />
-        <BranchSelect allLabel={text.owner.fields.allBranches} value={branchId} onChange={setBranchId} />
-      </FilterBar>
+      <FilterToolbar
+        fields={[
+          filterField(
+            'status',
+            <SelectField label={text.common.status} placeholder={text.common.all} value={status} onChange={setStatus} options={(['sent', 'failed', 'pending'] as const).map((value) => ({ value, label: t.receiptStates[value] }))} />,
+            { label: text.common.status, value: status && t.receiptStates[status as keyof typeof t.receiptStates], clear: () => setStatus('') },
+          ),
+          filterField('branch', <BranchSelect allLabel={text.owner.fields.allBranches} value={branchId} onChange={setBranchId} />, { label: text.owner.fields.branch, value: branchId && format.branch(branchId), clear: () => setBranchId('') }),
+        ]}
+        table={columnFilters}
+      />
       <AsyncContent state={state} empty={<Notice tone="success">{t.noReceipts}</Notice>}>
         {(rows) => (
           <Table
+            filters={columnFilters}
             label={t.tabs.receipts}
             columns={[
               { key: 'sale', label: t.sale },
-              { key: 'branch', label: text.owner.fields.branch },
+              { key: 'branch', label: text.owner.fields.branch, filterable: false }, // the filters above
               { key: 'total', label: text.common.total, align: 'end' },
               { key: 'authority', label: t.authority },
-              { key: 'status', label: text.common.status },
+              { key: 'status', label: text.common.status, width: vars.sizes.field.narrow, filterable: false }, // the error wraps under the tag
               { key: 'actions', label: '', align: 'end' },
             ]}
             rows={rows.map((row) => ({

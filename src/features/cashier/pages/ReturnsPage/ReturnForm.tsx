@@ -188,7 +188,7 @@ export const ReturnForm = ({ sale, onBack }: { sale: ReturnableSale; onBack: () 
       </Card>
 
       <Card>
-        <Table
+        <Table filterable={false}
           label={t.title}
           stackOnMobile
           columns={[

@@ -333,6 +333,8 @@ export const buildSeed = (): Database => {
     // Demo numbers only (01000 0xxxxx), never real ones.
     phone: index % 5 === 4 ? `+9665000${String(index).padStart(5, '0')}` : `010000${String(index).padStart(5, '0')}`,
     createdAt: notAfterNow(atTime(addDays(historyStart, random.int(-60, mockConfig.historyDays)), 12)),
+    // Two in three gave their age (16 to 45), worked out from the position so the rest of the demo stays the same.
+    birthYear: index % 3 ? new Date().getFullYear() - (16 + ((index * 7) % 30)) : undefined,
   }));
   const egyptCustomers = data.customers.filter((customer) => customer.phone.startsWith('010'));
   const saudiCustomers = data.customers.filter((customer) => customer.phone.startsWith('+966'));

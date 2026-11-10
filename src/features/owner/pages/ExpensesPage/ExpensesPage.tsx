@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { deleteExpense, listExpenses, saveExpense, type ExpenseInput } from '@/shared/api';
-import { AsyncContent, Badge, BarList, Button, Card, Checkbox, FileField, FilterBar, Grid, Icon, IconButton, Modal, Notice, PageHeader, SelectField, Stack, StatCard, Table, TextField } from '@/shared/components';
+import { AsyncContent, Badge, BarList, Button, Card, Checkbox, FileField, FilterToolbar, Grid, Icon, IconButton, Modal, Notice, PageHeader, SelectField, Stack, StatCard, Table, TextField, filterField, useTableFilters } from '@/shared/components';
 import { useAction, useAsync, useErrorMessage, useFormat, useLiveVersion, useLocale, useQueryState, useReference } from '@/shared/hooks';
 import type { Expense } from '@/shared/types';
 import { vars } from '@/shared/theme';
@@ -18,6 +18,7 @@ export const ExpensesPage = () => {
   const [managing, setManaging] = useQueryState('categories', '');
   const [branchId, setBranchId] = useQueryState('branch', '');
   const [categoryId, setCategoryId] = useQueryState('category', '');
+  const columnFilters = useTableFilters();
   const version = useLiveVersion();
   const state = useAsync(() => listExpenses({ range: period.range, branchId: (branchId || undefined) as string | undefined, categoryId: categoryId || undefined }), [period.range.from, period.range.to, branchId, categoryId, version]);
   const action = useAction();
@@ -48,17 +49,28 @@ export const ExpensesPage = () => {
       {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
       {managing && <ConfigListModal listKey="expenseCategories" title={t.categoriesTitle} hint={t.categoriesHint} onClose={() => setManaging('')} />}
       <Stack gap={vars.spacing[4]}>
-        <FilterBar>
-          <PeriodFilter period={period} />
-          <SelectField
-            label={text.owner.fields.branch}
-            placeholder={text.owner.fields.allBranches}
-            value={branchId}
-            onChange={setBranchId}
-            options={[{ value: 'company', label: text.common.wholeCompany }, ...branches.filter((branch) => !branch.archived).map((branch) => ({ value: branch.id, label: branch.name }))]}
-          />
-          <SelectField label={t.category} placeholder={text.common.all} value={categoryId} onChange={setCategoryId} options={categories.map((option) => ({ value: option.id, label: format.text(option.label) }))} />
-        </FilterBar>
+        <FilterToolbar
+          leading={<PeriodFilter period={period} />}
+          fields={[
+            filterField(
+              'branch',
+              <SelectField
+                label={text.owner.fields.branch}
+                placeholder={text.owner.fields.allBranches}
+                value={branchId}
+                onChange={setBranchId}
+                options={[{ value: 'company', label: text.common.wholeCompany }, ...branches.filter((branch) => !branch.archived).map((branch) => ({ value: branch.id, label: branch.name }))]}
+              />,
+              { label: text.owner.fields.branch, value: branchId && (branchId === 'company' ? text.common.wholeCompany : format.branch(branchId)), clear: () => setBranchId('') },
+            ),
+            filterField('category', <SelectField label={t.category} placeholder={text.common.all} value={categoryId} onChange={setCategoryId} options={categories.map((option) => ({ value: option.id, label: format.text(option.label) }))} />, {
+              label: t.category,
+              value: categoryId && format.option(categoryId),
+              clear: () => setCategoryId(''),
+            }),
+          ]}
+          table={columnFilters}
+        />
         <AsyncContent state={state}>
           {(data) => {
             const byCategory = categories
@@ -87,26 +99,25 @@ export const ExpensesPage = () => {
                   }
                 >
                   <Table
+                    filters={columnFilters}
                     label={t.list}
                     emptyText={t.empty}
                     columns={[
-                      { key: 'date', label: text.common.date },
-                      { key: 'category', label: t.category },
-                      { key: 'branch', label: text.owner.fields.branch },
+                      { key: 'date', label: text.common.date, filterable: false },
+                      { key: 'category', label: t.category, filterable: false },
+                      { key: 'branch', label: text.owner.fields.branch, filterable: false },
+                      { key: 'repeat', label: t.repeats },
                       { key: 'note', label: text.common.note },
                       { key: 'amount', label: text.common.amount, align: 'end' },
                       { key: 'actions', label: '', align: 'end' },
                     ]}
                     rows={data.rows.map(({ expense }) => ({
                       key: expense.id,
+                      values: { date: expense.date },
                       cells: {
                         date: format.date(expense.date),
-                        category: (
-                          <Stack direction="row" gap={vars.spacing[1]} wrap>
-                            {format.option(expense.categoryId)}
-                            {expense.repeatMonthly && <Badge>{t.monthly}</Badge>}
-                          </Stack>
-                        ),
+                        category: format.option(expense.categoryId),
+                        repeat: expense.repeatMonthly ? <Badge>{t.monthly}</Badge> : '',
                         branch: format.branch(expense.branchId),
                         note: expense.note,
                         amount: format.money(expense.amount, expense.currency),

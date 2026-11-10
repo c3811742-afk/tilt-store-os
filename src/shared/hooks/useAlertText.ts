@@ -16,6 +16,7 @@ export const useAlertText = () => {
   const { settings } = useReference();
   const staffAlerts = text.staff.alerts;
   const decisions: Record<string, string> = text.staff.decisions;
+  const actionNames: Record<string, string> = text.owner.activity.actions;
   return (item: Pick<NotificationView, 'kind' | 'params'>) => {
     const copy = item.kind in staffAlerts ? staffAlerts[item.kind as StaffAlertKind] : text.owner.alerts.kinds[item.kind as Exclude<typeof item.kind, StaffAlertKind>];
     // Words stored as keys (a decision, "discount" or "refund", "fee" or "payout") show in the reader's language.
@@ -30,6 +31,8 @@ export const useAlertText = () => {
       ...(item.params.decision ? { decision: decisions[item.params.decision] ?? item.params.decision } : {}),
       ...(item.params.kind ? { kind: word(item.params.kind) ?? '' } : {}),
       ...(item.params.what ? { what: word(item.params.what) ?? '' } : {}),
+      // A flagged action is stored by its key (void, writeOff...) and shows as the activity log names it.
+      ...(item.params.action ? { action: actionNames[item.params.action] ?? item.params.action } : {}),
       // An amount stored as "EGP 4000" shows as "EGP 4,000"; a date stored as 2026-11-05 shows as "Nov 5, 2026".
       ...(item.params.amount ? { amount: money(item.params.amount) } : {}),
       ...(item.params.date && isoDate.test(item.params.date) ? { date: format.date(item.params.date) } : {}),

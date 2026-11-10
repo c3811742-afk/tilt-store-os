@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { createStatement, getBrandPayouts, getBrandSales, recordBrandPayment, recordFeePayment } from '@/shared/api';
-import { AsyncContent, Badge, Button, Card, DetailList, Grid, Notice, PageHeader, SelectField, Stack, StatCard, Table, Tabs, TextField } from '@/shared/components';
+import { AsyncContent, Badge, Button, Card, DetailList, FilterToolbar, Grid, Notice, PageHeader, SelectField, Stack, StatCard, Table, Tabs, TextField, useTableFilters } from '@/shared/components';
 import { brandPaymentMethods, feeStateTone, routes, toPath } from '@/shared/constants';
 import { useAction, useAsync, useErrorMessage, useFormat, useLiveVersion, useLocale, useQueryState } from '@/shared/hooks';
 import type { BrandPaymentMethod } from '@/shared/types';
@@ -30,6 +30,7 @@ export const BrandPayoutsPage = () => {
   const [range, setRange] = useState<{ from: string; to: string } | null>(null);
   const [payment, setPayment] = useState({ date: today(), amount: '', method: 'bank' as BrandPaymentMethod, reference: '', statementId: '' });
   const t = text.owner.payouts;
+  const salesFilters = useTableFilters();
 
   return (
     <AsyncContent state={state}>
@@ -72,6 +73,7 @@ export const BrandPayoutsPage = () => {
                       { key: 'due', label: t.totals.amountDue, align: 'end' },
                       { key: 'paid', label: t.paid, align: 'end' },
                       { key: 'status', label: text.common.status },
+                      { key: 'locked', label: t.locked },
                     ]}
                     rows={data.statements.map(({ statement, paid }) => ({
                       key: statement.id,
@@ -81,12 +83,8 @@ export const BrandPayoutsPage = () => {
                         period: `${format.date(statement.periodStart)} – ${format.date(statement.periodEnd)}`,
                         due: format.money(statement.totals.amountDue, statement.currency),
                         paid: format.money(paid, statement.currency),
-                        status: (
-                          <Stack direction="row" gap={vars.spacing[1]}>
-                            <Badge variant={statement.status === 'paid' ? 'success' : statement.status === 'approved' ? 'info' : 'warning'}>{t.states[statement.status]}</Badge>
-                            {statement.locked && <Badge>{t.locked}</Badge>}
-                          </Stack>
-                        ),
+                        status: <Badge variant={statement.status === 'paid' ? 'success' : statement.status === 'approved' ? 'info' : 'warning'}>{t.states[statement.status]}</Badge>,
+                        locked: statement.locked ? <Badge>{t.locked}</Badge> : '',
                       },
                     }))}
                   />
@@ -138,6 +136,7 @@ export const BrandPayoutsPage = () => {
                     ]}
                     rows={data.payments.map((row) => ({
                       key: row.id,
+                      values: { date: row.date },
                       cells: {
                         date: format.date(row.date),
                         amount: format.money(row.amount, row.currency),
@@ -170,6 +169,7 @@ export const BrandPayoutsPage = () => {
                     ]}
                     rows={data.fees.map(({ fee, state: feeState, dueDate }) => ({
                       key: fee.id,
+                      values: { due: dueDate },
                       cells: {
                         month: format.month(fee.month),
                         amount: format.money(fee.amount, fee.currency),
@@ -188,14 +188,15 @@ export const BrandPayoutsPage = () => {
               )}
               {tab === 'sales' && (
                 <Stack gap={vars.spacing[4]}>
-                  <PeriodFilter period={period} />
+                  <FilterToolbar leading={<PeriodFilter period={period} />} table={salesFilters} />
                   <AsyncContent state={sales} empty={<Notice>{text.common.noResults}</Notice>}>
                     {(result) =>
                       result && (
                         <Table
+                          filters={salesFilters}
                           label={t.tabs.sales}
                           columns={[
-                            { key: 'when', label: text.common.when },
+                            { key: 'when', label: text.common.when, filterable: false }, // the period
                             { key: 'sale', label: t.sale },
                             { key: 'branch', label: text.owner.fields.branch },
                             { key: 'qty', label: text.common.quantity, align: 'end' },
@@ -205,6 +206,7 @@ export const BrandPayoutsPage = () => {
                           ]}
                           rows={result.items.map((item) => ({
                             key: item.key,
+                            values: { when: item.at },
                             cells: {
                               when: format.dateTime(item.at),
                               sale: `${item.saleNumber}${item.kind === 'return' ? ` · ${t.returnLabel}` : ''}`,

@@ -108,6 +108,7 @@ export const StatementPage = () => {
                 columns={[
                   { key: 'when', label: text.common.when },
                   { key: 'sale', label: t.sale },
+                  { key: 'kind', label: text.common.status },
                   { key: 'branch', label: text.owner.fields.branch },
                   { key: 'item', label: text.owner.fields.product },
                   { key: 'qty', label: text.common.quantity, align: 'end' },
@@ -118,14 +119,11 @@ export const StatementPage = () => {
                 ]}
                 rows={data.items.map((item) => ({
                   key: item.key,
+                  values: { when: item.at },
                   cells: {
                     when: format.dateTime(item.at),
-                    sale: (
-                      <Stack direction="row" gap={vars.spacing[1]} wrap>
-                        {item.saleNumber}
-                        {item.kind === 'return' && <Badge variant="warning">{item.carried ? t.returnAfterPayment : t.returnLabel}</Badge>}
-                      </Stack>
-                    ),
+                    sale: item.saleNumber,
+                    kind: item.kind === 'return' ? <Badge variant="warning">{item.carried ? t.returnAfterPayment : t.returnLabel}</Badge> : '',
                     branch: format.branch(item.branchId),
                     item: `${item.productName} · ${item.variantLabel}`,
                     qty: format.number(item.qty),

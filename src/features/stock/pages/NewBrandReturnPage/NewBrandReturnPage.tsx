@@ -61,7 +61,7 @@ export const NewBrandReturnPage = () => {
           <AsyncContent state={candidates} empty={<Notice>{t.nothing}</Notice>}>
             {(rows) => (
               <Stack gap={vars.spacing[4]}>
-                <Table
+                <Table filterable={false}
                   label={t.newTitle}
                   stackOnMobile
                   columns={[

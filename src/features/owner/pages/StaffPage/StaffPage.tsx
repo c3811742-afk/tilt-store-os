@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router';
 import { listStaff, type StaffMember } from '@/shared/api';
-import { AsyncContent, Badge, Button, FilterBar, Icon, PageHeader, SelectField, Stack, Table, Text, TextField, Thumbnail, recordRows } from '@/shared/components';
+import { AsyncContent, Badge, Button, FilterToolbar, Icon, PageHeader, SelectField, Stack, Table, Text, TextField, Thumbnail, filterField, recordRows } from '@/shared/components';
 import { routes, toPath, userStatusTone } from '@/shared/constants';
 import { useAsync, useFormat, useLiveVersion, useLocale, useQueryState, useReference } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
@@ -46,15 +46,26 @@ export const StaffPage = () => {
           </>
         }
       />
-      <FilterBar>
-        <TextField type="search" label={text.common.search} value={query} onChange={setQuery} />
-        <SelectField label={t.role} placeholder={text.common.all} value={roleId} onChange={setRoleId} options={roles.map((role) => ({ value: role.id, label: format.text(role.name) }))} />
-        <BranchSelect kinds={['store', 'online', 'warehouse']} allLabel={text.owner.fields.allBranches} value={branchId} onChange={setBranchId} />
-        <SelectField label={text.common.status} placeholder={text.common.all} value={status} onChange={setStatus} options={(['active', 'invited', 'inactive'] as const).map((value) => ({ value, label: t.statuses[value] }))} />
-      </FilterBar>
+      <FilterToolbar
+        leading={<TextField type="search" label={text.common.search} value={query} onChange={setQuery} />}
+        fields={[
+          filterField('role', <SelectField label={t.role} placeholder={text.common.all} value={roleId} onChange={setRoleId} options={roles.map((role) => ({ value: role.id, label: format.text(role.name) }))} />, {
+            label: t.role,
+            value: roleId && format.text(roles.find((role) => role.id === roleId)?.name),
+            clear: () => setRoleId(''),
+          }),
+          filterField('branch', <BranchSelect kinds={['store', 'online', 'warehouse']} allLabel={text.owner.fields.allBranches} value={branchId} onChange={setBranchId} />, { label: text.owner.fields.branch, value: branchId && format.branch(branchId), clear: () => setBranchId('') }),
+          filterField('status', <SelectField label={text.common.status} placeholder={text.common.all} value={status} onChange={setStatus} options={(['active', 'invited', 'inactive'] as const).map((value) => ({ value, label: t.statuses[value] }))} />, {
+            label: text.common.status,
+            value: status && t.statuses[status as keyof typeof t.statuses],
+            clear: () => setStatus(''),
+          }),
+        ]}
+      />
       <AsyncContent state={state}>
         {(rows) => (
           <Table
+            filterable={false} // every column is the search box or one of the page's filters
             label={t.title}
             emptyText={text.common.noResults}
             columns={[

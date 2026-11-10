@@ -39,6 +39,8 @@ export interface FlagRules {
   cashDifferences: boolean;
   stockAdjustments: boolean;
   voids: boolean;
+  voidsAbove: number; // a person who voids more sales than this...
+  voidDays: number; // ...within this many days is flagged
 }
 
 export interface Settings {

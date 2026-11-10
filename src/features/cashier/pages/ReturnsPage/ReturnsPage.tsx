@@ -59,6 +59,7 @@ export const ReturnsPage = () => {
         <AsyncContent state={results} empty={<Notice>{fillText(t.noMatch, { query: submitted })}</Notice>}>
           {(rows) => (
             <Table
+              filterable={false} // a lookup: the search box finds the receipt
               label={t.results}
               stackOnMobile
               columns={[

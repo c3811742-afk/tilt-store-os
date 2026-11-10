@@ -7,9 +7,11 @@
   min-inline-size: 0;
 }
 
+/* In a row of fields, a label on two lines pushes its own label up, not its box down, so the boxes line up. */
 .labelRow {
   display: flex;
-  align-items: center;
+  flex-grow: 1;
+  align-items: flex-end;
   gap: var(--spacing-1);
 }
 

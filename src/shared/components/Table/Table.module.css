@@ -1,3 +1,35 @@
+/* A table with its filters above and its pages below. */
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+  min-inline-size: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.filters {
+  padding: var(--spacing-3);
+  border: var(--borders-width-thin) var(--borders-style) var(--colors-border);
+  border-radius: var(--radii-md);
+  background: var(--colors-surface-muted);
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-2);
+  color: var(--colors-text-secondary);
+  font-size: var(--text-styles-body-sm-font-size);
+  font-variant-numeric: var(--numeric-tabular);
+}
+
 .scroller {
   max-inline-size: 100%;
   overflow-x: auto;

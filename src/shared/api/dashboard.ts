@@ -1,6 +1,7 @@
 import type { CurrencyCode, Id } from '@/shared/types';
 import { addDays, datesIn, presetRange, previousRange, sortBy, stockLevels, today, type DateRange } from '@/shared/utils';
 import { netProfitOf, periodCostsIn, salesFacts, stockSummary, totalsBy, totalsOf, type PeriodCosts, type Totals } from './facts';
+import { pausedBrandsStock } from './pausedBrands';
 import { db, respond } from './server';
 
 export interface DashboardFilter {
@@ -136,6 +137,7 @@ export interface MorningSummary {
   lowStockItems: number;
   cashDifferences: { branchId: Id; difference: number; currency: CurrencyCode }[];
   failedReceipts: number;
+  pausedBrands: { brandId: Id; step: 'collect' | 'onTheWay' | 'return'; pieces: number }[]; // stock still to send back
 }
 
 // Yesterday at a glance, for the owner's phone in the morning.
@@ -164,6 +166,9 @@ export const getMorningSummary = (userId: Id) =>
         .map((shift) => ({ branchId: shift.branchId, difference: (shift.countedCash ?? 0) - (shift.expectedCash ?? 0), currency: shift.currency }))
         .filter((row) => row.difference !== 0),
       failedReceipts: db.sales.filter((sale) => sale.eReceipt.status === 'failed').length,
+      pausedBrands: pausedBrandsStock().flatMap((row) =>
+        row.step === 'done' ? [] : [{ brandId: row.brandId, step: row.step, pieces: row.step === 'collect' ? row.inBranches : row.step === 'onTheWay' ? row.inTransit : row.atWarehouse }],
+      ),
     };
   });
 

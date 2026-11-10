@@ -9,7 +9,6 @@ import { ExportButtons } from '../../components';
 
 type Value = { id: string; units: number; costValue: number; retailValue: number };
 
-const productRowLimit = 300; // the most product rows drawn at once (the export has them all)
 
 // Pieces and their value at cost and at selling price: in total, per branch and per brand. One branch is valued in its
 // own currency; with branches in other currencies, each branch shows its own and the converted value (which add up).
@@ -59,7 +58,7 @@ export const ValueTab = ({ filter }: { filter: StockFilter }) => {
                 />
               }
             >
-              <Table
+              <Table paged filterable={false}
                 label={t.byBranch}
                 sort={branchTable.sort}
                 onSortChange={branchTable.setSort}
@@ -79,7 +78,7 @@ export const ValueTab = ({ filter }: { filter: StockFilter }) => {
               />
             </Card>
             <Card title={t.byBrand}>
-              <Table
+              <Table paged filterable={false}
                 label={t.byBrand}
                 sort={brandTable.sort}
                 onSortChange={brandTable.setSort}
@@ -89,14 +88,13 @@ export const ValueTab = ({ filter }: { filter: StockFilter }) => {
               />
             </Card>
             <Card title={t.byProduct}>
-              <Table
+              <Table paged filterable={false}
                 label={t.byProduct}
                 sort={productTable.sort}
                 onSortChange={productTable.setSort}
                 columns={[{ key: 'name', label: text.owner.fields.product, sortable: true }, ...columns.slice(1)]}
                 rows={productTable
                   .sorted(data.byProduct, (row, key) => (key === 'name' ? row.name : key === 'units' ? row.units : key === 'retail' ? row.retailValue : row.costValue))
-                  .slice(0, productRowLimit)
                   .map((row) => ({
                     key: row.id,
                     cells: {

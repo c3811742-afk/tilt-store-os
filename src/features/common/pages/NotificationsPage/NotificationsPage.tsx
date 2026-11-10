@@ -1,4 +1,4 @@
-import { getNotifications, markAllNotificationsOpened } from '@/shared/api';
+import { clearReadNotifications, getNotifications, markAllNotificationsOpened } from '@/shared/api';
 import { AsyncContent, Button, Card, Icon, Notice, NotificationList, PageHeader, Stack } from '@/shared/components';
 import { useAction, useAsync, useErrorMessage, useLiveVersion, useLocale, useQueryState } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
@@ -27,6 +27,9 @@ export const NotificationsPage = () => {
             </Button>
             <Button variant="secondary" disabled={Boolean(action.busy)} onClick={() => action.run('all', markAllNotificationsOpened)}>
               {t.markAll}
+            </Button>
+            <Button variant="secondary" disabled={Boolean(action.busy)} onClick={() => action.run('clear', clearReadNotifications)}>
+              {t.clearRead}
             </Button>
           </>
         }

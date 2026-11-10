@@ -45,7 +45,7 @@ export const RequestsTab = ({ filter }: { filter: StockFilter }) => {
                 <Text variant="caption" color={vars.colors.textMuted}>
                   {`${format.user(request.requestedById)} · ${format.dateTime(request.at)}`}
                 </Text>
-                <Table
+                <Table paged filterable={false}
                   label={request.number}
                   columns={[
                     { key: 'item', label: text.owner.fields.product },

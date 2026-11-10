@@ -101,3 +101,10 @@ export const datesIn = ({ from, to }: DateRange) => {
   for (let day = from; day <= to; day = addDays(day, 1)) days.push(day);
   return days;
 };
+
+// A customer's age from the year they were born, and that year from the age they gave (an age outside 1 to 120 is none).
+export const ageFromBirthYear = (birthYear: number, on: Date = new Date()) => on.getFullYear() - birthYear;
+export const birthYearFromAge = (age: string | number | undefined, on: Date = new Date()) => {
+  const years = Number(age);
+  return Number.isInteger(years) && years >= 1 && years <= 120 ? on.getFullYear() - years : undefined;
+};

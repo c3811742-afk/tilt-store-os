@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router';
 import { listBatches } from '@/shared/api';
-import { AsyncContent, Badge, Checkbox, FilterBar, Notice, PageHeader, Stack, Table, recordRows } from '@/shared/components';
+import { AsyncContent, Badge, Checkbox, FilterToolbar, Notice, PageHeader, Stack, Table, filterField, recordRows, useTableFilters } from '@/shared/components';
 import { routes, toPath } from '@/shared/constants';
 import { useAsync, useFormat, useLiveVersion, useLocale, useQueryState } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
@@ -15,6 +15,7 @@ export const CostingPage = () => {
   const [branchId, setBranchId] = useQueryState('branch', '');
   const [defects, setDefects] = useQueryState('defects', '');
   const [pending, setPending] = useQueryState('pending', '');
+  const columnFilters = useTableFilters();
   const version = useLiveVersion();
   const state = useAsync(() => listBatches({ brandId: brandId || undefined, branchId: branchId || undefined, withDefects: defects === '1', pending: pending === '1' }), [brandId, branchId, defects, pending, version]);
   const t = text.owner.costing;
@@ -23,22 +24,24 @@ export const CostingPage = () => {
     <Stack gap={vars.spacing[5]}>
       <PageHeader title={t.title} />
       <Notice>{t.pastSalesNote}</Notice>
-      <FilterBar>
-        <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />
-        <BranchSelect kinds={['store', 'warehouse']} allLabel={text.owner.fields.allBranches} value={branchId} onChange={setBranchId} />
-      </FilterBar>
-      <Stack direction="row" wrap gap={vars.spacing[4]}>
-        <Checkbox label={t.onlyDefects} checked={defects === '1'} onChange={(checked) => setDefects(checked ? '1' : '')} />
-        <Checkbox label={t.onlyPending} checked={pending === '1'} onChange={(checked) => setPending(checked ? '1' : '')} />
-      </Stack>
+      <FilterToolbar
+        fields={[
+          filterField('brand', <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />, { label: text.owner.fields.brand, value: brandId && format.brand(brandId), clear: () => setBrandId('') }),
+          filterField('branch', <BranchSelect kinds={['store', 'warehouse']} allLabel={text.owner.fields.allBranches} value={branchId} onChange={setBranchId} />, { label: text.owner.fields.branch, value: branchId && format.branch(branchId), clear: () => setBranchId('') }),
+          filterField('defects', <Checkbox label={t.onlyDefects} checked={defects === '1'} onChange={(checked) => setDefects(checked ? '1' : '')} />, { label: t.onlyDefects, value: defects === '1' && text.common.yes, clear: () => setDefects('') }),
+          filterField('pending', <Checkbox label={t.onlyPending} checked={pending === '1'} onChange={(checked) => setPending(checked ? '1' : '')} />, { label: t.onlyPending, value: pending === '1' && text.common.yes, clear: () => setPending('') }),
+        ]}
+        table={columnFilters}
+      />
       <AsyncContent state={state} empty={<Notice>{text.common.noResults}</Notice>}>
         {(rows) => (
           <Table
+            filters={columnFilters}
             label={t.title}
             columns={[
               { key: 'batch', label: t.batch },
               { key: 'product', label: text.owner.fields.product },
-              { key: 'branch', label: text.owner.fields.branch },
+              { key: 'branch', label: text.owner.fields.branch, filterable: false }, // the Branch filter
               { key: 'qty', label: t.pieces, align: 'end' },
               { key: 'defects', label: t.defects, align: 'end' },
               { key: 'original', label: t.originalCost, align: 'end' },

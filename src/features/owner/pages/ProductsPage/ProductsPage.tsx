@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router';
 import { listProducts, type ProductRow } from '@/shared/api';
-import { AsyncContent, Badge, Button, Checkbox, FilterBar, Icon, PageHeader, SelectField, Stack, Table, Text, TextField, Thumbnail, recordRows } from '@/shared/components';
+import { AsyncContent, Badge, Button, Checkbox, FilterToolbar, Icon, PageHeader, SelectField, Stack, Table, Text, TextField, Thumbnail, filterField, recordRows, useTableFilters } from '@/shared/components';
 import { routes, toPath } from '@/shared/constants';
 import { useAsync, useFormat, useLiveVersion, useLocale, useQueryState, useReference } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
@@ -18,6 +18,7 @@ export const ProductsPage = () => {
   const [branchId, setBranchId] = useQueryState('branch', '');
   const [season, setSeason] = useQueryState('season', '');
   const [archived, setArchived] = useQueryState('archived', '');
+  const columnFilters = useTableFilters();
   const version = useLiveVersion();
   const state = useAsync(
     () => listProducts({ query, brandId: brandId || undefined, categoryId: categoryId || undefined, branchId: branchId || undefined, season: season || undefined, archived: archived === '1' }),
@@ -45,14 +46,17 @@ export const ProductsPage = () => {
           </>
         }
       />
-      <FilterBar>
-        <TextField type="search" label={text.common.search} placeholder={t.searchPlaceholder} value={query} onChange={setQuery} />
-        <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />
-        <CategorySelect allLabel={text.owner.fields.allCategories} value={categoryId} onChange={setCategoryId} />
-        <BranchSelect kinds={['store', 'online', 'warehouse']} label={t.inStockAt} allLabel={text.owner.fields.allBranches} value={branchId} onChange={setBranchId} />
-        <SelectField label={text.owner.fields.season} placeholder={text.common.all} value={season} onChange={setSeason} options={settings.seasons.map((value) => ({ value, label: value }))} />
-      </FilterBar>
-      <Checkbox label={text.common.showArchived} checked={archived === '1'} onChange={(checked) => setArchived(checked ? '1' : '')} />
+      <FilterToolbar
+        leading={<TextField type="search" label={text.common.search} placeholder={t.searchPlaceholder} value={query} onChange={setQuery} />}
+        fields={[
+          filterField('brand', <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />, { label: text.owner.fields.brand, value: brandId && format.brand(brandId), clear: () => setBrandId('') }),
+          filterField('category', <CategorySelect allLabel={text.owner.fields.allCategories} value={categoryId} onChange={setCategoryId} />, { label: text.owner.fields.category, value: categoryId && format.category(categoryId), clear: () => setCategoryId('') }),
+          filterField('branch', <BranchSelect kinds={['store', 'online', 'warehouse']} label={t.inStockAt} allLabel={text.owner.fields.allBranches} value={branchId} onChange={setBranchId} />, { label: t.inStockAt, value: branchId && format.branch(branchId), clear: () => setBranchId('') }),
+          filterField('season', <SelectField label={text.owner.fields.season} placeholder={text.common.all} value={season} onChange={setSeason} options={settings.seasons.map((value) => ({ value, label: value }))} />, { label: text.owner.fields.season, value: season, clear: () => setSeason('') }),
+          filterField('archived', <Checkbox label={text.common.showArchived} checked={archived === '1'} onChange={(checked) => setArchived(checked ? '1' : '')} />, { label: text.common.showArchived, value: archived === '1' && text.common.yes, clear: () => setArchived('') }),
+        ]}
+        table={columnFilters}
+      />
       <AsyncContent state={state} empty={<Text color={vars.colors.textMuted}>{text.common.noResults}</Text>}>
         {(rows: ProductRow[]) => {
           const currencies = rows[0]?.pricing.map((row) => row.currency) ?? [];
@@ -62,13 +66,16 @@ export const ProductsPage = () => {
                 {format.number(rows.length)} {t.countSuffix}
               </Text>
               <Table
+                filters={columnFilters}
                 label={t.title}
                 columns={[
-                  { key: 'product', label: text.owner.fields.product },
-                  { key: 'brand', label: text.owner.fields.brand },
-                  { key: 'category', label: text.owner.fields.category },
+                  // Product, brand and category are the search box and the page's own filters.
+                  { key: 'product', label: text.owner.fields.product, filterable: false },
+                  { key: 'brand', label: text.owner.fields.brand, filterable: false },
+                  { key: 'category', label: text.owner.fields.category, filterable: false },
                   ...currencies.map((currency) => ({ key: currency, label: currency, align: 'end' as const })),
                   { key: 'margin', label: text.owner.fields.margin, align: 'end' },
+                  { key: 'alert', label: t.marginCheck },
                   { key: 'stock', label: t.stock, align: 'end' },
                 ]}
                 rows={recordRows(
@@ -105,14 +112,10 @@ export const ProductsPage = () => {
                       label: '',
                       render: (row) => {
                         const margin = row.pricing[0]?.margin;
-                        return (
-                          <Stack direction="row" gap={vars.spacing[1]} justify="flex-end" align="center">
-                            {row.belowMinimum && <Badge variant="danger">{t.belowMinimum}</Badge>}
-                            {margin === null || margin === undefined ? '' : format.percent(margin)}
-                          </Stack>
-                        );
+                        return margin === null || margin === undefined ? '' : format.percent(margin);
                       },
                     },
+                    { key: 'alert', label: '', render: (row) => (row.belowMinimum ? <Badge variant="danger">{t.belowMinimum}</Badge> : '') },
                     { key: 'stock', label: '', render: (row) => format.number(row.stock) },
                   ],
                   (row) => navigate(toPath(routes.owner.product, { productId: row.product.id })),

@@ -34,7 +34,7 @@ export const ItemLinesEditor = (props: ItemLinesEditorProps) => {
   return (
     <Stack gap={vars.spacing[3]}>
       <VariantSearch onPick={add} disabled={disabled} autoFocus={autoFocus} stockBranchId={stockBranchId} />
-      <Table
+      <Table filterable={false}
         label={t.item}
         stackOnMobile
         emptyText={t.noLines}

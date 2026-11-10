@@ -1,13 +1,16 @@
 import { Link } from 'react-router';
 import { decideWriteOff, listDefects, listWriteOffs } from '@/shared/api';
-import { AsyncContent, Badge, Button, FilterBar, Grid, Notice, PageHeader, SelectField, Stack, StatCard, Table, Tabs } from '@/shared/components';
+import { AsyncContent, Badge, Button, FilterToolbar, Grid, Notice, PageHeader, SegmentedControl, SelectField, Stack, StatCard, Table, Tabs, filterField, useTableFilters } from '@/shared/components';
 import { approvalStateTone, defectStatusTone, routes, toPath } from '@/shared/constants';
 import { useAction, useAsync, useErrorMessage, useFormat, useLiveVersion, useLocale, useQueryState, useReference } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
+import type { DefectLiability } from '@/shared/types';
+import { fillText } from '@/shared/utils';
 import { BranchSelect, BrandSelect, PeriodFilter } from '../../components';
 import { usePeriod } from '../../hooks';
 
 type DefectsTab = 'defects' | 'writeOffs';
+type DefectSide = 'all' | DefectLiability;
 
 // Every defect by brand, batch, branch and reason, what it cost the store vs the brands, and write-offs to approve.
 export const DefectsPage = () => {
@@ -20,6 +23,8 @@ export const DefectsPage = () => {
   const [brandId, setBrandId] = useQueryState('brand', '');
   const [branchId, setBranchId] = useQueryState('branch', '');
   const [reasonId, setReasonId] = useQueryState('reason', '');
+  const [side, setSide] = useQueryState<DefectSide>('side', 'all');
+  const columnFilters = useTableFilters();
   const version = useLiveVersion();
   const defects = useAsync(() => listDefects({ range: period.range, brandId: brandId || undefined, branchId: branchId || undefined, reasonId: reasonId || undefined }), [period.range.from, period.range.to, brandId, branchId, reasonId, version]);
   const writeOffs = useAsync(listWriteOffs, [version]);
@@ -41,47 +46,70 @@ export const DefectsPage = () => {
       >
         {tab === 'defects' && (
           <Stack gap={vars.spacing[4]}>
-            <PeriodFilter period={period} />
-            <FilterBar>
-              <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />
-              <BranchSelect kinds={['store', 'warehouse', 'online']} allLabel={text.owner.fields.allBranches} value={branchId} onChange={setBranchId} />
-              <SelectField label={text.common.reason} placeholder={text.common.all} value={reasonId} onChange={setReasonId} options={settings.lists.defectReasons.map((option) => ({ value: option.id, label: format.text(option.label) }))} />
-            </FilterBar>
+            <FilterToolbar
+              leading={<PeriodFilter period={period} />}
+              fields={[
+                filterField('brand', <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />, { label: text.owner.fields.brand, value: brandId && format.brand(brandId), clear: () => setBrandId('') }),
+                filterField('branch', <BranchSelect kinds={['store', 'warehouse', 'online']} allLabel={text.owner.fields.allBranches} value={branchId} onChange={setBranchId} />, { label: text.owner.fields.branch, value: branchId && format.branch(branchId), clear: () => setBranchId('') }),
+                filterField('reason', <SelectField label={text.common.reason} placeholder={text.common.all} value={reasonId} onChange={setReasonId} options={settings.lists.defectReasons.map((option) => ({ value: option.id, label: format.text(option.label) }))} />, {
+                  label: text.common.reason,
+                  value: reasonId && format.option(reasonId),
+                  clear: () => setReasonId(''),
+                }),
+              ]}
+              table={columnFilters}
+            />
             <AsyncContent state={defects} empty={<Notice>{text.common.noResults}</Notice>}>
               {(data) => (
                 <Stack gap={vars.spacing[4]}>
                   <Grid>
                     <StatCard label={t.pieces} value={format.number(data.pieces)} />
-                    <StatCard label={t.absorbed} value={format.money(data.absorbed, data.currency)} highlight />
-                    <StatCard label={t.toBrands} value={format.money(data.toBrands, data.currency)} />
+                    <StatCard label={t.absorbed} value={format.money(data.absorbed, data.currency)} detail={fillText(text.common.pieceCount, { count: format.number(data.absorbedPieces) })} highlight />
+                    <StatCard label={t.toBrands} value={format.money(data.toBrands, data.currency)} detail={fillText(text.common.pieceCount, { count: format.number(data.toBrandsPieces) })} />
                   </Grid>
+                  {/* The detail of one side at a time: what the store absorbed, or what went back to the brands. */}
+                  <SegmentedControl<DefectSide>
+                    label={text.owner.costing.liability}
+                    value={side}
+                    onChange={setSide}
+                    options={[
+                      { value: 'all', label: t.allDefects },
+                      { value: 'store', label: t.absorbed },
+                      { value: 'brand', label: t.toBrands },
+                    ]}
+                  />
                   <Table
+                    filters={columnFilters}
                     label={t.tabs.defects}
                     columns={[
-                      { key: 'date', label: text.common.date },
+                      // Date, branch and reason are the period and the filters above; who pays is the switch.
+                      { key: 'date', label: text.common.date, filterable: false },
                       { key: 'product', label: text.owner.fields.product },
                       { key: 'batch', label: text.owner.costing.batch },
-                      { key: 'branch', label: text.owner.fields.branch },
-                      { key: 'reason', label: text.common.reason },
+                      { key: 'branch', label: text.owner.fields.branch, filterable: false },
+                      { key: 'reason', label: text.common.reason, filterable: false },
                       { key: 'qty', label: t.pieces, align: 'end' },
                       { key: 'value', label: t.value, align: 'end' },
-                      { key: 'who', label: text.owner.costing.liability },
+                      { key: 'who', label: text.owner.costing.liability, filterable: false },
                       { key: 'status', label: text.common.status },
                     ]}
-                    rows={data.rows.map((row) => ({
-                      key: row.defect.id,
-                      cells: {
-                        date: format.date(row.defect.at),
-                        product: `${row.productName} · ${format.brand(row.brandId)}`,
-                        batch: row.defect.batchId ? <Link to={toPath(routes.owner.batch, { batchId: row.defect.batchId })}>{row.batchNumber}</Link> : '',
-                        branch: format.branch(row.defect.branchId),
-                        reason: `${format.option(row.defect.reasonId)} · ${t.foundAt[row.defect.foundAt]}`,
-                        qty: format.number(row.defect.qty),
-                        value: format.money(row.value, data.currency),
-                        who: text.owner.costing.liabilities[row.defect.liability],
-                        status: <Badge variant={defectStatusTone[row.defect.status]}>{t.statuses[row.defect.status]}</Badge>,
-                      },
-                    }))}
+                    rows={data.rows
+                      .filter((row) => side === 'all' || row.defect.liability === side)
+                      .map((row) => ({
+                        key: row.defect.id,
+                        values: { date: row.defect.at },
+                        cells: {
+                          date: format.date(row.defect.at),
+                          product: `${row.productName} · ${format.brand(row.brandId)}`,
+                          batch: row.defect.batchId ? <Link to={toPath(routes.owner.batch, { batchId: row.defect.batchId })}>{row.batchNumber}</Link> : '',
+                          branch: format.branch(row.defect.branchId),
+                          reason: `${format.option(row.defect.reasonId)} · ${t.foundAt[row.defect.foundAt]}`,
+                          qty: format.number(row.defect.qty),
+                          value: format.money(row.value, data.currency),
+                          who: text.owner.costing.liabilities[row.defect.liability],
+                          status: <Badge variant={defectStatusTone[row.defect.status]}>{t.statuses[row.defect.status]}</Badge>,
+                        },
+                      }))}
                   />
                 </Stack>
               )}
@@ -105,6 +133,7 @@ export const DefectsPage = () => {
                 ]}
                 rows={rows.map(({ writeOff, label }) => ({
                   key: writeOff.id,
+                  values: { date: writeOff.at },
                   cells: {
                     date: format.dateTime(writeOff.at),
                     item: label,

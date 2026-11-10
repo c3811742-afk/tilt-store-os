@@ -63,62 +63,64 @@ export interface BrandReturnInput {
   note?: string;
 }
 
-export const createBrandReturn = (input: BrandReturnInput) =>
-  mutate(() => {
-    const me = assertStorekeeper(input.branchId);
-    findById(db.brands, input.brandId);
-    const lines = input.lines.filter((line) => line.qty > 0 && ['toReturn', 'defective', 'available'].includes(line.status));
-    if (!lines.length) throw new ApiError('notAllowed');
-    const levels = stockLevels(db.movements);
-    lines.forEach((line) => {
-      const here = levels.find((level) => level.variantId === line.variantId && level.branchId === input.branchId && level.locationId === line.locationId && level.status === line.status);
-      if (!here || here.qty < line.qty) throw new ApiError('notEnoughStock');
-    });
-    const at = nowIso();
-    // Defective pieces going back close their open defects, oldest first (an item can have several, one per reason).
-    // A defect only partly sent back is split, so the pieces still here keep an open defect of their own.
-    const returnLines: BrandReturn['lines'] = [];
-    lines.forEach((line) => {
-      const qty = Math.floor(line.qty);
-      if (line.status === 'available') return void returnLines.push({ variantId: line.variantId, qty, condition: 'unsold' });
-      let left = qty;
-      db.defects
-        .filter((defect) => defect.branchId === input.branchId && defect.variantId === line.variantId && defect.status === 'open' && Boolean(defect.markedToReturnAt) === (line.status === 'toReturn'))
-        .sort((a, b) => a.at.localeCompare(b.at))
-        .forEach((defect) => {
-          const take = Math.min(defect.qty, left);
-          if (!take) return;
-          left -= take;
-          let sent = defect;
-          if (take < defect.qty) {
-            defect.qty -= take;
-            sent = { ...defect, id: newId(), qty: take };
-            db.defects.push(sent);
-          }
-          sent.status = 'returnedToBrand';
-          returnLines.push({ variantId: line.variantId, qty: take, condition: 'defective', defectId: sent.id });
-        });
-      if (left) returnLines.push({ variantId: line.variantId, qty: left, condition: 'defective' });
-    });
-    const record: BrandReturn = {
-      id: newId(),
-      number: nextNumber('RB', 4),
-      brandId: input.brandId,
-      branchId: input.branchId,
-      at,
-      byId: me.id,
-      lines: returnLines,
-      note: input.note?.trim() || undefined,
-      status: 'sent',
-    };
-    lines.forEach((line) => {
-      const from = { branchId: input.branchId, locationId: line.locationId, status: line.status };
-      db.movements.push({ id: newId(), at, byId: me.id, variantId: line.variantId, qty: Math.floor(line.qty), from, to: { ...from, status: 'returned' }, kind: 'returnToBrand', ref: { type: 'brandReturn', id: record.id } });
-    });
-    db.brandReturns.push(record);
-    logActivity({ action: 'send', target: { type: 'stock', id: record.id, label: record.number }, branchId: input.branchId, changes: [{ field: 'returned', from: null, to: lines.reduce((sum, line) => sum + line.qty, 0) }] });
-    return record;
+export const createBrandReturn = (input: BrandReturnInput) => mutate(() => openBrandReturn(input));
+
+// The change itself, also used to send a paused brand's stock back from the warehouse.
+export const openBrandReturn = (input: BrandReturnInput) => {
+  const me = assertStorekeeper(input.branchId);
+  findById(db.brands, input.brandId);
+  const lines = input.lines.filter((line) => line.qty > 0 && ['toReturn', 'defective', 'available'].includes(line.status));
+  if (!lines.length) throw new ApiError('notAllowed');
+  const levels = stockLevels(db.movements);
+  lines.forEach((line) => {
+    const here = levels.find((level) => level.variantId === line.variantId && level.branchId === input.branchId && level.locationId === line.locationId && level.status === line.status);
+    if (!here || here.qty < line.qty) throw new ApiError('notEnoughStock');
   });
+  const at = nowIso();
+  // Defective pieces going back close their open defects, oldest first (an item can have several, one per reason).
+  // A defect only partly sent back is split, so the pieces still here keep an open defect of their own.
+  const returnLines: BrandReturn['lines'] = [];
+  lines.forEach((line) => {
+    const qty = Math.floor(line.qty);
+    if (line.status === 'available') return void returnLines.push({ variantId: line.variantId, qty, condition: 'unsold' });
+    let left = qty;
+    db.defects
+      .filter((defect) => defect.branchId === input.branchId && defect.variantId === line.variantId && defect.status === 'open' && Boolean(defect.markedToReturnAt) === (line.status === 'toReturn'))
+      .sort((a, b) => a.at.localeCompare(b.at))
+      .forEach((defect) => {
+        const take = Math.min(defect.qty, left);
+        if (!take) return;
+        left -= take;
+        let sent = defect;
+        if (take < defect.qty) {
+          defect.qty -= take;
+          sent = { ...defect, id: newId(), qty: take };
+          db.defects.push(sent);
+        }
+        sent.status = 'returnedToBrand';
+        returnLines.push({ variantId: line.variantId, qty: take, condition: 'defective', defectId: sent.id });
+      });
+    if (left) returnLines.push({ variantId: line.variantId, qty: left, condition: 'defective' });
+  });
+  const record: BrandReturn = {
+    id: newId(),
+    number: nextNumber('RB', 4),
+    brandId: input.brandId,
+    branchId: input.branchId,
+    at,
+    byId: me.id,
+    lines: returnLines,
+    note: input.note?.trim() || undefined,
+    status: 'sent',
+  };
+  lines.forEach((line) => {
+    const from = { branchId: input.branchId, locationId: line.locationId, status: line.status };
+    db.movements.push({ id: newId(), at, byId: me.id, variantId: line.variantId, qty: Math.floor(line.qty), from, to: { ...from, status: 'returned' }, kind: 'returnToBrand', ref: { type: 'brandReturn', id: record.id } });
+  });
+  db.brandReturns.push(record);
+  logActivity({ action: 'send', target: { type: 'stock', id: record.id, label: record.number }, branchId: input.branchId, changes: [{ field: 'returned', from: null, to: lines.reduce((sum, line) => sum + line.qty, 0) }] });
+  return record;
+};
 
 export const listBrandReturns = (branchId: Id) =>
   respond(() => {

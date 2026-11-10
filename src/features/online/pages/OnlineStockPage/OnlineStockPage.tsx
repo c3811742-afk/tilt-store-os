@@ -1,5 +1,5 @@
 import { getOnlineStock, type OnlineAvailability, type OnlineSource } from '@/shared/api';
-import { AsyncContent, Badge, BrandSelect, Button, CategorySelect, ColorSelect, FilterBar, Notice, PageHeader, SelectField, SizeSelect, Stack, Table, Text, TextField, OfflineStockNotice } from '@/shared/components';
+import { AsyncContent, Badge, BrandSelect, CategorySelect, ColorSelect, FilterToolbar, Notice, OfflineStockNotice, PageHeader, SelectField, SizeSelect, Stack, Table, Text, TextField, filterField, useTableFilters } from '@/shared/components';
 import { useAsync, useFormat, useLiveVersion, useLocale, useQueryState } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { fillText } from '@/shared/utils';
@@ -28,44 +28,32 @@ export const OnlineStockPage = () => {
     (data) => data.rows.length === 0,
   );
   const t = text.online.stock;
-
-  const clear = () => {
-    setQuery('');
-    setBrandId('');
-    setCategoryId('');
-    setSize('');
-    setColor('');
-    setAvailability('');
-    setSource('');
-  };
+  const columnFilters = useTableFilters();
 
   return (
     <Stack gap={vars.spacing[5]}>
       <PageHeader title={t.title} />
       <OfflineStockNotice />
-      <FilterBar
-        actions={
-          filtered && (
-            <Button variant="secondary" size="sm" onClick={clear}>
-              {text.common.clearFilters}
-            </Button>
-          )
-        }
-      >
-        <TextField type="search" label={text.common.search} placeholder={t.searchPlaceholder} value={query} onChange={setQuery} />
-        <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />
-        <CategorySelect allLabel={text.owner.fields.allCategories} value={categoryId} onChange={setCategoryId} />
-        <SizeSelect allLabel={text.common.all} value={size} onChange={setSize} />
-        <ColorSelect allLabel={text.common.all} value={color} onChange={setColor} />
-        <SelectField<OnlineAvailability | ''>
-          label={t.availability}
-          placeholder={text.common.all}
-          value={availability}
-          onChange={setAvailability}
-          options={availabilities.map((value) => ({ value, label: t.availabilities[value] }))}
-        />
-        <SelectField<OnlineSource | ''> label={t.source} placeholder={text.common.all} value={source} onChange={setSource} options={sources.map((value) => ({ value, label: t.sources[value] }))} />
-      </FilterBar>
+      <FilterToolbar
+        leading={<TextField type="search" label={text.common.search} placeholder={t.searchPlaceholder} value={query} onChange={setQuery} />}
+        fields={[
+          filterField('brand', <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />, { label: text.owner.fields.brand, value: brandId && format.brand(brandId), clear: () => setBrandId('') }),
+          filterField('category', <CategorySelect allLabel={text.owner.fields.allCategories} value={categoryId} onChange={setCategoryId} />, { label: text.owner.fields.category, value: categoryId && format.category(categoryId), clear: () => setCategoryId('') }),
+          filterField('size', <SizeSelect allLabel={text.common.all} value={size} onChange={setSize} />, { label: text.owner.fields.size, value: size, clear: () => setSize('') }),
+          filterField('color', <ColorSelect allLabel={text.common.all} value={color} onChange={setColor} />, { label: text.owner.fields.color, value: color, clear: () => setColor('') }),
+          filterField(
+            'availability',
+            <SelectField<OnlineAvailability | ''> label={t.availability} placeholder={text.common.all} value={availability} onChange={setAvailability} options={availabilities.map((value) => ({ value, label: t.availabilities[value] }))} />,
+            { label: t.availability, value: availability && t.availabilities[availability], clear: () => setAvailability('') },
+          ),
+          filterField('source', <SelectField<OnlineSource | ''> label={t.source} placeholder={text.common.all} value={source} onChange={setSource} options={sources.map((value) => ({ value, label: t.sources[value] }))} />, {
+            label: t.source,
+            value: source && t.sources[source],
+            clear: () => setSource(''),
+          }),
+        ]}
+        table={columnFilters}
+      />
       <AsyncContent state={state} empty={<Notice>{filtered ? t.none : t.empty}</Notice>}>
         {({ rows, total }) => (
           <Stack gap={vars.spacing[2]}>
@@ -75,10 +63,11 @@ export const OnlineStockPage = () => {
               </Text>
             )}
             <Table
+              filters={columnFilters}
               label={t.title}
               stackOnMobile
               columns={[
-                { key: 'item', label: text.staff.items.item },
+                { key: 'item', label: text.staff.items.item, filterable: false }, // the search box and filters above
                 { key: 'online', label: t.online, align: 'end' },
                 { key: 'elsewhere', label: t.elsewhere, align: 'end' },
                 { key: 'reserved', label: t.reserved, align: 'end' },

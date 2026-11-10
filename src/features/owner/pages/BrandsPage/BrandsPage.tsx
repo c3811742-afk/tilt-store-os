@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { listBrands, type BrandRow } from '@/shared/api';
-import { AsyncContent, Badge, Button, FilterBar, Icon, PageHeader, SelectField, Stack, Table, Text, TextField, Thumbnail, recordRows } from '@/shared/components';
+import { AsyncContent, Badge, Button, FilterToolbar, Icon, PageHeader, SelectField, Stack, Table, Text, TextField, Thumbnail, filterField, recordRows, useTableFilters } from '@/shared/components';
 import { brandModels, routes, toPath } from '@/shared/constants';
 import { useAsync, useFormat, useLiveVersion, useLocale } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
@@ -19,6 +19,7 @@ export const BrandsPage = () => {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('active');
   const [model, setModel] = useState('');
+  const columnFilters = useTableFilters();
   const t = text.owner.brands;
 
   const filter = useMemo(
@@ -38,25 +39,37 @@ export const BrandsPage = () => {
           </Button>
         }
       />
-      <FilterBar>
-        <TextField type="search" label={text.common.search} placeholder={t.searchPlaceholder} value={query} onChange={setQuery} />
-        <SelectField label={text.common.status} value={status} onChange={setStatus} placeholder={text.common.all} options={[{ value: 'active', label: t.statuses.active }, { value: 'paused', label: t.statuses.paused }]} />
-        <SelectField label={t.terms.model} value={model} onChange={setModel} placeholder={text.common.all} options={brandModels.map((value) => ({ value, label: t.terms.models[value] }))} />
-      </FilterBar>
+      <FilterToolbar
+        leading={<TextField type="search" label={text.common.search} placeholder={t.searchPlaceholder} value={query} onChange={setQuery} />}
+        fields={[
+          filterField('status', <SelectField label={text.common.status} value={status} onChange={setStatus} placeholder={text.common.all} options={[{ value: 'active', label: t.statuses.active }, { value: 'paused', label: t.statuses.paused }]} />, {
+            label: text.common.status,
+            value: status && t.statuses[status as keyof typeof t.statuses],
+            clear: () => setStatus(''),
+          }),
+          filterField('model', <SelectField label={t.terms.model} value={model} onChange={setModel} placeholder={text.common.all} options={brandModels.map((value) => ({ value, label: t.terms.models[value] }))} />, {
+            label: t.terms.model,
+            value: model && t.terms.models[model as keyof typeof t.terms.models],
+            clear: () => setModel(''),
+          }),
+        ]}
+        table={columnFilters}
+      />
       <AsyncContent state={state}>
         {(rows) => {
           const shown = filter(rows);
           return (
             <Stack gap={vars.spacing[2]}>
               <Table
+                filters={columnFilters}
                 label={t.title}
                 emptyText={text.common.noResults}
                 columns={[
-                  { key: 'brand', label: text.owner.fields.brand },
+                  { key: 'brand', label: text.owner.fields.brand, filterable: false }, // the search box
                   { key: 'deal', label: t.terms.deal },
                   { key: 'products', label: t.products, align: 'end' },
                   { key: 'payouts', label: t.terms.payoutFrequency },
-                  { key: 'status', label: text.common.status },
+                  { key: 'status', label: text.common.status, filterable: false }, // the Status filter
                 ]}
                 rows={recordRows(
                   shown,

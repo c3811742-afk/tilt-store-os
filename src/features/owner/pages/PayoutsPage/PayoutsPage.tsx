@@ -24,6 +24,7 @@ export const PayoutsPage = () => {
             label={t.title}
             columns={[
               { key: 'brand', label: text.owner.fields.brand },
+              { key: 'fees', label: text.owner.brands.terms.monthlyFee },
               { key: 'balance', label: t.weOwe, align: 'end' },
               { key: 'unsettled', label: t.notOnStatement, align: 'end' },
               { key: 'approved', label: t.approvedUnpaid, align: 'end' },
@@ -36,13 +37,9 @@ export const PayoutsPage = () => {
                 {
                   key: 'brand',
                   label: '',
-                  render: (row) => (
-                    <Stack direction="row" gap={vars.spacing[2]} align="center" wrap>
-                      {format.brand(row.brandId)}
-                      {row.feesOverdue > 0 && <Badge variant="danger">{fillText(t.overdueFees, { count: format.number(row.feesOverdue) })}</Badge>}
-                    </Stack>
-                  ),
+                  render: (row) => format.brand(row.brandId),
                 },
+                { key: 'fees', label: '', render: (row) => (row.feesOverdue > 0 ? <Badge variant="danger">{fillText(t.overdueFees, { count: format.number(row.feesOverdue) })}</Badge> : '') },
                 {
                   key: 'balance',
                   label: '',

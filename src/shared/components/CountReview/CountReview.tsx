@@ -58,7 +58,7 @@ export const CountReview = (props: CountReviewProps) => {
       )}
       {missing && <Notice tone="danger">{text.errors.missingReason}</Notice>}
       <Card title={fillText(t.totalDifference, { pieces: format.number(view.totalDifference ?? 0) })}>
-        <Table
+        <Table filterable={false}
           label={count.number}
           stackOnMobile
           columns={[

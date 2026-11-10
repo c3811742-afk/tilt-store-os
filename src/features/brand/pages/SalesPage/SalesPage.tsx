@@ -1,5 +1,5 @@
 import { getBrandUnits } from '@/shared/api';
-import { AsyncContent, Card, ColumnChart, FilterBar, Grid, PageHeader, PeriodFilter, SelectField, Stack, StatCard, Table } from '@/shared/components';
+import { AsyncContent, Card, ColumnChart, FilterToolbar, Grid, PageHeader, PeriodFilter, SelectField, Stack, StatCard, Table, filterField, useTableFilters } from '@/shared/components';
 import { useAsync, useFormat, useLiveVersion, useLocale, usePeriod, useQueryState, useReference } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 
@@ -12,15 +12,23 @@ export const SalesPage = () => {
   const period = usePeriod('month');
   const [branchId, setBranchId] = useQueryState('branch', '');
   const t = text.brandPortal.sales;
+  const columnFilters = useTableFilters();
   const state = useAsync(() => getBrandUnits(period.range, branchId || undefined), [period.range.from, period.range.to, branchId, version]);
 
   return (
     <Stack gap={vars.spacing[5]}>
       <PageHeader title={t.title} />
-      <PeriodFilter period={period} />
-      <FilterBar>
-        <SelectField label={t.branch} placeholder={t.allBranches} value={branchId} onChange={setBranchId} options={branches.filter((branch) => !branch.archived && branch.kind !== 'warehouse').map((branch) => ({ value: branch.id, label: branch.name }))} />
-      </FilterBar>
+      <FilterToolbar
+        leading={<PeriodFilter period={period} />}
+        fields={[
+          filterField('branch', <SelectField label={t.branch} placeholder={t.allBranches} value={branchId} onChange={setBranchId} options={branches.filter((branch) => !branch.archived && branch.kind !== 'warehouse').map((branch) => ({ value: branch.id, label: branch.name }))} />, {
+            label: t.branch,
+            value: branchId && format.branch(branchId),
+            clear: () => setBranchId(''),
+          }),
+        ]}
+        table={columnFilters}
+      />
       <AsyncContent state={state}>
         {(data) => (
           <Stack gap={vars.spacing[5]}>
@@ -34,7 +42,7 @@ export const SalesPage = () => {
                 <ColumnChart label={t.byDay} points={data.byDay.map((point) => ({ key: point.day, label: format.shortDate(`${point.day}T12:00:00`), value: point.sold, display: format.number(point.sold) }))} labelEvery={Math.max(1, Math.ceil(data.byDay.length / 10))} />
               </Card>
               <Card title={t.byBranch}>
-                <Table
+                <Table paged filterable={false} // the Branch filter
                   label={t.byBranch}
                   columns={[
                     { key: 'branch', label: t.branch },
@@ -47,7 +55,8 @@ export const SalesPage = () => {
               </Card>
             </Grid>
             <Card title={t.byProduct}>
-              <Table
+              <Table paged
+                filters={columnFilters}
                 label={t.byProduct}
                 emptyText={text.brandPortal.overview.noSales}
                 columns={[

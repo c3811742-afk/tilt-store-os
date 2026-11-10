@@ -5,7 +5,6 @@ import { routes, toPath } from '@/shared/constants';
 import { useAsync, useFormat, useLiveVersion, useLocale, useTableSort } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 
-const rowLimit = 300; // the most rows drawn at once; narrow the filters to see others
 
 // Pieces on hand of each item in each branch. Opens with the most pieces first; every column sorts.
 export const LevelsTab = ({ filter }: { filter: StockFilter }) => {
@@ -23,10 +22,7 @@ export const LevelsTab = ({ filter }: { filter: StockFilter }) => {
         const rows = table.sorted(data.rows, valueOf);
         return (
           <Stack gap={vars.spacing[2]}>
-            <Text variant="caption" color={vars.colors.textMuted}>
-              {rows.length > rowLimit ? `${format.number(rowLimit)} / ${format.number(rows.length)} · ${t.narrowFilters}` : format.number(rows.length)}
-            </Text>
-            <Table
+            <Table paged filterable={false}
               label={t.tabs.levels}
               sort={table.sort}
               onSortChange={table.setSort}
@@ -36,7 +32,7 @@ export const LevelsTab = ({ filter }: { filter: StockFilter }) => {
                 ...data.branchIds.map((id) => ({ key: id, label: format.branch(id), align: 'end' as const, sortable: true })),
                 { key: 'total', label: text.common.total, align: 'end', sortable: true },
               ]}
-              rows={rows.slice(0, rowLimit).map((row) => ({
+              rows={rows.map((row) => ({
                 key: row.variantId,
                 cells: {
                   item: (

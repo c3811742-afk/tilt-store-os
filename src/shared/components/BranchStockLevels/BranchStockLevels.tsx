@@ -8,12 +8,12 @@ import { vars } from '@/shared/theme';
 import { fillText, withDefaults } from '@/shared/utils';
 import { AsyncContent } from '../AsyncContent';
 import { Badge } from '../Badge';
-import { FilterBar } from '../FilterBar';
+import { FilterToolbar, filterField } from '../FilterToolbar';
 import { Notice } from '../Notice';
 import { BrandSelect, ColorSelect, SizeSelect } from '../ReferenceSelect';
 import { SelectField } from '../SelectField';
 import { Stack } from '../Stack';
-import { Table } from '../Table';
+import { Table, useTableFilters } from '../Table';
 import { Text } from '../Text';
 import { TextField } from '../TextField';
 import { branchStockLevelsDefaults } from './BranchStockLevels.defaults';
@@ -33,24 +33,27 @@ export const BranchStockLevels = (props: BranchStockLevelsProps) => {
   const [size, setSize] = useState('');
   const [color, setColor] = useState('');
   const [status, setStatus] = useState<StockStatus | ''>(p.status);
+  const columnFilters = useTableFilters();
   const state = useAsync(() => getBranchStock(branchId, { query, brandId: brandId || undefined, size: size || undefined, color: color || undefined, status: status || undefined }), [branchId, query, brandId, size, color, status, version]);
   const t = text.staff.stock;
   const statusText = text.owner.stock.statuses;
 
   return (
     <Stack gap={vars.spacing[4]}>
-      <FilterBar>
-        <TextField type="search" label={text.common.search} placeholder={text.owner.products.searchPlaceholder} value={query} onChange={setQuery} />
-        <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />
-        <SizeSelect allLabel={text.common.all} value={size} onChange={setSize} />
-        <ColorSelect allLabel={text.common.all} value={color} onChange={setColor} />
-        <SelectField<StockStatus | ''>
-          label={text.common.status}
-          value={status}
-          onChange={setStatus}
-          options={[{ value: '', label: t.anyStatus }, ...stockStatuses.map((value) => ({ value, label: statusText[value] }))]}
-        />
-      </FilterBar>
+      <FilterToolbar
+        leading={<TextField type="search" label={text.common.search} placeholder={text.owner.products.searchPlaceholder} value={query} onChange={setQuery} />}
+        fields={[
+          filterField('brand', <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />, { label: text.owner.fields.brand, value: brandId && format.brand(brandId), clear: () => setBrandId('') }),
+          filterField('size', <SizeSelect allLabel={text.common.all} value={size} onChange={setSize} />, { label: text.owner.fields.size, value: size, clear: () => setSize('') }),
+          filterField('color', <ColorSelect allLabel={text.common.all} value={color} onChange={setColor} />, { label: text.owner.fields.color, value: color, clear: () => setColor('') }),
+          filterField(
+            'status',
+            <SelectField<StockStatus | ''> label={text.common.status} value={status} onChange={setStatus} options={[{ value: '', label: t.anyStatus }, ...stockStatuses.map((value) => ({ value, label: statusText[value] }))]} />,
+            { label: text.common.status, value: status && statusText[status], clear: () => setStatus('') },
+          ),
+        ]}
+        table={columnFilters}
+      />
       <AsyncContent state={state}>
         {(data) => {
           const shown = data.rows.slice(0, p.limit);
@@ -68,17 +71,19 @@ export const BranchStockLevels = (props: BranchStockLevelsProps) => {
             <Stack gap={vars.spacing[2]}>
               {data.rows.length > p.limit && <Notice>{fillText(t.showingFirst, { count: format.number(p.limit) })}</Notice>}
               <Table
+                filters={columnFilters}
                 label={text.owner.stock.tabs.levels}
                 stackOnMobile
                 columns={[
-                  { key: 'brand', label: text.owner.fields.brand },
-                  { key: 'item', label: text.staff.items.item },
-                  { key: 'size', label: text.owner.fields.size },
-                  { key: 'color', label: text.owner.fields.color },
+                  // Brand, item, size, colour and status are the search box and the filters above.
+                  { key: 'brand', label: text.owner.fields.brand, filterable: false },
+                  { key: 'item', label: text.staff.items.item, filterable: false },
+                  { key: 'size', label: text.owner.fields.size, filterable: false },
+                  { key: 'color', label: text.owner.fields.color, filterable: false },
                   { key: 'floor', label: t.floor, align: 'end' },
                   { key: 'back', label: t.backRoom, align: 'end' },
                   { key: 'available', label: t.available, align: 'end' },
-                  { key: 'statuses', label: text.common.status },
+                  { key: 'statuses', label: text.common.status, filterable: false },
                   { key: 'others', label: t.otherBranches },
                 ]}
                 rows={shown.map((row) => ({

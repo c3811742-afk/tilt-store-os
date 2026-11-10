@@ -1,4 +1,4 @@
-import { mockConfig, storageKeys } from '@/shared/constants';
+import { defaultSettings, mockConfig, routes, storageKeys } from '@/shared/constants';
 import type { ActivityAction, ActivityChange, ActivityEntry, ActivityTarget, AlertKind, Id, StaffAlertKind, User } from '@/shared/types';
 import { compressText, decompressText, nowIso, safeAsync, storage, tabStorage } from '@/shared/utils';
 import { buildSeed } from '@/shared/mocks/seed';
@@ -16,10 +16,18 @@ const loadSaved = async (): Promise<Database | null> => {
   return result.ok && result.data.version === mockConfig.databaseVersion ? result.data : null;
 };
 
+// Saved data from before a setting existed gets that setting's default (e.g. a new alert or flag rule).
+const withNewSettings = (data: Database) => {
+  data.settings.flagRules = { ...defaultSettings.flagRules, ...data.settings.flagRules };
+  data.settings.ownerAlerts = { ...defaultSettings.ownerAlerts, ...data.settings.ownerAlerts };
+  return data;
+};
+
 // The in-memory "database", loaded once: the changes saved in this browser, or fresh seed data.
 export let db = undefined as unknown as Database;
 export const ready = (async () => {
-  db = (await loadSaved()) ?? buildSeed();
+  const saved = await loadSaved();
+  db = saved ? withNewSettings(saved) : buildSeed();
 })();
 
 let saveTimer: ReturnType<typeof setTimeout> | undefined;
@@ -56,7 +64,7 @@ window.addEventListener('storage', (event) => {
   clearTimeout(saveTimer);
   void loadSaved().then((saved) => {
     if (!saved) return;
-    db = saved;
+    db = withNewSettings(saved);
     listeners.forEach((listener) => listener());
   });
 });
@@ -123,6 +131,17 @@ export const isOwner = (user: User) => user.roleIds.some((roleId) => db.roles.fi
 
 export const ownerIds = () => db.users.filter((user) => user.status === 'active' && isOwner(user)).map((user) => user.id);
 
+const isManager = (user: User) => user.roleIds.some((roleId) => db.roles.find((role) => role.id === roleId)?.builtIn === 'manager');
+
+// Who hears about a person's flagged action: the managers of the branch (not the person), and the level above them,
+// the owners, when the person is a manager themselves or the branch has no manager.
+export const peopleAbove = (userId: Id, branchId?: Id) => {
+  const person = db.users.find((user) => user.id === userId);
+  const managers = db.users.filter((user) => user.id !== userId && user.status === 'active' && isManager(user) && (!branchId || user.branchIds.includes(branchId))).map((user) => user.id);
+  const ownersToo = !managers.length || (person ? isManager(person) : true);
+  return { managers, owners: ownersToo ? ownerIds() : [] };
+};
+
 // ---- Lookups ---------------------------------------------------------------------------------------------------
 
 export const findById = <T extends { id: string }>(list: T[], id: string): T => {
@@ -149,6 +168,7 @@ interface LogInput {
   userId?: Id;
   at?: string;
   flagged?: boolean; // set by the caller when one of the owner's flag rules matches
+  alerted?: boolean; // the caller already sent its own alert about it, so the flag sends none
 }
 
 // Every change goes through here, so nothing is missing from the activity log.
@@ -166,7 +186,20 @@ export const logActivity = (input: LogInput): ActivityEntry => {
     flagged: input.flagged ?? false,
   };
   db.activity.unshift(entry);
+  if (entry.flagged && !input.alerted) alertFlag(entry);
   return entry;
+};
+
+// A flagged action by branch staff goes to their managers and the person above them (see peopleAbove). The owners
+// also get it when they have the alert on. An owner's own actions are only marked in the log.
+const alertFlag = (entry: ActivityEntry) => {
+  const person = db.users.find((user) => user.id === entry.userId);
+  if (!person || isOwner(person)) return;
+  const branch = entry.branchId ? db.branches.find((current) => current.id === entry.branchId)?.name : undefined;
+  const params = { action: entry.action, user: person.name, target: [entry.target.label, branch].filter(Boolean).join(' · ') };
+  const { managers, owners } = peopleAbove(person.id, entry.branchId);
+  notify('flaggedAction', params, routes.owner.activity, owners);
+  if (managers.length) notify('flaggedAction', params, routes.manager.staff, managers, false);
 };
 
 // The changed fields between two versions of a record, for the activity log.

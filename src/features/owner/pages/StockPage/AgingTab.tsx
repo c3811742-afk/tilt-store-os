@@ -1,12 +1,11 @@
 import { Link } from 'react-router';
 import { getStockAging, type StockFilter } from '@/shared/api';
-import { AsyncContent, Grid, Stack, StatCard, Table, Text } from '@/shared/components';
+import { AsyncContent, Grid, Stack, StatCard, Table } from '@/shared/components';
 import { routes, toPath } from '@/shared/constants';
 import { useAsync, useFormat, useLiveVersion, useLocale, useTableSort } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { fillText } from '@/shared/utils';
 
-const rowLimit = 200; // the most rows drawn at once; narrow the filters to see others
 
 // How long items have stayed unsold, grouped by the age limits in Policies. Opens with the oldest first.
 export const AgingTab = ({ filter }: { filter: StockFilter }) => {
@@ -29,10 +28,7 @@ export const AgingTab = ({ filter }: { filter: StockFilter }) => {
                 <StatCard key={bucket.index} label={bucket.to === null ? fillText(t.olderThan, { days: format.number(bucket.from - 1) }) : fillText(t.daysRange, { from: format.number(bucket.from), to: format.number(bucket.to) })} value={fillText(text.owner.dashboard.units, { count: format.number(bucket.pieces) })} highlight={bucket.to === null} />
               ))}
             </Grid>
-            <Text variant="caption" color={vars.colors.textMuted}>
-              {rows.length > rowLimit ? `${format.number(rowLimit)} / ${format.number(rows.length)} · ${t.narrowFilters}` : format.number(rows.length)}
-            </Text>
-            <Table
+            <Table paged filterable={false}
               label={t.tabs.aging}
               sort={table.sort}
               onSortChange={table.setSort}
@@ -43,7 +39,7 @@ export const AgingTab = ({ filter }: { filter: StockFilter }) => {
                 { key: 'days', label: t.daysInStock, align: 'end', sortable: true },
                 { key: 'lastSale', label: t.lastSale, align: 'end', sortable: true },
               ]}
-              rows={rows.slice(0, rowLimit).map((row) => ({
+              rows={rows.map((row) => ({
                 key: `${row.variantId}|${row.branchId}`,
                 cells: {
                   item: <Link to={toPath(routes.owner.itemHistory, { variantId: row.variantId })}>{`${row.productName} · ${row.size} · ${row.color}`}</Link>,

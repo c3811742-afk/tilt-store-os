@@ -1,4 +1,12 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+}
+
 .list {
+  align-self: stretch;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -34,4 +42,20 @@
   flex-shrink: 0;
   align-items: center;
   gap: var(--spacing-1);
+}
+
+/* A folded alert of the same kind, under the newest one. */
+.nested {
+  padding-inline-start: var(--spacing-4);
+}
+
+/* Swiping: the row follows the finger (vertical scrolling still works), then slides out or back. */
+.swipe {
+  touch-action: pan-y;
+  transform: translateX(var(--swipe-shift));
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+
+.dragging {
+  transition: none;
 }

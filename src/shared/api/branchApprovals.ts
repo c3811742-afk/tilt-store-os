@@ -6,7 +6,7 @@ import { assertBranch, hasRole } from './branchScope';
 import { decideBranchCount } from './counts';
 import { describeVariant } from './stock';
 import { decideTransfer } from './transfers';
-import { actor, db, findById, isOwner, logActivity, mutate, newId, notify, respond } from './server';
+import { actor, db, findById, isOwner, logActivity, mutate, newId, notify, ownerIds, peopleAbove, respond } from './server';
 
 // Approvals for a branch manager: requests from the till (discounts, refunds, price changes, returns outside the
 // policy or without a receipt, voids) and from the branch (transfers out, stock counts). At the till the manager (or
@@ -154,7 +154,36 @@ export const voidSale = (saleId: Id, reasonId: string, note?: string) =>
       .forEach((movement) => db.movements.push({ id: newId(), at, byId: me.id, variantId: movement.variantId, qty: movement.qty, to: movement.from, kind: 'return', ref: { type: 'sale', id: sale.id }, reason: 'void' }));
     Object.assign(sale, { voidedAt: at, voidedById: me.id, voidReasonId: reasonId, voidNote: note });
     db.approvals.push({ id: newId(), kind: 'void', level: 'manager', status: 'approved', branchId: sale.branchId, requestedById: me.id, at, ref: { type: 'sale', id: sale.id }, summary: sale.number, amount: saleTotal(sale), currency: sale.currency, decidedById: me.id, decidedAt: at, reason: reasonId, note, channel: 'app' });
-    logActivity({ action: 'void', target: { type: 'sale', id: sale.id, label: sale.number }, branchId: sale.branchId, amount: saleTotal(sale), currency: sale.currency, flagged: true });
+    logActivity({ action: 'void', target: { type: 'sale', id: sale.id, label: sale.number }, branchId: sale.branchId, amount: saleTotal(sale), currency: sale.currency, flagged: db.settings.flagRules.voids, alerted: true });
+    reportVoid(sale, me);
     return sale;
   });
+
+// Every void is reported to the owners (and the branch's other managers). Whoever voids more sales than the owner's
+// limit within the set days, or whose own sales are voided that often, is flagged to the people above them.
+const reportVoid = (sale: Sale, me: User) => {
+  const branch = findById(db.branches, sale.branchId);
+  const others = (ids: Id[]) => ids.filter((id) => id !== me.id);
+  const params = { number: sale.number, branch: branch.name, amount: `${sale.currency} ${saleTotal(sale)}`, user: me.name };
+  const { managers } = peopleAbove(me.id, branch.id);
+  notify('saleVoided', params, routes.owner.activity, others(ownerIds()));
+  if (others(managers).length) notify('saleVoided', params, routes.manager.approvals, others(managers), false);
+
+  const { voidsAbove, voidDays } = db.settings.flagRules;
+  const since = new Date(Date.now() - voidDays * 86_400_000).toISOString();
+  const recent = db.sales.filter((current) => current.voidedAt && current.voidedAt >= since);
+  const check = (personId: Id, count: number) => {
+    if (count <= voidsAbove) return;
+    const person = findById(db.users, personId);
+    if (isOwner(person)) return; // no one is above an owner
+    const waiting = db.notifications.some((item) => item.kind === 'suspiciousVoids' && item.params.personId === personId && !item.openedBy.length);
+    if (waiting) return;
+    const flag = { personId, person: person.name, count: String(count), days: String(voidDays), limit: String(voidsAbove), branch: branch.name };
+    const above = peopleAbove(personId, branch.id);
+    notify('suspiciousVoids', flag, routes.owner.activity, others(ownerIds()));
+    if (others(above.managers).length) notify('suspiciousVoids', flag, routes.manager.approvals, others(above.managers), false);
+  };
+  check(me.id, recent.filter((current) => current.voidedById === me.id).length);
+  if (sale.cashierId !== me.id) check(sale.cashierId, recent.filter((current) => current.cashierId === sale.cashierId).length);
+};
 

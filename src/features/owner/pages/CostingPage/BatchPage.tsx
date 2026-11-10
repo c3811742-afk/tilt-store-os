@@ -142,6 +142,7 @@ export const BatchPage = () => {
                 ]}
                 rows={data.defects.map((defect) => ({
                   key: defect.id,
+                  values: { date: defect.at },
                   cells: {
                     date: format.date(defect.at),
                     qty: format.number(defect.qty),

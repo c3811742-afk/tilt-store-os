@@ -109,6 +109,8 @@ export const defaultSettings: Settings = {
     cashDifferences: true,
     stockAdjustments: true,
     voids: true,
+    voidsAbove: 3,
+    voidDays: 7,
   },
   ownerAlerts: {
     lowStock: true,
@@ -128,6 +130,11 @@ export const defaultSettings: Settings = {
     approvalRejected: false,
     promotionApproved: false,
     promotionRejected: false,
+    saleVoided: true,
+    suspiciousVoids: true,
+    flaggedAction: true,
+    pausedBrandCollect: true,
+    pausedBrandReturn: true,
   },
   sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'One size'],
   colors: ['Black', 'White', 'Off-white', 'Grey', 'Navy', 'Green', 'Beige', 'Brown', 'Blue', 'Red', 'Pink'],
@@ -239,7 +246,7 @@ export const supportDefaults = {
 // The alerts each kind of role can receive and turn off (Notifications › Alerts you receive). Owners choose
 // for all owners at once on the same tab.
 export const alertsByRole: Partial<Record<BuiltInRole, AlertKind[]>> = {
-  manager: ['approvalWaiting', 'approvalApproved', 'approvalRejected', 'cashDifference', 'lowStock', 'stockRequest', 'defectiveReturn'],
+  manager: ['approvalWaiting', 'approvalApproved', 'approvalRejected', 'cashDifference', 'lowStock', 'stockRequest', 'defectiveReturn', 'saleVoided', 'suspiciousVoids', 'flaggedAction'],
   cashier: ['approvalApproved', 'approvalRejected', 'lowStock'],
   brandPartner: ['promotionApproved', 'promotionRejected', 'lowStock'],
   it: ['eReceiptFailed', 'approvalApproved', 'approvalRejected'],

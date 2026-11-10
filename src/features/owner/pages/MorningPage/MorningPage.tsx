@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router';
 import { getMorningSummary } from '@/shared/api';
 import { AsyncContent, BarList, Button, Card, Grid, Notice, PageHeader, Stack, StatCard } from '@/shared/components';
-import { routes, withQuery } from '@/shared/constants';
+import { routes, toPath, withQuery } from '@/shared/constants';
 import { useAsync, useFormat, useLiveVersion, useLocale, useSession } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 import { addDays, fillText, today } from '@/shared/utils';
@@ -33,6 +33,9 @@ export const MorningPage = () => {
             ...data.cashDifferences.map((row, index) => ({ key: `cash-${index}`, tone: 'danger' as const, message: fillText(row.difference < 0 ? t.cashShort : t.cashOver, { branch: format.branch(row.branchId), amount: format.money(Math.abs(row.difference), row.currency) }), to: withQuery(routes.owner.reports, { view: 'shifts', branch: row.branchId }) })),
             ...(data.failedReceipts > 0 ? [{ key: 'receipts', tone: 'danger' as const, message: fillText(t.failedReceipts, count(data.failedReceipts)), to: withQuery(routes.owner.tax, { tab: 'receipts' }) }] : []),
             ...(data.pendingApprovals > 0 ? [{ key: 'approvals', tone: 'warning' as const, message: fillText(t.approvals, count(data.pendingApprovals)), to: routes.owner.approvals }] : []),
+            ...data.pausedBrands
+              .filter((row) => row.step !== 'onTheWay')
+              .map((row) => ({ key: `paused-${row.brandId}`, tone: 'warning' as const, message: fillText(row.step === 'collect' ? t.pausedCollect : t.pausedReturn, { brand: format.brand(row.brandId), pieces: format.number(row.pieces) }), to: toPath(routes.owner.brand, { brandId: row.brandId }) })),
             ...(data.lowStockItems > 0 ? [{ key: 'lowStock', tone: 'warning' as const, message: fillText(t.lowStock, count(data.lowStockItems)), to: withQuery(routes.owner.stock, { tab: 'low' }) }] : []),
             ...(data.newAlerts > 0 ? [{ key: 'alerts', tone: 'info' as const, message: fillText(t.alerts, count(data.newAlerts)), to: routes.notifications }] : []),
           ];

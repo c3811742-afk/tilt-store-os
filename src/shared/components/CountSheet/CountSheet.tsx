@@ -71,7 +71,7 @@ export const CountSheet = ({ view, onSubmitted }: CountSheetProps) => {
         </Stack>
       </Card>
       {Boolean(error) && <Notice tone="danger">{errorMessage(error)}</Notice>}
-      <Table
+      <Table filterable={false}
         label={count.number}
         stackOnMobile
         columns={[

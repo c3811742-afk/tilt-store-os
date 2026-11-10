@@ -25,7 +25,7 @@ export const ApprovalPolicies = () => {
         <Grid minColumnWidth={vars.sizes.field.narrow}>
           <TextField label={t.refundAbove} hint={t.refundAboveHint} type="number" min={0} prefix={settings.baseCurrency} value={String(values.refundApprovalAbove)} onChange={(value) => set('refundApprovalAbove', toNumber(value))} />
           <TextField label={t.ownerAbove} hint={t.ownerAboveHint} type="number" min={0} prefix={settings.baseCurrency} value={String(values.ownerApprovalAbove)} onChange={(value) => set('ownerApprovalAbove', toNumber(value))} />
-          <TextField label={t.countAbove} hint={t.countAboveHint} type="number" min={0} value={String(values.stockCountApprovalAbove)} onChange={(value) => set('stockCountApprovalAbove', toNumber(value))} />
+          <TextField label={t.countAbove} hint={t.countAboveHint} type="number" min={0} suffix={text.common.pieces} value={String(values.stockCountApprovalAbove)} onChange={(value) => set('stockCountApprovalAbove', toNumber(value))} />
           <TextField label={t.pinTries} type="number" min={1} value={String(values.approvalPinTries)} onChange={(value) => set('approvalPinTries', Math.max(toNumber(value), 1))} />
         </Grid>
       </SettingsSection>

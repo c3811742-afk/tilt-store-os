@@ -32,7 +32,7 @@ export const SignatureForm = (props: SignatureFormProps) => {
   return (
     <Stack gap={vars.spacing[4]}>
       {fields.length > 0 && (
-        <Table
+        <Table filterable={false}
           label={text.staff.items.item}
           stackOnMobile
           columns={[{ key: 'item', label: text.staff.items.item }, ...fields.map((field) => ({ key: field.key, label: field.label, align: 'end' as const, width: vars.sizes.field.qty }))]}

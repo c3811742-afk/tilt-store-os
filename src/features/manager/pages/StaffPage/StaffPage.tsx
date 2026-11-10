@@ -45,6 +45,7 @@ export const StaffPage = () => {
                   ]}
                   rows={data.discounts.map((row) => ({
                     key: row.id,
+                    values: { when: row.at },
                     cells: {
                       when: format.dateTime(row.at),
                       cashier: format.user(row.cashierId),

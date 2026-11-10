@@ -50,6 +50,7 @@ export const CategoriesPage = () => {
               { key: 'name', label: text.common.name },
               { key: 'products', label: text.owner.products.title, align: 'end' },
               { key: 'margin', label: t.minMargin, align: 'end' },
+              { key: 'status', label: text.common.status },
               { key: 'actions', label: text.common.actions, align: 'end' },
             ]}
             rows={recordRows(
@@ -59,15 +60,11 @@ export const CategoriesPage = () => {
                 {
                   key: 'name',
                   label: '',
-                  render: (row) => (
-                    <Stack direction="row" gap={vars.spacing[2]} align="center">
-                      {format.text(row.category.name)}
-                      {row.category.archived && <Badge>{text.common.archived}</Badge>}
-                    </Stack>
-                  ),
+                  render: (row) => format.text(row.category.name),
                 },
                 { key: 'products', label: '', render: (row) => <Link to={withQuery(routes.owner.products, { category: row.category.id })}>{format.number(row.productCount)}</Link> },
                 { key: 'margin', label: '', render: (row) => (row.category.minMargin === null ? t.defaultMargin : format.percent(row.category.minMargin)) },
+                { key: 'status', label: '', render: (row) => (row.category.archived ? <Badge>{text.common.archived}</Badge> : '') },
                 {
                   key: 'actions',
                   label: '',

@@ -1,10 +1,11 @@
 import { routes, tillDefaults } from '@/shared/constants';
 import type { Defect, Id, ReturnCondition, Sale, SaleReturn } from '@/shared/types';
 import { convert, daysBetween, nowIso, toIsoDate, roundMoney, phoneDigits } from '@/shared/utils';
+import { addBatchDefects, batchForDefect } from './costing';
 import { addMovement, availableIn, currentUnitCost, placeIn, recordSale, variantIndex } from './engine';
 import { ApiError } from './errors';
 import { actor, db, findById, isOwner, logActivity, mutate, newId, nextNumber, notify, respond } from './server';
-import { customerFor, openShiftOf, storeCreditOf, type CartItemInput, type TillPayment } from './till';
+import { alertLargeAmount, customerFor, openShiftOf, storeCreditOf, type CartItemInput, type TillPayment } from './till';
 import { assertBranch } from './branchScope';
 
 // Returns and exchanges at the till: finding the sale, what can come back under the country's policy, refunds,
@@ -334,12 +335,14 @@ export const createReturn = (input: ReturnInput) =>
       const status = line.condition === 'available' ? 'available' : line.condition === 'toReturn' || line.defectOrigin === 'received' ? 'toReturn' : 'defective';
       addMovement(db, { variantId: saleLine.variantId, qty: line.qty, to: placeIn(stockBranch, line.condition === 'available' ? 'floor' : 'backRoom', status), kind: 'return', ref: { type: 'return', id: saleReturn.id }, at: saleReturn.at, byId: me.id }, newId);
       if (line.condition === 'defective') {
+        const batch = batchForDefect(saleLine.productId, stockBranch.id);
         const defect: Defect = {
           id: newId(),
           at: saleReturn.at,
           byId: me.id,
           productId: saleLine.productId,
           variantId: saleLine.variantId,
+          batchId: batch?.id,
           branchId: stockBranch.id,
           qty: line.qty,
           reasonId: line.defectReasonId ?? db.settings.lists.defectReasons[0]?.id ?? '',
@@ -353,6 +356,7 @@ export const createReturn = (input: ReturnInput) =>
           ...(line.defectOrigin === 'received' ? { markedToReturnById: me.id, markedToReturnAt: saleReturn.at } : {}),
         };
         db.defects.push(defect);
+        addBatchDefects(batch?.id, line.qty);
         const product = db.products.find((current) => current.id === saleLine.productId);
         const managers = db.users.filter((user) => user.status === 'active' && !isOwner(user) && user.roleIds.includes('role-manager') && user.branchIds.includes(branch.id)).map((user) => user.id);
         notify('defectiveReturn', { branch: branch.name, product: product?.name ?? '' }, routes.owner.defects, managers);
@@ -362,9 +366,9 @@ export const createReturn = (input: ReturnInput) =>
     const refundTotal = roundMoney(saleReturn.refunds.filter((refund) => refund.methodId !== 'pm-credit' || input.kind === 'return').reduce((sum, refund) => sum + refund.amount, 0));
     const refundLimit = convert(db.settings.flagRules.refundAbove, db.settings.baseCurrency, sale.currency, nowIso(), db.rates, db.settings.baseCurrency);
     const largeRefund = refundTotal > refundLimit;
-    logActivity({ action: 'refund', target: { type: 'return', id: saleReturn.id, label: saleReturn.number }, branchId: branch.id, amount: value, currency: sale.currency, flagged: largeRefund, changes: [{ field: 'sale', from: null, to: sale.number }] });
-    // Above the limit in Activity › Flag settings: the owners get an alert.
-    if (largeRefund) notify('largeDiscountOrRefund', { kind: 'refund', branch: branch.name, amount: `${sale.currency} ${refundTotal}`, user: me.name }, routes.owner.activity);
+    logActivity({ action: 'refund', target: { type: 'return', id: saleReturn.id, label: saleReturn.number }, branchId: branch.id, amount: value, currency: sale.currency, flagged: largeRefund, alerted: largeRefund, changes: [{ field: 'sale', from: null, to: sale.number }] });
+    // Above the limit in Activity › Flag settings: the owners and the branch's managers get an alert.
+    if (largeRefund) alertLargeAmount({ kind: 'refund', branch: branch.name, amount: `${sale.currency} ${refundTotal}`, user: me.name }, branch.id);
     return saleReturn;
   });
 

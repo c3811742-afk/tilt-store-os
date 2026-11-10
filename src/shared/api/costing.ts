@@ -1,4 +1,4 @@
-import type { Batch, DefectHandling, Id } from '@/shared/types';
+import type { Batch, DefectHandling, DefectLiability, Id } from '@/shared/types';
 import { batchUnitCosts, convert, currentTerms, inRange, nowIso, shopPrice, type DateRange } from '@/shared/utils';
 import { ApiError } from './errors';
 import { piecesIn } from './engine';
@@ -69,6 +69,11 @@ const askCostApproval = (batch: Batch, before: ReturnType<typeof batchUnitCosts>
   }
   notify('batchCostChanged', { batch: batch.number, from: before.effective.toFixed(2), to: after.adjusted.toFixed(2) }, `/owner/costing/${batch.id}`);
 };
+
+// The batch a defective piece found after receiving counts against: the latest delivery of the product, one received
+// in this branch first.
+export const batchForDefect = (productId: Id, branchId?: Id) =>
+  db.batches.filter((batch) => batch.productId === productId).sort((a, b) => Number(b.branchId === branchId) - Number(a.branchId === branchId) || b.receivedAt.localeCompare(a.receivedAt))[0];
 
 // Defects found after receiving (in a branch, at inspection, in a transfer) count against the batch they came in,
 // like those found at receiving: its defect count goes up and its cost follows (with the owner's approval).
@@ -166,9 +171,18 @@ export const listDefects = (filter: DefectFilter) =>
         return { defect, productName: product?.name ?? '', brandId: product?.brandId ?? '', batchNumber: db.batches.find((batch) => batch.id === defect.batchId)?.number, value };
       });
     // Money impact: what the store absorbs vs what goes back to the brands (credit, replacement or return).
-    const absorbed = rows.filter((row) => row.defect.liability === 'store').reduce((sum, row) => sum + row.value, 0);
-    const toBrands = rows.filter((row) => row.defect.liability === 'brand').reduce((sum, row) => sum + row.value, 0);
-    return { rows, absorbed, toBrands, currency: reportingCurrency, pieces: rows.reduce((sum, row) => sum + row.defect.qty, 0) };
+    const side = (liability: DefectLiability) => rows.filter((row) => row.defect.liability === liability);
+    const value = (list: typeof rows) => list.reduce((sum, row) => sum + row.value, 0);
+    const pieces = (list: typeof rows) => list.reduce((sum, row) => sum + row.defect.qty, 0);
+    return {
+      rows,
+      absorbed: value(side('store')),
+      absorbedPieces: pieces(side('store')),
+      toBrands: value(side('brand')),
+      toBrandsPieces: pieces(side('brand')),
+      currency: reportingCurrency,
+      pieces: pieces(rows),
+    };
   });
 
 // ---- Write-offs -------------------------------------------------------------------------------------------------

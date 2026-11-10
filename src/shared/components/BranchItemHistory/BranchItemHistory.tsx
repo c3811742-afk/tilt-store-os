@@ -61,7 +61,7 @@ export const BranchItemHistory = ({ variantId, back, actions, notice }: BranchIt
               )}
             </Card>
             <Card title={t.history}>
-              <Table
+              <Table paged
                 label={t.history}
                 stackOnMobile
                 emptyText={t.noHistory}
@@ -75,6 +75,7 @@ export const BranchItemHistory = ({ variantId, back, actions, notice }: BranchIt
                 ]}
                 rows={data.movements.map((movement) => ({
                   key: movement.id,
+                  values: { when: movement.at },
                   cells: {
                     when: format.dateTime(movement.at),
                     kind: <Badge variant={movement.to?.status ? stockStatusTone[movement.to.status] : 'neutral'}>{o.movements[movement.kind]}</Badge>,

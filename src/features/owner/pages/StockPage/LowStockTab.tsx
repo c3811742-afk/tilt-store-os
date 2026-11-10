@@ -5,7 +5,6 @@ import { routes, toPath } from '@/shared/constants';
 import { useAsync, useFormat, useLiveVersion, useLocale, useTableSort } from '@/shared/hooks';
 import { isFiltered } from './isFiltered';
 
-const rowLimit = 300;
 
 // Items at or below their minimum in each store. Opens with the fewest pieces (out of stock) first.
 export const LowStockTab = ({ filter }: { filter: StockFilter }) => {
@@ -18,7 +17,7 @@ export const LowStockTab = ({ filter }: { filter: StockFilter }) => {
   return (
     <AsyncContent state={state} empty={isFiltered(filter) ? <Notice>{text.common.noResults}</Notice> : <Notice tone="success">{t.noLowStock}</Notice>}>
       {(rows) => (
-        <Table
+        <Table paged filterable={false}
           label={t.tabs.low}
           sort={table.sort}
           onSortChange={table.setSort}
@@ -30,7 +29,6 @@ export const LowStockTab = ({ filter }: { filter: StockFilter }) => {
           ]}
           rows={table
             .sorted(rows, (row, key) => (key === 'item' ? `${row.productName} ${row.size} ${row.color}` : key === 'branch' ? format.branch(row.branchId) : key === 'min' ? row.min : row.qty))
-            .slice(0, rowLimit)
             .map((row) => ({
               key: `${row.variantId}|${row.branchId}`,
               cells: {

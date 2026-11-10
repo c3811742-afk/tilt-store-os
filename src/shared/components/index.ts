@@ -32,6 +32,7 @@ export * from './SegmentedControl';
 export * from './FileField';
 export * from './LocalizedField';
 export * from './FilterBar';
+export * from './FilterToolbar';
 export * from './Thumbnail';
 export * from './BarList';
 export * from './ColumnChart';

@@ -77,7 +77,6 @@ export const VariantsTab = ({ data, onSaved }: { data: ProductData; onSaved: () 
                       error={duplicateInForm(row.barcode) ? text.errors.duplicateBarcode : undefined}
                       onChange={(barcode) => edit(variant.id, { barcode, barcodeGenerated: false })}
                     />
-                    {row.barcodeGenerated && <Badge variant="info">{t.generated}</Badge>}
                     <Button
                       variant="muted"
                       size="sm"
@@ -89,6 +88,7 @@ export const VariantsTab = ({ data, onSaved }: { data: ProductData; onSaved: () 
                       <Icon name="barcode" />
                       {t.generateBarcode}
                     </Button>
+                    {row.barcodeGenerated && <Badge variant="info">{t.generated}</Badge>}
                   </Stack>
                 ),
                 labels: <TextField label="" type="number" min={0} value={copies[variant.id] ?? ''} onChange={(value) => setCopies((current) => ({ ...current, [variant.id]: value }))} width={vars.sizes.field.narrow} />,

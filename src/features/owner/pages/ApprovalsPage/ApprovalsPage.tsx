@@ -83,6 +83,7 @@ export const ApprovalsPage = () => {
                 ]}
                 rows={rows.map((approval) => ({
                   key: approval.id,
+                  values: { when: approval.at },
                   cells: {
                     when: format.dateTime(approval.at),
                     what: `${t.kinds[approval.kind]} · ${approval.summary}`,

@@ -63,7 +63,7 @@ export const BranchForm = ({ branchId, initial, onDone }: BranchFormProps) => {
             <InfoTip text={t.locationsHint} />
           </Text>
         </Stack>
-        <Table
+        <Table filterable={false}
           label={t.locations}
           columns={[
             { key: 'kind', label: t.locationKind },

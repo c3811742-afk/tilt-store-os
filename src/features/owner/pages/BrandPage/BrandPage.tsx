@@ -9,6 +9,7 @@ import { downloadDataUrl, fillText, today } from '@/shared/utils';
 import { BrandTermsFields } from '../../components/BrandTermsFields';
 import { useTermsSummary } from '../../hooks/useTermsSummary';
 import { BrandProfileForm } from './BrandProfileForm';
+import { PausedStock } from './PausedStock';
 import { TermsHistory } from './TermsHistory';
 
 type BrandTab = 'overview' | 'profile' | 'terms' | 'history' | 'agreement';
@@ -55,6 +56,7 @@ export const BrandPage = () => {
               }
             />
             {brand.status === 'paused' && <Notice tone="warning">{t.pausedNotice}</Notice>}
+            {brand.status === 'paused' && <PausedStock brandId={brand.id} />}
             {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
             <Tabs<BrandTab>
               label={brand.name}

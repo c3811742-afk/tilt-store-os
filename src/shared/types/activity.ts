@@ -134,7 +134,12 @@ export type AlertKind =
   | 'approvalApproved'
   | 'approvalRejected'
   | 'promotionApproved'
-  | 'promotionRejected';
+  | 'promotionRejected'
+  | 'saleVoided'
+  | 'suspiciousVoids'
+  | 'flaggedAction'
+  | 'pausedBrandCollect'
+  | 'pausedBrandReturn';
 
 // Alerts only branch staff receive (the owners' own alerts, which they can switch off, are AlertKind).
 export type StaffAlertKind = 'transferArrived' | 'stockRequestDecided' | 'transferAssigned' | 'transferReady' | 'lowOnFloor' | 'countSubmitted' | 'transferDecided';
@@ -144,7 +149,8 @@ export interface AppNotification {
   at: IsoDateTime;
   kind: AlertKind | StaffAlertKind;
   userIds: Id[]; // who receives it
-  openedBy: Id[];
+  openedBy: Id[]; // read: still listed, no longer New
+  dismissedBy?: Id[]; // dismissed (× or swiped away): no longer listed
   params: Record<string, string>; // filled into the alert's text
   link: string; // the page it is about
 }

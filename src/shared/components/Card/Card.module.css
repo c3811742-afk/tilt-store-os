@@ -24,8 +24,9 @@
   border-radius: 0;
 }
 
-/* A table that ends the card also reaches its bottom edge. */
-.card > [data-table]:last-child {
+/* A table that ends the card also reaches its bottom edge (also under its filters, when no pages follow it). */
+.card > [data-table]:last-child,
+.card > [data-table-group]:last-child > [data-table]:last-child {
   margin-block-end: calc(-1 * var(--card-padding));
   border-block-end: none;
 }

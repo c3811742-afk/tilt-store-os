@@ -1,5 +1,5 @@
 import { getBrandReturns } from '@/shared/api';
-import { AsyncContent, Badge, PageHeader, PeriodFilter, Stack, Table, Tabs } from '@/shared/components';
+import { AsyncContent, Badge, FilterToolbar, PageHeader, PeriodFilter, Stack, Table, Tabs, useTableFilters } from '@/shared/components';
 import { useAsync, useFormat, useLiveVersion, useLocale, usePeriod, useQueryState } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
 
@@ -13,30 +13,35 @@ export const ReturnsPage = () => {
   const period = usePeriod('month');
   const [tab, setTab] = useQueryState<ReturnsTab>('tab', 'returns');
   const t = text.brandPortal.returns;
+  const columnFilters = useTableFilters();
   const state = useAsync(() => getBrandReturns(period.range), [period.range.from, period.range.to, version]);
 
   return (
     <Stack gap={vars.spacing[5]}>
       <PageHeader title={t.title} />
-      <PeriodFilter period={period} />
+      <FilterToolbar leading={<PeriodFilter period={period} />} table={columnFilters} />
       <AsyncContent state={state}>
         {({ returns, defects }) => (
           <Tabs<ReturnsTab>
             label={t.title}
             value={tab}
-            onChange={setTab}
+            onChange={(next) => {
+              columnFilters.clear(); // each tab's columns have their own filters
+              setTab(next);
+            }}
             tabs={[
               { value: 'returns', label: t.returns, count: returns.length },
               { value: 'defects', label: t.defects, count: defects.length },
             ]}
           >
             {tab === 'returns' ? (
-              <Table
+              <Table paged
+                filters={columnFilters}
                 label={t.returns}
                 stackOnMobile
                 emptyText={t.noReturns}
                 columns={[
-                  { key: 'at', label: text.common.date },
+                  { key: 'at', label: text.common.date, filterable: false }, // the period
                   { key: 'item', label: t.item },
                   { key: 'branch', label: t.branch },
                   { key: 'qty', label: t.qty, align: 'end' },
@@ -45,6 +50,7 @@ export const ReturnsPage = () => {
                 ]}
                 rows={returns.map((row) => ({
                   key: row.id,
+                  values: { at: row.at },
                   cells: {
                     at: format.date(row.at),
                     item: `${row.name} · ${row.size} · ${row.color}`,
@@ -56,12 +62,13 @@ export const ReturnsPage = () => {
                 }))}
               />
             ) : (
-              <Table
+              <Table paged
+                filters={columnFilters}
                 label={t.defects}
                 stackOnMobile
                 emptyText={t.noDefects}
                 columns={[
-                  { key: 'at', label: text.common.date },
+                  { key: 'at', label: text.common.date, filterable: false }, // the period
                   { key: 'item', label: t.item },
                   { key: 'branch', label: t.branch },
                   { key: 'qty', label: t.qty, align: 'end' },
@@ -71,6 +78,7 @@ export const ReturnsPage = () => {
                 ]}
                 rows={defects.map((row) => ({
                   key: row.id,
+                  values: { at: row.at },
                   cells: {
                     at: format.date(row.at),
                     item: `${row.name} · ${row.size} · ${row.color}`,

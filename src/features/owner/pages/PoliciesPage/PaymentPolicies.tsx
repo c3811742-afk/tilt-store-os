@@ -26,7 +26,7 @@ export const PaymentPolicies = () => {
   return (
     <Stack gap={vars.spacing[4]}>
       <SettingsSection title={t.paymentMethods} hint={t.paymentMethodsHint} draft={draft}>
-        <Table
+        <Table filterable={false}
           label={t.paymentMethods}
           columns={[
             { key: 'name', label: text.common.name },
@@ -77,7 +77,7 @@ export const PaymentPolicies = () => {
         )}
       </SettingsSection>
       {Boolean(action.error) && <Notice tone="danger">{errorMessage(action.error)}</Notice>}
-      <Table
+      <Table filterable={false}
         label={t.acceptedBy}
         columns={[{ key: 'method', label: t.acceptedBy }, ...selling.map((branch) => ({ key: branch.id, label: branch.name, align: 'center' as const }))]}
         rows={methods

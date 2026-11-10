@@ -4,7 +4,7 @@ import { AsyncContent, Card, DetailList, Notice, PageHeader, Stack, Table } from
 import { routes, toPath } from '@/shared/constants';
 import { useAsync, useFormat, useLocale, useBranchScope } from '@/shared/hooks';
 import { vars } from '@/shared/theme';
-import { fillText } from '@/shared/utils';
+import { fillText, ageFromBirthYear } from '@/shared/utils';
 
 // A customer's details, store credit and past purchases.
 export const CustomerPage = () => {
@@ -27,6 +27,7 @@ export const CustomerPage = () => {
                 { key: 'phone', label: t.search, value: <bdi>{customer.phone}</bdi> },
                 { key: 'orders', label: t.orders, value: format.number(customer.orders) },
                 { key: 'credit', label: t.storeCredit, value: format.money(customer.storeCredit, branch?.currency ?? '') },
+                ...(customer.birthYear ? [{ key: 'age', label: text.common.age, value: format.number(ageFromBirthYear(customer.birthYear)) }] : []),
               ]}
             />
           </Card>

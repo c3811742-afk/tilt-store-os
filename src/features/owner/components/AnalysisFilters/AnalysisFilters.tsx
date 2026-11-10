@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { listProducts } from '@/shared/api';
-import { Button, Card, CategorySelect, ColorSelect, FilterBar, Icon, SelectField, SizeSelect, Stack, TextField } from '@/shared/components';
+import { CategorySelect, ColorSelect, FilterButton, FilterChips, FilterPanel, SelectField, SizeSelect, TextField } from '@/shared/components';
 import { useAsync, useFormat, useLiveVersion, useLocale, useQueryState, useReference } from '@/shared/hooks';
-import { vars } from '@/shared/theme';
 import type { SalesChannel } from '@/shared/types';
 import type { AnalysisFilterKey } from '../../constants/analysis';
 import { BranchSelect, BrandSelect } from '../ReferenceSelect';
@@ -63,59 +62,33 @@ export const useAnalysisFilters = (keys: readonly AnalysisFilterKey[]) => {
   ].filter((chip): chip is { key: string; label: string; value: string; clear: () => void } => Boolean(chip));
   const available = keys.filter((key) => key !== 'period').length > 0;
 
-  const button = available && (
-    <Button variant="secondary" onClick={() => setOpen(!open)}>
-      <Icon name="filter" />
-      {chips.length ? `${text.common.filters} (${format.number(chips.length)})` : text.common.filters}
-    </Button>
-  );
+  const button = available && <FilterButton count={chips.length} onToggle={() => setOpen(!open)} />;
 
   const panel = open && available && (
-    <Card
-      title={text.common.filters}
-      actions={
-        <Button size="sm" variant="muted" onClick={() => setOpen(false)}>
-          {text.common.close}
-        </Button>
-      }
-    >
-      <FilterBar>
-        {shows('branch') && <BranchSelect kinds={['store', 'online', 'warehouse']} includeArchived allLabel={text.owner.fields.allBranches} value={branchId} onChange={setBranchId} />}
-        {shows('brand') && <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />}
-        {shows('category') && <CategorySelect allLabel={text.owner.fields.allCategories} value={categoryId} onChange={setCategoryId} />}
-        {shows('product') && (
-          <SelectField
-            label={text.owner.fields.product}
-            placeholder={t.allProducts}
-            value={productId}
-            onChange={setProductId}
-            options={products.filter((product) => (!brandId || product.brandId === brandId) && (!categoryId || product.categoryId === categoryId)).map((product) => ({ value: product.id, label: product.name, group: format.brand(product.brandId) }))}
-          />
-        )}
-        {shows('reason') && <SelectField label={t.columns.returnReason} placeholder={t.allReasons} value={reasonId} onChange={setReasonId} options={settings.lists.returnReasons.map((option) => ({ value: option.id, label: format.text(option.label) }))} />}
-        {shows('staff') && <SelectField label={t.groupings.cashier} placeholder={text.owner.fields.allStaff} value={cashierId} onChange={setCashierId} options={users.filter((user) => user.branchIds.length > 0).map((user) => ({ value: user.id, label: user.name }))} />}
-        {shows('payment') && <SelectField label={t.groupings.paymentMethod} placeholder={text.common.all} value={paymentMethodId} onChange={setPaymentMethodId} options={settings.paymentMethods.map((method) => ({ value: method.id, label: format.text(method.name) }))} />}
-        {shows('channel') && <SelectField label={t.groupings.channel} placeholder={text.common.all} value={channel} onChange={setChannel} options={(['store', 'online'] as const).map((value) => ({ value, label: t.channels[value] }))} />}
-        {shows('size') && <SizeSelect allLabel={text.common.all} value={size} onChange={setSize} />}
-        {shows('color') && <ColorSelect allLabel={text.common.all} value={color} onChange={setColor} />}
-        {shows('weeks') && <TextField label={t.weeks} type="number" min={1} value={weeks} placeholder={String(settings.slowMoverWeeks)} onChange={setWeeks} />}
-      </FilterBar>
-    </Card>
+    <FilterPanel onClose={() => setOpen(false)}>
+      {shows('branch') && <BranchSelect kinds={['store', 'online', 'warehouse']} includeArchived allLabel={text.owner.fields.allBranches} value={branchId} onChange={setBranchId} />}
+      {shows('brand') && <BrandSelect allLabel={text.owner.fields.allBrands} value={brandId} onChange={setBrandId} />}
+      {shows('category') && <CategorySelect allLabel={text.owner.fields.allCategories} value={categoryId} onChange={setCategoryId} />}
+      {shows('product') && (
+        <SelectField
+          label={text.owner.fields.product}
+          placeholder={t.allProducts}
+          value={productId}
+          onChange={setProductId}
+          options={products.filter((product) => (!brandId || product.brandId === brandId) && (!categoryId || product.categoryId === categoryId)).map((product) => ({ value: product.id, label: product.name, group: format.brand(product.brandId) }))}
+        />
+      )}
+      {shows('reason') && <SelectField label={t.columns.returnReason} placeholder={t.allReasons} value={reasonId} onChange={setReasonId} options={settings.lists.returnReasons.map((option) => ({ value: option.id, label: format.text(option.label) }))} />}
+      {shows('staff') && <SelectField label={t.groupings.cashier} placeholder={text.owner.fields.allStaff} value={cashierId} onChange={setCashierId} options={users.filter((user) => user.branchIds.length > 0).map((user) => ({ value: user.id, label: user.name }))} />}
+      {shows('payment') && <SelectField label={t.groupings.paymentMethod} placeholder={text.common.all} value={paymentMethodId} onChange={setPaymentMethodId} options={settings.paymentMethods.map((method) => ({ value: method.id, label: format.text(method.name) }))} />}
+      {shows('channel') && <SelectField label={t.groupings.channel} placeholder={text.common.all} value={channel} onChange={setChannel} options={(['store', 'online'] as const).map((value) => ({ value, label: t.channels[value] }))} />}
+      {shows('size') && <SizeSelect allLabel={text.common.all} value={size} onChange={setSize} />}
+      {shows('color') && <ColorSelect allLabel={text.common.all} value={color} onChange={setColor} />}
+      {shows('weeks') && <TextField label={t.weeks} type="number" min={1} value={weeks} placeholder={String(settings.slowMoverWeeks)} onChange={setWeeks} />}
+    </FilterPanel>
   );
 
-  const chipRow = chips.length > 0 && (
-    <Stack direction="row" wrap gap={vars.spacing[2]} align="center">
-      {chips.map((chip) => (
-        <Button key={chip.key} size="sm" variant="secondary" onClick={chip.clear}>
-          {`${chip.label}: ${chip.value}`}
-          <Icon name="close" />
-        </Button>
-      ))}
-      <Button size="sm" variant="muted" onClick={() => chips.forEach((chip) => chip.clear())}>
-        {text.common.clearFilters}
-      </Button>
-    </Stack>
-  );
+  const chipRow = <FilterChips chips={chips} />;
 
   return { values, button, panel, chips: chipRow };
 };
